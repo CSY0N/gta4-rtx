@@ -197,6 +197,36 @@ namespace shared::utils
 
 	std::string hash_file_sha1(const char* file_path);
 
+	inline uint32_t at_string_hash(const char* str, const uint32_t ival = 0)
+	{
+		uint32_t k = ival;
+		const bool q = (*str == '\"');
+
+		if (q) {
+			str++;
+		}
+
+		while (*str && (!q || *str != '\"'))
+		{
+			char character = *str++;
+			if (character >= 'A' && character <= 'Z') {
+				character += 'a' - 'A';
+			} else if (character == '\\') {
+				character = '/';
+			}
+
+			k += character;
+			k += (k << 10);
+			k ^= (k >> 6);
+		}
+
+		k += (k << 3);
+		k ^= (k >> 11);
+		k += (k << 15);
+
+		return k;
+	}
+
 	bool compare_ps_shader_constant_name(IDirect3DDevice9* dev, const UINT& start_register, const std::string_view& constant_name);
 	bool compare_vs_shader_constant_name(IDirect3DDevice9* dev, const UINT& start_register, const std::string_view& constant_name);
 

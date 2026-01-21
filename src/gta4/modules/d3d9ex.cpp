@@ -271,7 +271,6 @@ namespace gta4
 		remix_vars::on_client_frame();
 
 		//renderer::get()->m_modified_draw_prim = false;
-
 		return m_pIDirect3DDevice9->EndScene();
 	}
 

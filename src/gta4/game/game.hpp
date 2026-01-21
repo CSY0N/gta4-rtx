@@ -109,6 +109,9 @@ namespace gta4::game
 	typedef	void* (__cdecl* AddSceneLight_t)(int unk_flag, game::eLightType type, int flag, float* dir, float* otherdir, float* pos, float* color, float intensity, int tex_hash, int txd_hash, float radius, float inner_cone, float outer_cone, int inter_index, int room_index, int shadow_rel_index);
 		extern AddSceneLight_t AddSceneLight; // // int unk_flag, game::eLightType type, int flag, float* dir, float* otherdir, float* pos, float* color, float intensity, int tex_hash, int txd_hash, float radius, float inner_cone, float outer_cone, int inter_index, int room_index, int shadow_rel_index
 
+	typedef	void (__fastcall* SetupTextureAndSampler_t)(uint32_t tex_register, grcTextureReference* a2, int sampler_state_count, int a4);
+		extern SetupTextureAndSampler_t SetupTextureAndSampler;
+
 	// --------------
 	// game asm offsets
 

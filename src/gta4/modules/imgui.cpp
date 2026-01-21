@@ -906,6 +906,7 @@ namespace gta4
 			ImGui::Checkbox("Debug Bool 3", &im->m_dbg_debug_bool03);
 			ImGui::Checkbox("Debug Bool 4", &im->m_dbg_debug_bool04);
 			ImGui::Checkbox("Debug Bool 5", &im->m_dbg_debug_bool05);
+
 			ImGui::DragInt("Debug Int 1", &im->m_dbg_int_01, 0.01f);
 			ImGui::DragInt("Debug Int 2", &im->m_dbg_int_02, 0.01f);
 			ImGui::TreePop();
@@ -974,14 +975,21 @@ namespace gta4
 		}
 
 #if DEBUG
+		ImGui::Spacing(0.0f, 4.0f);
 		if (ImGui::Button("Timecycle Vars - Debug Single Frame", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
 			im->m_dbg_debug_single_frame_timecycle_remix_vars = true;
 		}
 
+		ImGui::Spacing(0.0f, 4.0f);
 		if (ImGui::Button("Emissive Intensity - Debug Single Frame", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
 			im->m_dbg_debug_single_frame_emissive_intensity_vars = true;
 		}
 #endif
+
+		ImGui::Spacing(0.0f, 4.0f);
+		ImGui::Checkbox("Provide AutoPBR Information", &im->m_provide_autopbr_info);
+		TT(	"Enabling this will provide additional information about processed textures to remix.\n"
+			"Only useful if AutoPBR is enabled on remix' side (Texture Selection Tab).")
 
 		ImGui::Spacing(0.0f, 4.0f);
 	}
@@ -996,13 +1004,11 @@ namespace gta4
 				dev_shader_container, false, ICON_FA_ELLIPSIS_H, &im->ImGuiCol_ContainerBackground, &im->ImGuiCol_ContainerBorder);
 		}
 
-//#if DEBUG
 		{
 			static float cont_debug_height = 0.0f;
 			cont_debug_height = ImGui::Widget_ContainerWithCollapsingTitle("DEBUG Section", cont_debug_height, 
 				dev_debug_container, false, ICON_FA_TERMINAL, &im->ImGuiCol_ContainerBackground, &im->ImGuiCol_ContainerBorder);
 		}
-//#endif
 
 		{
 			static float cont_other_height = 0.0f;

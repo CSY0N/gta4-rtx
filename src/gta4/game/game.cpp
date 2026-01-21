@@ -90,6 +90,7 @@ namespace gta4::game
 	PopulateAvailResolutionsArray_t PopulateAvailResolutionsArray = nullptr;
 	AddSingleVehicleLight_t AddSingleVehicleLight = nullptr;
 	AddSceneLight_t AddSceneLight = nullptr;
+	SetupTextureAndSampler_t SetupTextureAndSampler = nullptr;
 
 
 
@@ -483,6 +484,7 @@ namespace gta4::game
 
 		if (const auto offset = shared::utils::mem::find_pattern("83 EC ?? 53 57 8B FA", 0, "func_addr__SetupTextureAndSampler", use_pattern, 0x437C40); offset) {
 			func_addr__SetupTextureAndSampler = offset; found_pattern_count++;
+			SetupTextureAndSampler = (SetupTextureAndSampler_t)offset;
 		} total_pattern_count++;
 
 

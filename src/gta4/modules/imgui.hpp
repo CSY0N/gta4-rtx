@@ -41,6 +41,8 @@ namespace gta4
 		float m_freecam_up_speed = 0.2f;
 		float m_freecam_up_offset = 0.0f;
 
+		bool m_provide_autopbr_info = false;
+
 		Vector m_debug_vector = { 0.0f, 0.0f, 0.0f };
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 

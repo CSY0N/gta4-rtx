@@ -826,18 +826,25 @@ namespace gta4::game
 
 	struct shader_info_sub_s
 	{
-		shader_constant_s* constants;
+		shader_constant_s* constants; // mEntries
 		shader_data_s* data;
-		int N0000076E;
-		int N0000076F;
-		__int8* constant_float_count_array;
-		char pad_0x0014[0x1C];
+		uint32_t mCount;
+		int mTotalSize;
+		__int8* constant_float_count_array; // mEntriesCounts
+		uint32_t mEffectHash;
+		void* field_18;
+		uint32_t field_1C;
+		uint32_t* mEntriesHashes;
+		class grcEffect* mNextEffect;
+		uint32_t field_28;
+		uint8_t* mTechNameIndices;
 		const char* shader_name;
 		const char* preset_name;
 		int pad4;
 		int pad5;
 		int preset_index;
-	};
+	}; 
+	STATIC_ASSERT_OFFSET(shader_info_sub_s, preset_index, 64);
 
 	struct sampler_data_s
 	{

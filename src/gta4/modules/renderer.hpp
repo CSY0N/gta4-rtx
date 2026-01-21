@@ -152,6 +152,9 @@ namespace gta4
 		GTA_NORMAL_SPEC_ALPHA = 40,
 		GTA_NORMAL_SPEC_DECAL = 42,
 		GTA_NORMAL_SPEC_REFLECT = 43,
+		GTA_PARALLAX = 52,
+		GTA_PARALLAX_SPECMAP = 53,
+		//GTA_PARALLAX_STEEP ? 
 		GTA_PED = 54,
 		GTA_PED_ALPHA = 55,
 		GTA_PED_REFLECT = 56,
@@ -546,6 +549,9 @@ namespace gta4
 			float shaderconst_emissive_intensity = -1.0f;
 			bool shaderconst_uses_emissive_multiplier = false;
 
+			uint32_t shaderconst_specularmap_index = 0u;
+			bool shaderconst_uses_specularmap_index = false;
+
 			DWORD rs_alphablendenable = 0u;
 			DWORD rs_blendop = 0u;
 			DWORD rs_srcblend = 0u;
@@ -576,6 +582,9 @@ namespace gta4
 
 				shaderconst_emissive_intensity = -1.0f;
 				shaderconst_uses_emissive_multiplier = false;
+
+				shaderconst_specularmap_index = 0u;
+				shaderconst_uses_specularmap_index = false;
 
 				rs_alphablendenable = 0u;
 				rs_blendop = 0u;
