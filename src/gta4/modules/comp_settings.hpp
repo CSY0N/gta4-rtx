@@ -1288,7 +1288,7 @@ namespace gta4
 
 			// -----
 			variable timecycle_bloom_enabled = {
-				"timecycle_bloomintensity_enabled",
+				"timecycle_bloom_enabled",
 				("Enables automatic adjustment of 'rtx.bloom.burnIntensity' and 'rtx.bloom.luminanceThreshold' based on timecycle settings."),
 				true
 			};
