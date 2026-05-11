@@ -1191,10 +1191,11 @@ namespace gta4
 
 
 		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Vehicle Livery ");
+		ImGui::SeparatorText(" General Vehicle Settings ");
 		ImGui::Spacing(0, 4);
 
 		compsettings_bool_widget("Enable Vehicle Livery", gs->vehicle_livery_enabled);
+		compsettings_bool_widget("Force Vertex Color Usage", gs->vehicle_force_vertex_colors);
 
 
 		ImGui::Spacing(0, inbetween_spacing);

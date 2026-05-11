@@ -848,6 +848,16 @@ namespace gta4
 				true
 			};
 
+			variable vehicle_force_vertex_colors =
+			{
+				"vehicle_force_vertex_colors",
+				("Force usage of vertex colors on vehicles. Vertex color can include required color data (eg. wheel colors)\n"
+				"but might also be used for baked lighting / fake shadows."),
+				true
+			};
+
+			
+
 			// -----
 			variable decal_dirt_shader_usage =
 			{

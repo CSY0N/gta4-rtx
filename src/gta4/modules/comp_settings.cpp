@@ -230,6 +230,8 @@ namespace gta4
 				ASSIGN(vehicle_dirt_roughness_blending);
 
 				ASSIGN(vehicle_livery_enabled);
+				ASSIGN(vehicle_force_vertex_colors);
+
 				ASSIGN(decal_dirt_shader_usage);
 				ASSIGN(decal_dirt_shader_scalar);
 				ASSIGN(decal_dirt_shader_contrast);

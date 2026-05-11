@@ -209,6 +209,7 @@ namespace gta4
 	void on_constant_matDiffuseColor(IDirect3DDevice9* dev, const Vector& color)
 	{
 		auto& ctx = renderer::get()->dc_ctx;
+		const auto cs = comp_settings::get();
 
 		ctx.save_rs(dev, D3DRS_TEXTUREFACTOR); // prob. not needed
 		ctx.save_tss(dev, D3DTSS_COLOROP);
@@ -216,6 +217,13 @@ namespace gta4
 		ctx.save_tss(dev, D3DTSS_COLORARG2);
 
 		ctx.modifiers.is_vehicle_paint = true;
+
+		// Enable VertexColor usage (+ tFactor) on vehicles without needing to manually assign the beam category
+		if (cs->vehicle_force_vertex_colors._bool()) 
+		{
+			renderer::set_remix_modifier(dev, RemixModifier::EnableVertexColor); 
+			renderer::set_remix_texture_categories(dev, InstanceCategories::Beam);
+		}
 		
 		dev->SetRenderState(D3DRS_TEXTUREFACTOR, D3DCOLOR_COLORVALUE(color.x, color.y, color.z, 1.0f));
 		dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
