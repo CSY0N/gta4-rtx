@@ -50,6 +50,7 @@ namespace gta4
 		WndMsg s_mouseMove = { 0 };
 		WndMsg s_mouseLButton = { 0 };
 		WndMsg s_mouseRButton = { 0 };
+		WndMsg s_mouseMButton = { 0 };
 		WndMsg s_mouseWheel = { 0 };
 
 		bool m_initialized = false;

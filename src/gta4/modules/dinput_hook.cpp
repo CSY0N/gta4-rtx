@@ -170,6 +170,18 @@ namespace gta4
 			}
 		}
 
+		if (s_mouseButtons[2] != state->rgbButtons[2])
+		{
+			wm.msg = (state->rgbButtons[2] & 0x80) ? WM_MBUTTONDOWN : WM_MBUTTONUP;
+			s_mouseButtons[2] = state->rgbButtons[2];
+
+			if (0 != memcmp(&wm, &s_mouseMButton, sizeof(wm)))
+			{
+				forwardMessage(wm);
+				s_mouseMButton = wm;
+			}
+		}
+
 		if (GET_WHEEL_DELTA_WPARAM(s_mouseWheel.wParam) != state->lZ) 
 		{
 			// Preserve button codes
