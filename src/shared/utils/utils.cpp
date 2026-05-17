@@ -266,6 +266,31 @@ namespace shared::utils
 		}
 	}
 
+	// Helper function to get sorted files from a directory
+	std::vector<std::string> get_sorted_files(const std::string& dir_path, const std::string_view& file_ext)
+	{
+		std::vector<std::string> files;
+		std::filesystem::path dir(shared::globals::root_path + "\\" + dir_path);
+
+		if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+			return files;
+		}
+
+		for (const auto& entry : std::filesystem::directory_iterator(dir))
+		{
+			if (entry.is_regular_file() && entry.path().extension() == file_ext) {
+				files.push_back(entry.path().string());
+			}
+		}
+
+		// Sort alphabetically (numbers before letters)
+		std::sort(files.begin(), files.end(), [](const std::string& a, const std::string& b) {
+			return a < b;
+		});
+
+		return files;
+	}
+
 	void transpose_float3x4_to_d3dxmatrix(const shared::float3x4& src, D3DXMATRIX& dest)
 	{
 		dest.m[0][0] = src.m[0][0];

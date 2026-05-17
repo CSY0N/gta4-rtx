@@ -24,31 +24,6 @@ namespace gta4
 	{
 		try 
 		{
-			// Helper function to get sorted TOML files from a directory
-			auto get_sorted_toml_files = [](const std::string& dir_path) -> std::vector<std::string>
-			{
-				std::vector<std::string> files;
-				std::filesystem::path dir(shared::globals::root_path + "\\" + dir_path);
-				
-				if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
-					return files;
-				}
-
-				for (const auto& entry : std::filesystem::directory_iterator(dir))
-				{
-					if (entry.is_regular_file() && entry.path().extension() == ".toml") {
-						files.push_back(entry.path().string());
-					}
-				}
-
-				// Sort alphabetically (numbers before letters)
-				std::sort(files.begin(), files.end(), [](const std::string& a, const std::string& b) {
-					return a < b;
-				});
-
-				return files;
-			};
-
 			// Parse main map_settings.toml
 			shared::common::log("MapSettings", "Parsing 'map_settings.toml' ...", shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
 			toml::basic_value<toml::type_config> config;
@@ -198,7 +173,7 @@ namespace gta4
 					};
 
 				// Process all marker files in alphabetical order
-				const auto marker_files = get_sorted_toml_files("rtx_comp\\markers");
+				const auto marker_files = shared::utils::get_sorted_files("rtx_comp\\markers", ".toml");
 				for (const auto& file_path : marker_files)
 				{
 					try 
@@ -236,7 +211,7 @@ namespace gta4
 			shared::common::log("MapSettings", "Parsing light tweaks from 'rtx_comp/light_tweaks/' folder ...", shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
 			{
 				// Process all light tweak files in alphabetical order (earlier files have higher priority)
-				const auto light_tweak_files = get_sorted_toml_files("rtx_comp\\light_tweaks");
+				const auto light_tweak_files = shared::utils::get_sorted_files("rtx_comp\\light_tweaks", ".toml");
 				for (const auto& file_path : light_tweak_files)
 				{
 					try 

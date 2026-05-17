@@ -43,48 +43,48 @@ namespace gta4
 		{
 		public:
 			// bool
-			variable(const char* name, const char* desc, const bool boolean) :
-				m_name(name), m_desc(desc), m_type(var_type_boolean)
+			variable(const char* name, const char* desc, const char* version, const bool boolean) :
+				m_name(name), m_desc(desc), m_version(shared::utils::version_t::from_string(version)), m_type(var_type_boolean)
 			{
 				m_var.boolean = boolean;
 				m_var_default.boolean = boolean;
 			}
 	
 			// int
-			variable(const char* name, const char* desc, const int integer) :
-				m_name(name), m_desc(desc), m_type(var_type_integer)
+			variable(const char* name, const char* desc, const char* version, const int integer) :
+				m_name(name), m_desc(desc), m_version(shared::utils::version_t::from_string(version)), m_type(var_type_integer)
 			{
 				m_var.integer = integer;
 				m_var_default.integer = integer;
 			}
 	
 			// float
-			variable(const char* name, const char* desc, const float value) :
-				m_name(name), m_desc(desc), m_type(var_type_value)
+			variable(const char* name, const char* desc, const char* version, const float value) :
+				m_name(name), m_desc(desc), m_version(shared::utils::version_t::from_string(version)), m_type(var_type_value)
 			{
 				m_var.value[0] = value;
 				m_var_default.value[0] = value;
 			}
 	
 			// vec2
-			variable(const char* name, const char* desc, const float x, const float y) :
-				m_name(name), m_desc(desc), m_type(var_type_vec2)
+			variable(const char* name, const char* desc, const char* version, const float x, const float y) :
+				m_name(name), m_desc(desc), m_version(shared::utils::version_t::from_string(version)), m_type(var_type_vec2)
 			{
 				m_var.value[0] = x; m_var.value[1] = y;
 				m_var_default.value[0] = x; m_var_default.value[1] = y;
 			}
 	
 			// vec3
-			variable(const char* name, const char* desc, const float x, const float y, const float z) :
-				m_name(name), m_desc(desc), m_type(var_type_vec3)
+			variable(const char* name, const char* desc, const char* version, const float x, const float y, const float z) :
+				m_name(name), m_desc(desc), m_version(shared::utils::version_t::from_string(version)), m_type(var_type_vec3)
 			{
 				m_var.value[0] = x; m_var.value[1] = y; m_var.value[2] = z;
 				m_var_default.value[0] = x; m_var_default.value[1] = y; m_var_default.value[2] = z;
 			}
 	
 			// vec4
-			variable(const char* name, const char* desc, const float x, const float y, const float z, const float w) :
-				m_name(name), m_desc(desc), m_type(var_type_vec4)
+			variable(const char* name, const char* desc, const char* version, const float x, const float y, const float z, const float w) :
+				m_name(name), m_desc(desc), m_version(shared::utils::version_t::from_string(version)), m_type(var_type_vec4)
 			{
 				m_var.value[0] = x; m_var.value[1] = y; m_var.value[2] = z; m_var.value[3] = w;
 				m_var_default.value[0] = x; m_var_default.value[1] = y; m_var_default.value[2] = z; m_var_default.value[3] = w;
@@ -144,6 +144,11 @@ namespace gta4
 				return nullptr;
 			}
 	
+			std::string get_ver_string() const
+			{
+				return std::format("{}.{}.{}", this->m_version.major, this->m_version.minor, this->m_version.patch);
+			}
+
 			std::string get_tooltip_string() const
 			{
 				std::string out;
@@ -322,6 +327,7 @@ namespace gta4
 
 			const char* m_name;
 			const char* m_desc;
+			shared::utils::version_t m_version;
 	
 		private:
 			var_value m_var;
@@ -341,6 +347,7 @@ namespace gta4
 				"manual_game_resolution_enabled",
 				("Enabling this will override saved resolution settings\n"
 				 "and use settings defined in 'manual_game_resolution'."),
+				"1.3.0",
 				false
 			};
 
@@ -349,6 +356,7 @@ namespace gta4
 				"manual_game_resolution",
 				("Resolution override when 'manual_game_resolution_enabled' is enabled\n"
 				 "Not required normally"),
+				"1.3.0",
 				1920, 1080
 			};
 
@@ -356,6 +364,7 @@ namespace gta4
 				"load_colormaps_only",
 				("This setting will prevent loading and usage of all non-colormap textures.\n"
 				 "Useful to declutter the remix UI and reducing used VRAM."),
+				"1.3.0",
 				true
 			};
 
@@ -363,13 +372,15 @@ namespace gta4
 				"remix_override_rtxdi_samplecount",
 				("Remix sets 'rtx.di.initialSampleCount' to hardcoded values on start.\n"
 				 "Setting this value to anything greater 0 constantly sets the remix variable with this value."),
-				30
+				"1.3.0",
+				60
 			};
 
 			variable remix_override_enable_particle_tlas_collision = {
 				"remix_override_enable_particle_tlas_collision",
 				("This setting enables TLAS collision detection on supported particle systems (rain).\n"
 				 "This may impact performance and is still wip so its disabled by default."),
+				"1.3.0",
 				false
 			};
 
@@ -381,6 +392,7 @@ namespace gta4
 			{
 				"nocull_dist_near_static",
 				("Distance (radius around player) where culling of static objects is disabled"),
+				"1.3.0",
 				50.0f
 			};
 
@@ -388,6 +400,7 @@ namespace gta4
 			{
 				"nocull_dist_medium_static",
 				("Distance (radius around player) were an object radius is checked against the 'nocull_radius_medium_static' setting. Objects with larger radii will NOT get culled."),
+				"1.3.0",
 				80.0f
 			};
 
@@ -395,6 +408,7 @@ namespace gta4
 			{
 				"nocull_radius_medium_static",
 				("The minimum radius an object has to have to not get culled within the distance set by 'nocull_dist_medium_static'"),
+				"1.3.0",
 				40.0f
 			};
 
@@ -402,6 +416,7 @@ namespace gta4
 			{
 				"nocull_dist_far_static",
 				("Distance (radius around player) were an object radius is checked against the 'nocull_radius_far_static' setting. Objects with larger radii will NOT get culled."),
+				"1.3.0",
 				500.0f
 			};
 
@@ -409,6 +424,7 @@ namespace gta4
 			{
 				"nocull_radius_far_static",
 				("The minimum radius an object has to have to not get culled within the distance set by 'nocull_dist_far_static'"),
+				"1.3.0",
 				50.0f
 			};
 
@@ -417,6 +433,7 @@ namespace gta4
 				"nocull_height_far_static",
 				("The minimum height an object has to have to not get culled within the distance set by 'nocull_dist_far_static'\n"
 				"Setting this to 0 disables the condition."),
+				"1.3.0",
 				13.0f
 			};
 
@@ -424,6 +441,7 @@ namespace gta4
 			{
 				"nocull_dist_lights",
 				("Distance (radius around player) where culling of game lights is disabled. 0.0 = disabled"),
+				"1.3.0",
 				20.0f
 			};
 
@@ -431,6 +449,7 @@ namespace gta4
 			{
 				"nocull_dist_sphere_interior",
 				("Distance (radius around player) where culling of game objects is disabled. 0.0 = disabled"),
+				"1.3.0",
 				20.0f
 			};
 
@@ -438,6 +457,7 @@ namespace gta4
 				"nocull_extended",
 				("Extended Anti Culling logic. Rechecks for manually added anti culling meshes added via mapsettings.\n"
 				 "Does not prevent culling if part of the map containing the mesh 'unloads'"),
+				"1.3.0",
 				true
 			};
 
@@ -449,6 +469,7 @@ namespace gta4
 			{
 				"translate_game_lights",
 				("This recreates game-lights as remixApi lights"),
+				"1.3.0",
 				true
 			};
 
@@ -457,6 +478,7 @@ namespace gta4
 				"translate_game_lights_ignore_filler_lights",
 				("This prevents translation of game-lights when they have a certain FLAG set.\n"
 				 "Ignores a lot of filler lights but also disables emergency lights. It's recommended to mod the actual game files to remove unwanted lights."),
+				"1.3.0",
 				false
 			};
 
@@ -464,6 +486,7 @@ namespace gta4
 			{
 				"translate_game_light_radius_scalar",
 				("Scale radius of translated game lights"),
+				"1.3.0",
 				0.5f
 			};
 
@@ -471,6 +494,7 @@ namespace gta4
 			{
 				"translate_game_light_intensity_scalar",
 				("Scale intensity of translated game lights"),
+				"1.3.0",
 				500.0f
 			};
 
@@ -478,6 +502,7 @@ namespace gta4
 			{
 				"translate_game_light_softness_offset",
 				("Offset softness of translated game lights"),
+				"1.3.0",
 				0.00f
 			};
 
@@ -485,6 +510,7 @@ namespace gta4
 			{
 				"translate_game_light_softness_scalar",
 				("Scalar applied to softness of translated game spot lights"),
+				"1.3.0",
 				1.00f
 			};
 
@@ -492,6 +518,7 @@ namespace gta4
 			{
 				"translate_game_light_focus_expo",
 				("Fixed focus expo of translated game spot lights"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -499,6 +526,7 @@ namespace gta4
 			{
 				"translate_game_light_spotlight_volumetric_radiance_scale",
 				("Volumetric scale of translated game spotlights"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -506,6 +534,7 @@ namespace gta4
 			{
 				"translate_game_light_spherelight_volumetric_radiance_scale",
 				("Volumetric scale of translated game sphere lights"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -513,6 +542,7 @@ namespace gta4
 			{
 				"translate_game_light_angle_offset",
 				("Offset spotlight angles of translated game lights"),
+				"1.3.0",
 				0.0f
 			};
 
@@ -520,6 +550,7 @@ namespace gta4
 			{
 				"translate_sunlight_intensity_scalar",
 				("Scale intensity of translated game sunlight"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -528,6 +559,7 @@ namespace gta4
 				"translate_sunlight_intensity_bad_weather_influence",
 				("Reduce intensity of translated game sunlight when weather is bad.\n"
 				 "0: No influence, 1: No sunlight on (full) bad weather"),
+				"1.3.0",
 				0.65f
 			};
 
@@ -535,6 +567,7 @@ namespace gta4
 			{
 				"translate_sunlight_angular_diameter_degrees",
 				("Angular Diameter of sunlight (Static value, not influenced by the game)"),
+				"1.3.0",
 				0.45f
 			};
 
@@ -543,6 +576,7 @@ namespace gta4
 				"translate_sunlight_volumetric_radiance_base",
 				("Base volumetric scale of sunlight (Static value, not influenced by the game)\n"
 				"The timecycle fogdensity setting can also influence the volumetric scale when enabled."),
+				"1.3.0",
 				2.0f
 			};
 
@@ -550,6 +584,7 @@ namespace gta4
 			{
 				"translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled",
 				("Enables influence of timecycle fogdensity setting on sunlight volumetric scale"),
+				"1.3.0",
 				true
 			};
 
@@ -558,6 +593,7 @@ namespace gta4
 				"translate_sunlight_timecycle_fogdensity_volumetric_influence_scalar",
 				("Scale influence of fogdensity timecycle setting on volumetric scale of sunlight.\n"
 				"( < translate_sunlight_volumetric_radiance_base >  +  < timecycle fogdensity (0-1) >  *  < this scalar >"),
+				"1.3.0",
 				4.0f
 			};
 
@@ -567,6 +603,7 @@ namespace gta4
 				("Scale intensity of moonlight. Moonlight is active from 22:00 to 05:00.\n"
 				"Transitions smoothly from sun intensity to moon intensity between 21:00-22:00 and 05:00-06:00.\n"
 				"Clamped from 0.0 to 1.0."),
+				"1.3.0",
 				0.1f
 			};
 
@@ -576,6 +613,7 @@ namespace gta4
 			{
 				"translate_vehicle_headlight_intensity_scalar",
 				("Scale intensity of vehicle headlights."),
+				"1.3.0",
 				1.2f
 			};
 
@@ -583,6 +621,7 @@ namespace gta4
 			{
 				"translate_vehicle_headlight_radius_scalar",
 				("Scale radius of vehicle headlights."),
+				"1.3.0",
 				1.0f
 			};
 
@@ -592,6 +631,7 @@ namespace gta4
 			{
 				"translate_vehicle_rearlight_intensity_scalar",
 				("Scale intensity of vehicle rearlights."),
+				"1.3.0",
 				0.6f
 			};
 
@@ -599,6 +639,7 @@ namespace gta4
 			{
 				"translate_vehicle_rearlight_radius_scalar",
 				("Scale radius of vehicle headlights."),
+				"1.3.0",
 				1.0f
 			};
 
@@ -606,6 +647,7 @@ namespace gta4
 			{
 				"translate_vehicle_rearlight_inner_cone_angle_offset",
 				("Additional offset applied to the inner cone of the spotlight (can be negative)"),
+				"1.3.0",
 				0.0f
 			};
 
@@ -613,6 +655,7 @@ namespace gta4
 			{
 				"translate_vehicle_rearlight_outer_cone_angle_offset",
 				("Additional offset applied to the outer cone of the spotlight (can be negative)"),
+				"1.3.0",
 				5.0f
 			};
 
@@ -620,6 +663,7 @@ namespace gta4
 			{
 				"translate_vehicle_rearlight_direction_offset",
 				("Additional offset applied to direction vector of the light"),
+				"1.3.0",
 				0.0f, 0.0f, -0.2f
 			};
 
@@ -629,6 +673,7 @@ namespace gta4
 			{
 				"translate_vehicle_fake_siren_z_offset",
 				("Z Offset applied to the fake siren light that is way above the vehicle"),
+				"1.3.0",
 				-1.3f
 			};
 
@@ -636,6 +681,7 @@ namespace gta4
 			{
 				"translate_vehicle_fake_siren_intensity_offset",
 				("Intensity offset applied to the fake siren light that is way above the vehicle"),
+				"1.3.0",
 				0.0f
 			};
 
@@ -643,6 +689,7 @@ namespace gta4
 			{
 				"translate_vehicle_fake_siren_radius_offset",
 				("Radius offset applied to the fake siren light that is way above the vehicle"),
+				"1.3.0",
 				0.0f
 			};
 
@@ -652,6 +699,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_make_spotlight",
 				("Use spotlights on v-siren lights"),
+				"1.3.0",
 				true
 			};
 		
@@ -659,6 +707,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_intensity_offset",
 				("Intensity offset (in game units) applied to the v-siren lights inside the actual sirens"),
+				"1.3.0",
 				20.0f
 			};
 
@@ -666,6 +715,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_radius_offset",
 				("Radius offset (in game units) applied to the v-siren lights inside the actual sirens"),
+				"1.3.0",
 				25.0f
 			};
 
@@ -674,6 +724,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_enabled",
 				("Create a secondary spherelight on v-siren lights"),
+				"1.3.0",
 				true
 			};
 
@@ -681,6 +732,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_radius_offset",
 				("Radius offset (in game units) applied to the secondary v-siren light"),
+				"1.3.0",
 				2.0f
 			};
 
@@ -688,6 +740,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_intensity_offset",
 				("Intensity offset (in game units) applied to the secondary v-siren light"),
+				"1.3.0",
 				4.0f
 			};
 
@@ -695,6 +748,7 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_z_offset",
 				("Z-Axis offset (in game units) applied to the secondary v-siren light"),
+				"1.3.0",
 				0.15f
 			};
 
@@ -704,6 +758,7 @@ namespace gta4
 			{
 				"translate_vehicle_barsirens_intensity_scalar",
 				("Intensity scalar used on bar-siren lights"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -711,6 +766,7 @@ namespace gta4
 			{
 				"translate_vehicle_barsirens_radius_scalar",
 				("Radius scalar used on bar-siren lights"),
+				"1.3.0",
 				0.07f
 			};
 
@@ -722,6 +778,7 @@ namespace gta4
 				"vehicle_lights_emissive_scalar",
 				("Scale emissive strength of vehicle lights\n"
 				"(< gta4 emissiveMultiplier shader constant >  *  < this scalar >  *  < remix material setting >  *  < global remix emissive setting >)"),
+				"1.3.0",
 				13.0f
 			};
 
@@ -730,6 +787,7 @@ namespace gta4
 				"vehicle_lights_dual_render_proxy_texture",
 				("This renders surfaces using the 'gta_vehicle_lightsemissive' shader a second time using a proxy texture (veh_light_ems_glass.png).\n"
 				"The remix-mod of the compatibility mod makes that surface translucent."),
+				"1.3.0",
 				false
 			};
 
@@ -737,6 +795,7 @@ namespace gta4
 			{
 				"emissive_night_surfaces_emissive_scalar",
 				("Scale emissive strength of every surface using a shader ending on 'emissivenight.fxc'"),
+				"1.3.0",
 				0.25f
 			};
 
@@ -744,6 +803,7 @@ namespace gta4
 			{
 				"emissive_surfaces_emissive_scalar",
 				("Scale emissive strength of every surface using a shader ending on 'emissive.fxc'"),
+				"1.3.0",
 				0.15f
 			};
 
@@ -751,6 +811,7 @@ namespace gta4
 			{
 				"emissive_strong_surfaces_emissive_scalar",
 				("Scale emissive strength of every surface using a shader ending on 'strong.fxc'"),
+				"1.3.0",
 				0.4f
 			};
 
@@ -758,6 +819,7 @@ namespace gta4
 			{
 				"emissive_generic_scale",
 				("Some emissive surfaces do not use the emissiveMultiplier shader constant. These will use this constant."),
+				"1.3.0",
 				1.6f
 			};
 
@@ -767,6 +829,7 @@ namespace gta4
 				("Assign WorldUI and DecalStatic to AlphaBlended Emissives.\n"
 				 "Fixes aliasing induced by RR Particle Mode. Enables RR Particle Mode when on.\n"
 				 "Disables RR Particle Mode when off (not recommended)"),
+				"1.3.0",
 				true
 			};
 
@@ -775,6 +838,7 @@ namespace gta4
 				"emissive_alpha_blend_hack_scale",
 				("AlphaBlended Emissive Surface that are tagged as 'Decal' are less emissive\n"
 				 "so we have to increase their emissive intensity to compensate for that."),
+				"1.3.0",
 				4.0f
 			};
 
@@ -782,12 +846,14 @@ namespace gta4
 				"phone_emissive_override",
 				("Automatically tags phone related meshes as world-ui and adjusts the emissive scale.\n"
 				 "Emissive intensity can be tweaked via 'phone_emissive_scalar'"),
+				"1.3.0",
 				true
 			};
 
 			variable phone_emissive_scalar = {
 				"phone_emissive_scalar",
 				("Scales the emissive intensity of phone meshes. Needs 'phone_emissive_override'"),
+				"1.3.0",
 				2.5f
 			};
 
@@ -799,6 +865,7 @@ namespace gta4
 				"vehicle_dirt_enabled",
 				("Enable dirt on vehicles. This renders the vehicle surface a second time\n"
 				"using the dirt texture and applies it as a decal."),
+				"1.3.0",
 				true
 			};
 
@@ -807,6 +874,7 @@ namespace gta4
 				"vehicle_dirt_custom_color_enabled",
 				("Enable dirt color override on vehicles. The color constant of the game seems to be static.\n"
 				"This option can be used to use a custom dirt color."),
+				"1.3.0",
 				false
 			};
 
@@ -814,6 +882,7 @@ namespace gta4
 			{
 				"vehicle_dirt_custom_color",
 				("Color used for vehicle dirt when 'vehicle_dirt_custom_color_enabled' is enabled."),
+				"1.3.0",
 				0.22f, 0.21f, 0.20f
 			};
 
@@ -822,6 +891,7 @@ namespace gta4
 			{
 				"vehicle_dirt_expo",
 				("Exponent applied to the dirtiness value so that smaller values do not make the vehicle dirty and rough as quickly."),
+				"1.3.0",
 				3.0f
 			};
 
@@ -829,6 +899,7 @@ namespace gta4
 			{
 				"vehicle_dirt_roughness_z_normal",
 				("Surfaces with a Z-Normal value above this will be influenced by adjusted roughness."),
+				"1.3.0",
 				1.0f
 			};
 
@@ -836,6 +907,7 @@ namespace gta4
 			{
 				"vehicle_dirt_roughness_blending",
 				("Defines the blending strength used to go from original roughness to adjusted roughness."),
+				"1.3.0",
 				0.02f
 			};
 
@@ -845,6 +917,7 @@ namespace gta4
 				"vehicle_livery_enabled",
 				("Enable livery on vehicles. This renders the vehicle surface a second time\n"
 				"using the livery texture and applies it as a decal."),
+				"1.3.0",
 				true
 			};
 
@@ -853,6 +926,7 @@ namespace gta4
 				"vehicle_force_vertex_colors",
 				("Force usage of vertex colors on vehicles. Vertex color can include required color data (eg. wheel colors)\n"
 				"but might also be used for baked lighting / fake shadows."),
+				"1.3.0",
 				true
 			};
 
@@ -864,6 +938,7 @@ namespace gta4
 				"handle_decal_dirt_shader",
 				("Enable decal_dirt shader logic. Runtime will use 'rtx_comp/textures/decal_dirt.png' in texture slot 0 and the games intensity/alpha mask in slot 1.\n"
 				"This allows remixing the dirt texture while the game is handling the blending."),
+				"1.3.0",
 				false
 			};
 
@@ -871,6 +946,7 @@ namespace gta4
 			{
 				"decal_dirt_shader_scalar",
 				("Scale decal_dirt shader strength"),
+				"1.3.0",
 				0.25f
 			};
 
@@ -878,6 +954,7 @@ namespace gta4
 			{
 				"decal_dirt_shader_contrast",
 				("Mask contrast of decal_dirt shader"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -886,6 +963,7 @@ namespace gta4
 			{
 				"fixed_function_trees",
 				("Render trees via fixed function. Improves performance but gets rid of wind sway"),
+				"1.3.0",
 				true
 			};
 
@@ -893,6 +971,7 @@ namespace gta4
 			{
 				"tree_foliage_alpha_cutout_value",
 				("Value used for ALPHAREF. 0.625f for PC and 4.0 for Console"),
+				"1.3.0",
 				0.5f
 			};
 
@@ -900,6 +979,7 @@ namespace gta4
 			{
 				"grass_foliage_alpha_cutout_value",
 				("Value used for ALPHAREF. 0.625f for PC and 4.0 for Console"),
+				"1.3.0",
 				0.6f
 			};
 
@@ -909,6 +989,7 @@ namespace gta4
 				"npc_expensive_hair_alpha_testing",
 				("Alpha-test hair rendered with 'gta_hair_sorted_alpha_expensive' shader to make it look a little more like hair.\n"
 				 "Not perfect and still WIP."),
+				"1.3.0",
 				true
 			};
 
@@ -916,6 +997,7 @@ namespace gta4
 			{
 				"npc_expensive_hair_alpha_cutout_value",
 				("Value used for ALPHAREF. Lower values might cause transparency issues while higher values will reduce hair visibility."),
+				"1.3.0",
 				0.35f
 			};
 
@@ -924,6 +1006,7 @@ namespace gta4
 			{
 				"override_water_texture_hash",
 				("This assigns the same texture hash to all water surfaces. Aids with water replacements."),
+				"1.3.0",
 				true
 			};
 
@@ -931,6 +1014,7 @@ namespace gta4
 			{
 				"water_apply_animated_water_category",
 				("This automatically assigns remix' animated water category to all water surfaces. Causes issues with RR!"),
+				"1.3.0",
 				false
 			};
 
@@ -938,6 +1022,7 @@ namespace gta4
 			{
 				"water_texture_uv_scale",
 				("Water surfaces use world positions instead of surface UVs. This can be used to scale the applied texture."),
+				"1.3.0",
 				3.0f
 			};
 
@@ -945,6 +1030,7 @@ namespace gta4
 			{
 				"water_texture_normal_fadeout_distance",
 				("This will fade out the normal strength over the specified distance where it reaches 0. 0.0 to disable."),
+				"1.3.0",
 				600.0f
 			};
 
@@ -954,6 +1040,7 @@ namespace gta4
 			{
 				"gta_rmptfx_litsprite_alpha_scalar",
 				("Scale alpha of gta_rmptfx_litsprite"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -961,6 +1048,7 @@ namespace gta4
 			{
 				"rain_particle_system_enabled",
 				("Enable rain handled by a remix particle system. Has limited collision detection - can still rain 'inside' - WIP"),
+				"1.3.0",
 				true
 			};
 
@@ -972,12 +1060,14 @@ namespace gta4
 				"timecycle_set_on_endscene",
 				("Set timecycle related remix variables on EndScene. Set on BeginScene when false.\n"
 				 "Using BeginScene might get values stuck while EndScene might cause some very minor flickering."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_wetness_enabled = {
 				"timecycle_wetness_enabled",
 				("Enables material roughness tweaks based on timecycle wetness settings."),
+				"1.3.0",
 				true
 			};
 
@@ -985,6 +1075,7 @@ namespace gta4
 			{
 				"timecycle_wetness_world_scalar",
 				("Scales the weather wetness value (ranges from 0-1). Final value is clamped to 0-1. Increasing this will mostly affect damper weather states"),
+				"1.3.0",
 				2.4f
 			};
 
@@ -992,6 +1083,7 @@ namespace gta4
 			{
 				"timecycle_wetness_world_offset",
 				("Additional offset applied onto the final wetness value."),
+				"1.3.0",
 				0.0f
 			};
 
@@ -999,6 +1091,7 @@ namespace gta4
 			{
 				"timecycle_wetness_world_z_normal",
 				("Surfaces with a Z-Normal value above this can get wet."),
+				"1.3.0",
 				0.30f
 			};
 
@@ -1006,24 +1099,28 @@ namespace gta4
 			{
 				"timecycle_wetness_world_blending",
 				("Defines the blending strength used to go from original roughness to adjusted roughness."),
+				"1.3.0",
 				0.65f
 			};
 
 			variable timecycle_wetness_world_variation_enable = {
 				"timecycle_wetness_world_variation_enable",
 				("Enables some roughness variation on wet world surfaces."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_wetness_world_puddle_layer_enable = {
 				"timecycle_wetness_world_puddle_layer_enable",
 				("Enables an additional puddle layer on wet world surfaces."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_wetness_world_raindrop_enable = {
 				"timecycle_wetness_world_raindrop_enable",
 				("Enables Raindrop logic on World Surfaces."),
+				"1.3.0",
 				true
 			};
 
@@ -1031,18 +1128,21 @@ namespace gta4
 			{
 				"timecycle_wetness_world_raindrop_scalar",
 				"Scale of raindrops on World Surfaces",
+				"1.3.0",
 				0.23f
 			};
 
 			variable timecycle_wetness_world_occlusion_check_enable = {
 				"timecycle_wetness_world_occlusion_check_enable",
 				("Enables occlusion check on world surfaces (check if something above is covering a surface)"),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_wetness_world_occlusion_smoothing_enable = {
 				"timecycle_wetness_world_occlusion_smoothing_enable",
 				("Smoothes occlusion test edges. Requires DLSS-RR to be on to look good. Creates a hard cutoff when turned off."),
+				"1.3.0",
 				true
 			};
 
@@ -1051,6 +1151,7 @@ namespace gta4
 			variable timecycle_wetness_ped_raindrop_enable = {
 				"timecycle_wetness_ped_raindrop_enable",
 				("Enables Raindrop logic on Supported Ped Surfaces."),
+				"1.3.0",
 				true
 			};
 
@@ -1058,6 +1159,7 @@ namespace gta4
 			{
 				"timecycle_wetness_ped_raindrop_scalar",
 				"Scale of raindrops on Supported Ped Surfaces",
+				"1.3.0",
 				3.0f
 			};
 
@@ -1068,6 +1170,7 @@ namespace gta4
 				"timecycle_wetness_vehicle_scalar",
 				("Vehicle Roughness Scalar when it's wet.\n"
 				 "0 = No Roughness, 1 = Original Roughness, > 1 increases the original roughness"),
+				"1.3.0",
 				0.0f
 			};
 
@@ -1075,6 +1178,7 @@ namespace gta4
 			{
 				"timecycle_wetness_vehicle_z_normal",
 				("Surfaces with a Z-Normal value above this can get wet."),
+				"1.3.0",
 				0.15f
 			};
 
@@ -1082,6 +1186,7 @@ namespace gta4
 			{
 				"timecycle_wetness_vehicle_blending",
 				("Defines the blending strength used to go from original roughness to adjusted roughness."),
+				"1.3.0",
 				1.0f
 			};
 
@@ -1089,6 +1194,7 @@ namespace gta4
 			variable timecycle_wetness_vehicle_raindrop_enable = {
 				"timecycle_wetness_vehicle_raindrop_enable",
 				("Enables Raindrop logic on Vehicles."),
+				"1.3.0",
 				true
 			};
 
@@ -1096,6 +1202,7 @@ namespace gta4
 			{
 				"timecycle_wetness_vehicle_raindrop_scalar",
 				"Scale of raindrops on vehicles",
+				"1.3.0",
 				1.6f
 			};
 
@@ -1105,6 +1212,7 @@ namespace gta4
 				"timecycle_wetness_vehicle_dirt_intensity_scalar",
 				("Vehicle Dirt Intensity Scalar when it's wet.\n"
 				 "0 = No Dirt to 1 = Original Dirt Amount"),
+				"1.3.0",
 				0.8f
 			};
 
@@ -1113,6 +1221,7 @@ namespace gta4
 				"timecycle_wetness_vehicle_dirt_roughness_scalar",
 				("Vehicle Dirt Roughness Scalar when it's wet.\n"
 				 "0 = No Roughness, 1 = Original Roughness, > 1 increases the original roughness"),
+				"1.3.0",
 				0.1f
 			};
 
@@ -1120,6 +1229,7 @@ namespace gta4
 			{
 				"timecycle_wetness_vehicle_dirt_z_normal",
 				("Surfaces with a Z-Normal value above this can get wet."),
+				"1.3.0",
 				0.2f
 			};
 
@@ -1127,6 +1237,7 @@ namespace gta4
 			{
 				"timecycle_wetness_vehicle_dirt_blending",
 				("Defines the blending strength used to go from original roughness to adjusted roughness."),
+				"1.3.0",
 				1.0f
 			};
 
@@ -1135,18 +1246,21 @@ namespace gta4
 			variable timecycle_fogcolor_enabled = {
 				"timecycle_fogcolor_enabled",
 				("Enables automatic adjustment of 'rtx.volumetrics.singleScatteringAlbedo' based on timecycle settings."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_fogcolor_base_strength = {
 				"timecycle_fogcolor_base_strength",
 				("Sets the base vector (rgb=val) of 'rtx.volumetrics.singleScatteringAlbedo'. Static offset not bound to any timecycle variable."),
+				"1.3.0",
 				0.3f
 			};
 
 			variable timecycle_fogcolor_influence_scalar = {
 				"timecycle_fogcolor_influence_scalar",
 				("Controls how much the fogcolor timecycle variable influences 'rtx.volumetrics.singleScatteringAlbedo'"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -1154,12 +1268,14 @@ namespace gta4
 			variable timecycle_fogdensity_enabled = {
 				"timecycle_fogdensity_enabled",
 				("Enables automatic adjustment of 'rtx.volumetrics.transmittanceMeasurementDistanceMeters' based on timecycle settings."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_fogdensity_influence_scalar = {
 				"timecycle_fogdensity_influence_scalar",
 				("Controls how much the fogdensity timecycle variable influences 'rtx.volumetrics.transmittanceMeasurementDistanceMeters'"),
+				"1.3.0",
 				1.0f
 			};
 
@@ -1168,6 +1284,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_enabled",
 				("Enables automatic adjustment of 'rtx.volumetrics.atmosphereHeightMeters' based on timecycle settings.\n"
 				"Also influences 'rtx.volumetrics.transmittanceMeasurementDistanceMeters' based on low/high transmittance offsets."),
+				"1.3.0",
 				true
 			};
 
@@ -1175,6 +1292,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_scalar",
 				("Controls how much the horizon height timecycle variable influences 'rtx.volumetrics.atmosphereHeightMeters'.\n"
 				"Final value is also used to offset 'transmittanceMeasurementDistanceMeters' based on atmospheric height."),
+				"1.3.0",
 				1.2f
 			};
 
@@ -1182,6 +1300,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_low_transmittance_offset",
 				("Increase fog transmittance with higher skyhorizonheight values. Lowest offset that can be applied to 'transmittanceMeasurementDistanceMeters' based on atmospheric height.\n"
 				"Higher values result in less fog."),
+				"1.3.0",
 				0.0f
 			};
 
@@ -1189,6 +1308,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_high_transmittance_offset",
 				("Increase fog transmittance with higher skyhorizonheight values. Highest offset that can be applied to 'transmittanceMeasurementDistanceMeters' based on atmospheric height.\n"
 				"Higher values result in less fog."),
+				"1.3.0",
 				100.0f
 			};
 
@@ -1196,6 +1316,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_cam_height_threshold",
 				("Camera height threshold (in meters) where the influence curve changes behavior.\n"
 				"Below this height, the impact is minimal. Above this height, the impact increases more significantly."),
+				"1.3.0",
 				100.0f
 			};
 
@@ -1203,6 +1324,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_cam_height_influence_low",
 				("Scalar for camera height influence on atmosphere height for heights up to the threshold.\n"
 				"Controls how much atmosphere height increases per meter of camera height before the threshold (minimal impact)."),
+				"1.3.0",
 				0.2f
 			};
 
@@ -1210,6 +1332,7 @@ namespace gta4
 				"timecycle_skyhorizonheight_cam_height_influence_high",
 				("Scalar for camera height influence on atmosphere height for heights above the threshold.\n"
 				"Controls how much atmosphere height increases per meter of camera height above the threshold (stronger impact)."),
+				"1.3.0",
 				1.0f
 			};
 
@@ -1217,18 +1340,21 @@ namespace gta4
 			variable timecycle_skylight_enabled = {
 				"timecycle_skylight_enabled",
 				("Enables automatic adjustment of 'rtx.skyBrightness' based on timecycle settings."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_skylight_scalar = {
 				"timecycle_skylight_scalar",
 				("Controls how much the skylight timecycle variable influences 'rtx.skyBrightness'"),
+				"1.3.0",
 				0.02f
 			};
 
 			variable timecycle_skylight_max_offset_bad_weather = {
 				"timecycle_skylight_max_offset_bad_weather",
 				("How much offset gets applied to skylight on (full) bad weather. Influences 'rtx.skyBrightness'"),
+				"1.3.0",
 				0.5f
 			};
 
@@ -1237,30 +1363,35 @@ namespace gta4
 				"timecycle_colorcorrection_enabled",
 				("Enables influence of color correction on 'rtx.tonemap.colorBalance' based on timecycle settings.\n"
 				"Disabling this also disables color temperature influence."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_colorcorrection_influence = {
 				"timecycle_colorcorrection_influence",
 				("Controls how much the timecycle color correction variable influences 'rtx.tonemap.colorBalance'"),
+				"1.3.0",
 				1.0f
 			};
 
 			variable timecycle_colortemp_enabled = {
 				"timecycle_colortemp_enabled",
 				("Enables influence of color temperature on 'rtx.tonemap.colorBalance'. NOT based on timecycle setting."),
+				"1.3.0",
 				false
 			};
 
 			variable timecycle_colortemp_value = {
 				"timecycle_colortemp_value",
 				("Base colortemp value used for calculations."),
+				"1.3.0",
 				11.2f
 			};
 
 			variable timecycle_colortemp_influence = {
 				"timecycle_colortemp_influence",
 				("Controls how much the timecycle_colortemp_value variable influences 'rtx.tonemap.colorBalance'"),
+				"1.3.0",
 				0.15f
 			};
 
@@ -1268,18 +1399,21 @@ namespace gta4
 			variable timecycle_desaturation_enabled = {
 				"timecycle_desaturation_enabled",
 				("Enables automatic adjustment of 'rtx.tonemap.saturation' based on timecycle settings."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_desaturation_influence = {
 				"timecycle_desaturation_influence",
 				("Controls how much the desaturation timecycle variable influences 'rtx.tonemap.saturation'"),
+				"1.3.0",
 				0.3f
 			};
 
 			variable timecycle_fardesaturation_influence = {
 				"timecycle_fardesaturation_influence",
 				("Controls how much the fardesaturation timecycle variable influences 'rtx.tonemap.saturation'."),
+				"1.3.0",
 				0.06f
 			};
 
@@ -1287,12 +1421,14 @@ namespace gta4
 			variable timecycle_gamma_enabled = {
 				"timecycle_gamma_enabled",
 				("Enables automatic adjustment of 'rtx.tonemap.exposureBias' based on timecycle settings."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_gamma_offset = {
 				"timecycle_gamma_offset",
 				("Controls the offset that's added to the gamma timecycle variable which influences 'rtx.tonemap.exposureBias'."),
+				"1.3.0",
 				0.3f
 			};
 
@@ -1300,30 +1436,35 @@ namespace gta4
 			variable timecycle_bloom_enabled = {
 				"timecycle_bloom_enabled",
 				("Enables automatic adjustment of 'rtx.bloom.burnIntensity' and 'rtx.bloom.luminanceThreshold' based on timecycle settings."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_bloomintensity_scalar = {
 				"timecycle_bloomintensity_scalar",
 				("Scales the bloom intensity timecycle variable which influences 'rtx.tonemap.saturation'."),
+				"1.3.0",
 				1.5f
 			};
 
 			variable timecycle_bloomthreshold_scalar = {
 				"timecycle_bloomthreshold_scalar",
 				("Scales the bloom threshold timecycle variable which influences 'rtx.tonemap.luminanceThreshold'."),
+				"1.3.0",
 				1.0f
 			};
 
 			variable timecycle_bloom_night_min_clamp_enabled = {
 				"timecycle_bloom_night_min_clamp_enabled",
 				("Lower bound clamp bloom intensity at night with no cutscene playing."),
+				"1.3.0",
 				true
 			};
 
 			variable timecycle_bloom_night_min_clamp_value = {
 				"timecycle_bloom_night_min_clamp_value",
 				("Min value of bloom intensity at night with no cutscene playing. Needs 'timecycle_bloom_night_min_clamp_enabled'"),
+				"1.3.0",
 				1.5f
 			};
 

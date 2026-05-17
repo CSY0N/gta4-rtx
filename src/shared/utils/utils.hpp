@@ -107,6 +107,52 @@ namespace shared::utils
 	const char* va(const char* fmt, ...);
 	void extract_integer_words(const std::string_view& str, std::vector<int>& integers, bool check_for_duplicates);
 
+	std::vector<std::string> get_sorted_files(const std::string& dir_path, const std::string_view& file_ext);
+
+	class version_t
+	{
+	public:
+		version_t()
+		{ }
+
+		static version_t from_string(const std::string& str)
+		{
+			version_t v; char dot;
+			std::stringstream ss(str);
+
+			ss >> v.major >> dot >> v.minor >> dot >> v.patch;
+			return v;
+		}
+
+		auto tie() const {
+			return std::tie(major, minor, patch);
+		}
+
+		bool operator<(const version_t& other) const {
+			return tie() < other.tie();
+		}
+
+		bool operator>(const version_t& other) const {
+			return tie() > other.tie();
+		}
+
+		bool operator<=(const version_t& other) const {
+			return tie() <= other.tie();
+		}
+
+		bool operator>=(const version_t& other) const {
+			return tie() >= other.tie();
+		}
+
+		bool operator==(const version_t& other) const {
+			return tie() == other.tie();
+		}
+
+		int major = 0;
+		int minor = 0;
+		int patch = 0;
+	};
+
 	void transpose_float3x4_to_d3dxmatrix(const shared::float3x4& src, D3DXMATRIX& dest);
 	void transpose_d3dxmatrix(const D3DXMATRIX* input, D3DXMATRIX* output, std::uint32_t count);
 	void transpose_float4x4(const float* row_major, float* column_major);
