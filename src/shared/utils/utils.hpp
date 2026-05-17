@@ -107,7 +107,7 @@ namespace shared::utils
 	const char* va(const char* fmt, ...);
 	void extract_integer_words(const std::string_view& str, std::vector<int>& integers, bool check_for_duplicates);
 
-	std::vector<std::string> get_sorted_files(const std::string& dir_path, const std::string_view& file_ext);
+	std::vector<std::string> get_sorted_files(const std::string& dir_path, const std::string_view& file_ext, bool invert_order = false, bool full_path = true);
 
 	class version_t
 	{

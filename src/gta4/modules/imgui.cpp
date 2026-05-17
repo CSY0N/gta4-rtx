@@ -1037,21 +1037,38 @@ namespace gta4
 
 	void cont_compsettings_quick_cmd()
 	{
-		if (ImGui::Button("Save Current Settings", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0))) {
+		if (ImGui::Button(ICON_FA_SAVE "  Save Current Settings", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0))) {
 			comp_settings::write_toml();
-		}
+		} TT("Saves current settings to 'comp_settings.toml'. Ignores settings that were modified by addon setting files.");
 
 		ImGui::SameLine();
-		if (ImGui::Button("Reload CompSettings", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+		if (ImGui::Button(ICON_FA_REDO "   Reload CompSettings", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
 		{
 			if (!ImGui::IsPopupOpen("Reload CompSettings?")) {
 				ImGui::OpenPopup("Reload CompSettings?");
 			}
 		}
 
+		static bool has_addon_files = !shared::utils::get_sorted_files("rtx_comp\\addon_settings", ".toml").empty();
+		static bool wants_reload_with_addons = false;
+		if (has_addon_files)
+		{
+			if (ImGui::Button(ICON_FA_REDO "   Reload CompSettings + Addons", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				if (!ImGui::IsPopupOpen("Reload CompSettings?"))
+				{
+					wants_reload_with_addons = true;
+					ImGui::OpenPopup("Reload CompSettings?");
+				}
+			} TT("Reload the comp_settings file and all addon files stored in 'rtx_comp/addon_settings/");
+		}
+
 		// popup
 		if (ImGui::BeginPopupModal("Reload CompSettings?", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 		{
+			// re-check if we have addon files by now
+			has_addon_files = !shared::utils::get_sorted_files("rtx_comp\\addon_settings", ".toml").empty();
+
 			shared::imgui::draw_background_blur();
 			ImGui::Spacing(0.0f, 0.0f);
 
@@ -1079,12 +1096,20 @@ namespace gta4
 			ImVec2 button_size(half_width - 6.0f - ImGui::GetStyle().WindowPadding.x, 0.0f);
 			if (ImGui::Button("Reload", button_size))
 			{
-				comp_settings::parse_toml();
+				if (wants_reload_with_addons) {
+					comp_settings::load_all_settings();
+				} else {
+					comp_settings::load_comp_settings_only();
+				}
+
+				wants_reload_with_addons = false;
 				ImGui::CloseCurrentPopup();
 			}
 
 			ImGui::SameLine(0, 6.0f);
-			if (ImGui::Button("Cancel", button_size)) {
+			if (ImGui::Button("Cancel", button_size)) 
+			{
+				wants_reload_with_addons = false;
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -1092,20 +1117,160 @@ namespace gta4
 		}
 	}
 
+	void compsettings_var_reset_logic(comp_settings::variable& var)
+	{
+		std::string popup_id = "Reset "s + var.m_name + " ?";
+
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+		{
+			if (!ImGui::IsPopupOpen(popup_id.c_str())) {
+				ImGui::OpenPopup(popup_id.c_str());
+			}
+		}
+
+		ImGui::SetNextWindowSize(ImVec2(400.0f, 160.0f));
+		if (ImGui::BeginPopupModal(popup_id.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings))
+		{
+			ImGui::Spacing(0.0f, 0.0f);
+
+			ImGui::Spacing();
+			ImGui::CenterText("This will reset the current variable");
+
+			ImGui::PushFont(shared::imgui::font::BOLD);
+			ImGui::CenterText("Are you sure?");
+			ImGui::PopFont();
+
+			ImGui::Spacing(0, 8);
+			ImGui::Spacing(0, 0); ImGui::SameLine();
+
+			const auto xpos = ImGui::GetCursorPosX();
+			ImGui::BeginGroup();
+
+			const auto half_width = ImGui::GetContentRegionAvail().x * 0.5f;
+			ImVec2 button_size(half_width - (ImGui::GetStyle().WindowPadding.x * 2.0f) - ImGui::GetStyle().ItemSpacing.x, 0.0f);
+			if (ImGui::Button("Back To Saved", button_size))
+			{
+				var.reset_base();
+				ImGui::CloseCurrentPopup();
+			} TT("Restores setting to value stored in your comp_settings.toml file.");
+
+			ImGui::SameLine();
+			if (ImGui::Button("Back To Default", button_size)) 
+			{
+				var.reset_default();
+				ImGui::CloseCurrentPopup();
+			} TT("Restores setting to the default value defined by the compatibility mod.");
+			ImGui::EndGroup();
+			const auto group_width = ImGui::GetItemRectSize().x;
+
+			ImGui::SetCursorPosX(xpos);
+			if (ImGui::Button("Cancel", ImVec2(group_width, 0))) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
 
 	bool compsettings_bool_widget(const char* desc, comp_settings::variable& var)
 	{
 		const auto gs_var_ptr = var.get_as<bool*>();
 		const bool result = ImGui::Checkbox(desc, gs_var_ptr);
+		
+		if (result) {
+			var.set_dirty(false);
+		}
+
 		TT(var.get_tooltip_string().c_str());
+		compsettings_var_reset_logic(var);
 		return result;
 	}
 
-	bool compsettings_float_widget(const char* desc, comp_settings::variable& var, const float& min = 0.0f, const float& max = 0.0f, const float& speed = 0.02f)
+	bool compsettings_int_widget(const char* desc, comp_settings::variable& var, const int& min = 0, const int& max = 0, const float& speed = 0.02f)
+	{
+		const auto gs_var_ptr = var.get_as<int*>();
+		const bool result = ImGui::DragInt(desc, gs_var_ptr, speed, min, max, "%d", (min != 0 || max != 0) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
+
+		if (result) {
+			var.set_dirty(false);
+		}
+
+		TT(var.get_tooltip_string().c_str());
+		compsettings_var_reset_logic(var);
+		return result;
+	}
+
+	bool compsettings_float_widget(const char* desc, comp_settings::variable& var, const float& min = 0.0f, const float& max = 0.0f, const float& speed = 0.02f, const char* fmt = "%.2f")
 	{
 		const auto gs_var_ptr = var.get_as<float*>();
-		const bool result = ImGui::DragFloat(desc, gs_var_ptr, speed, min, max, "%.2f", (min != 0.0f || max != 0.0f) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
+		const bool result = ImGui::DragFloat(desc, gs_var_ptr, speed, min, max, fmt, (min != 0.0f || max != 0.0f) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
+
+		if (result) {
+			var.set_dirty(false);
+		}
+
 		TT(var.get_tooltip_string().c_str());
+		compsettings_var_reset_logic(var);
+		return result;
+	}
+
+	bool compsettings_vec_widget(const char* desc, comp_settings::variable& var, const int& size, const float& min = 0.0f, const float& max = 0.0f, const float& speed = 0.02f)
+	{
+		const auto cs_var_ptr = var.get_as<float*>();
+		bool result = false;
+		switch (size)
+		{
+		case 2:
+			assert(var.get_type() == comp_settings::var_type_vec2 && "Type mismatch: expected vec2");
+			result = ImGui::DragFloat2(desc, cs_var_ptr, speed, min, max, "%.2f", (min != 0.0f || max != 0.0f) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
+			break;
+
+		case 3:
+			assert(var.get_type() == comp_settings::var_type_vec3 && "Type mismatch: expected vec3");
+			result = ImGui::DragFloat3(desc, cs_var_ptr, speed, min, max, "%.2f", (min != 0.0f || max != 0.0f) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
+			break;
+
+		default:
+		case 4:
+			assert(var.get_type() == comp_settings::var_type_vec4 && "Type mismatch: expected vec4");
+			result = ImGui::DragFloat4(desc, cs_var_ptr, speed, min, max, "%.2f", (min != 0.0f || max != 0.0f) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
+			break;
+		}
+
+		if (result) {
+			var.set_dirty(false);
+		}
+
+		TT(var.get_tooltip_string().c_str());
+		compsettings_var_reset_logic(var);
+		return result;
+	}
+
+	bool compsettings_color_widget(const char* desc, comp_settings::variable& var, const int& size, const ImGuiColorEditFlags_& flags)
+	{
+		const auto cs_var_ptr = var.get_as<float*>();
+		bool result = false;
+
+		switch (size)
+		{
+		case 3:
+			assert(var.get_type() == comp_settings::var_type_vec3 && "Type mismatch: expected vec3");
+			result = ImGui::ColorEdit3(desc, cs_var_ptr, flags);
+			break;
+
+		default:
+		case 4:
+			assert(var.get_type() == comp_settings::var_type_vec4 && "Type mismatch: expected vec4");
+			result = ImGui::ColorEdit4(desc, cs_var_ptr, flags);
+			break;
+		}
+
+		if (result) {
+			var.set_dirty(false);
+		}
+
+		TT(var.get_tooltip_string().c_str());
+		compsettings_var_reset_logic(var);
 		return result;
 	}
 
@@ -1131,13 +1296,7 @@ namespace gta4
 
 		compsettings_bool_widget("Stabilize Water Texture Hash", gs->override_water_texture_hash);
 		compsettings_bool_widget("Assign Animated Water Category", gs->water_apply_animated_water_category);
-
-		{
-			const auto gs_var_ptr = gs->water_texture_uv_scale.get_as<float*>();
-			ImGui::DragFloat("Water Texture Scale", gs_var_ptr, 0.001f, 0.00001f, 100.0f, "%.4f");
-			TT(gs->water_texture_uv_scale.get_tooltip_string().c_str());
-		}
-
+		compsettings_float_widget("Water Texture Scale", gs->water_texture_uv_scale, 0.00001f, 100.0f, 0.001f, "%.4f");
 		compsettings_float_widget("Water Normal Fadeout Distance", gs->water_texture_normal_fadeout_distance, 0.0f, 1000.0f, 0.5f);
 
 
@@ -1170,17 +1329,7 @@ namespace gta4
 		ImGui::BeginDisabled(!gs->vehicle_dirt_enabled.get_as<bool>());
 		{
 			compsettings_bool_widget("Enable Vehicle Dirt Color Override", gs->vehicle_dirt_custom_color_enabled);
-
-			{
-				auto gs_var_ptr = gs->vehicle_dirt_custom_color.get_as<float*>();
-				if (ImGui::ColorEdit3("Vehicle Dirt Color", gs_var_ptr, ImGuiColorEditFlags_Float)) 
-				{
-					gs_var_ptr[0] = std::clamp(gs_var_ptr[0], 0.0f, 1.0f);
-					gs_var_ptr[1] = std::clamp(gs_var_ptr[1], 0.0f, 1.0f);
-					gs_var_ptr[2] = std::clamp(gs_var_ptr[2], 0.0f, 1.0f);
-				}
-				TT(gs->vehicle_dirt_custom_color.get_tooltip_string().c_str());
-			}
+			compsettings_color_widget("Vehicle Dirt Color", gs->vehicle_dirt_custom_color, 3, ImGuiColorEditFlags_Float);
 
 			compsettings_float_widget("Dirt Roughness: Expo", gs->vehicle_dirt_expo, 0.5f, 5.0f, 0.005f);
 			compsettings_float_widget("Dirt Roughness: Min Z-Normal", gs->vehicle_dirt_roughness_z_normal, 0.0f, 1.0f, 0.005f);
@@ -1761,8 +1910,7 @@ namespace gta4
 		ImGui::SeparatorText(" Remix ");
 		ImGui::Spacing(0, 4);
 
-		ImGui::DragInt("RTXDI Initial Sample Count Override", gs->remix_override_rtxdi_samplecount.get_as<int*>(), 0.01f);
-		TT(gs->remix_override_rtxdi_samplecount.get_tooltip_string().c_str());
+		compsettings_int_widget("RTXDI Initial Sample Count Override", gs->remix_override_rtxdi_samplecount, 0, 60, 0.01f);
 
 		ImGui::Spacing(0, 4);
 	}
@@ -1948,7 +2096,6 @@ namespace gta4
 
 				natives::Ped ped;
 				n->GetPlayerChar(n->ConvertIntToPlayerindex(n->GetPlayerId()), &ped);
-
 				n->DisplayRadar(im->m_screenshot_mode);
 
 				if (im->m_screenshot_mode) {
@@ -1959,8 +2106,7 @@ namespace gta4
 
 				if (im->m_screenshot_mode_hide_player) {
 					n->SetCharVisible(ped, im->m_screenshot_mode);
-				}
-				else {
+				} else {
 					n->SetCharVisible(ped, true);
 				}
 
@@ -2079,8 +2225,9 @@ namespace gta4
 		static int last_frame_count = -1;
 		
 		// Reset flag if we're in a new frame
-		int current_frame = ImGui::GetFrameCount();
-		if (current_frame != last_frame_count) {
+		if (const int current_frame = ImGui::GetFrameCount(); 
+					  current_frame != last_frame_count)
+		{
 			popup_rendered_this_frame = false;
 			last_frame_count = current_frame;
 		}
@@ -2096,9 +2243,9 @@ namespace gta4
 			popup_rendered_this_frame = true;
 			shared::imgui::draw_background_blur();
 			const auto half_width = ImGui::GetContentRegionMax().x * 0.5f;
-			auto line1_str = "You'll loose all unsaved changes if you continue!";
-			auto line2_str = "Use the copy to clipboard buttons and manually update  ";
-			auto line3_str = "the map_settings.toml file if you've made changes.";
+			const auto line1_str = "You'll loose all unsaved changes if you continue!";
+			const auto line2_str = "Use the copy to clipboard buttons and manually update  ";
+			const auto line3_str = "the map_settings.toml file if you've made changes.";
 
 			ImGui::Spacing();
 			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line1_str).x * 0.5f));

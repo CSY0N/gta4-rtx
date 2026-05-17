@@ -43,26 +43,77 @@ namespace gta4
 		file.close();
 	}
 
-	bool comp_settings::parse_toml()
+	/// Func used to parse and set comp settings
+	/// @param 	is_addon_toml_file	if is addon setting file or not
+	/// @param  addon_file_name		file name (with ext) of addon file
+	/// @return						true if parsed successfully or if defaults were written if no file found, false if parsing failed
+	bool comp_settings::parse_toml(bool is_addon_toml_file, std::string addon_file_name)
 	{
+		// helper
+		auto to_vec = [](const toml::value& entry, const var_type type, float* default_vec = nullptr)
+			{
+				std::vector<float> result;
+				const size_t size_for_vec = type == var_type_vec2 ? 2u : type == var_type_vec3 ? 3u : type == var_type_vec4 ? 4u : 0u;
+
+				if (entry.is_array())
+				{
+					if (entry.as_array().size() == size_for_vec)
+					{
+						for (const auto& val : entry.as_array())
+						{
+							if (val.is_floating())
+							{
+								result.push_back((float)val.as_floating());
+								continue;
+							}
+							TOML_ERROR("[CompSettings] #to_vec", val, "expected float but got value_t of => %d ", val.type());
+						}
+						return result;
+					}
+					TOML_ERROR("[CompSettings] #to_vec", entry, "unexpected array size of => %d ", entry.as_array().size());
+				}
+				TOML_ERROR("[CompSettings] #to_vec", entry, "expected a vector but got value_t => %d ", entry.type());
+
+				switch (type)
+				{
+				default:
+					result = { 0, 0, 0, 0 };
+					break;
+				case var_type_vec2:
+					result = { default_vec[0], default_vec[1] };
+					break;
+				case var_type_vec3:
+					result = { default_vec[0], default_vec[1], default_vec[2] };
+					break;
+				case var_type_vec4:
+					result = { default_vec[0], default_vec[1], default_vec[2], default_vec[3] };
+					break;
+				}
+
+				return result;
+			};
+
 
 #ifndef asd // DEBUG
+
 		std::ifstream file;
-		if (shared::utils::open_file_homepath("rtx_comp", "comp_settings.toml", file))
+		if (!is_addon_toml_file ? shared::utils::open_file_homepath("rtx_comp", "comp_settings.toml", file) : true)
 		{
-			// file exists
-			file.close();
+			if (!is_addon_toml_file)
+			{
+				// file exists
+				file.close();
+			}
 
 			try
 			{
-				auto config = toml::parse("rtx_comp\\comp_settings.toml");
+				auto config = toml::parse(!is_addon_toml_file ? "rtx_comp\\comp_settings.toml" : "rtx_comp\\addon_settings\\" + addon_file_name);
 
-				if (config.contains("CreatedOnCompVersion"))
+				// "legacy" format - rewrite on first launch
+				if (!is_addon_toml_file && config.contains("CreatedOnCompVersion"))
 				{
 					write_toml();
 					return true;
-
-					// const auto current_comp_version = shared::utils::version_t::from_string(get_current_comp_version_string());
 
 					/*std::string created_on_comp_version_str;
 					auto& val = config.at("CreatedOnCompVersion");
@@ -82,89 +133,44 @@ namespace gta4
 					}*/
 				}
 
-				// #
-				auto to_vec = [](const toml::value& entry, const var_type type, float* default_vec = nullptr)
-					{
-						std::vector<float> result;
-
-						const size_t size_for_vec =
-							type == var_type_vec2 ? 2u :
-							type == var_type_vec3 ? 3u :
-							type == var_type_vec4 ? 4u : 0u;
-
-						if (entry.is_array())
-						{
-							if (entry.as_array().size() == size_for_vec)
-							{
-								for (const auto& val : entry.as_array())
-								{
-									if (val.is_floating())
-									{
-										result.push_back((float)val.as_floating());
-										continue;
-									}
-
-									TOML_ERROR("[CompSettings] #to_vec", val, "expected float but got value_t of => %d ", val.type());
-								}
-
-								return result;
-							}
-
-							TOML_ERROR("[CompSettings] #to_vec", entry, "unexpected array size of => %d ", entry.as_array().size());
-						}
-
-						TOML_ERROR("[CompSettings] #to_vec", entry, "expected a vector but got value_t => %d ", entry.type());
-
-						switch (type)
-						{
-						default:
-							result = { 0, 0, 0, 0 };
-							break;
-						case var_type_vec2:
-							result = { default_vec[0], default_vec[1] };
-							break;
-						case var_type_vec3:
-							result = { default_vec[0], default_vec[1], default_vec[2] };
-							break;
-						case var_type_vec4:
-							result = { default_vec[0], default_vec[1], default_vec[2], default_vec[3] };
-							break;
-						}
-
-						return result;
-					};
-
+				const auto current_comp_version = shared::utils::version_t::from_string(get_current_comp_version_string());
+				
+				//vars.decal_dirt_shader_contrast.set_config_name()
 				// ---------------------------------------
+				// Used to assign toml settings
+				// - check setting version, only read val if setting on disk is older than version the setting was last changed on - use the default val otherwise
+				// - guard against invalid version
+				// - save users comp_settings value which is later used to write to the file if the user hits save
 
-				// check setting version, only read val if setting on disk is older than version the setting was last changed on
-				// - use the default val otherwise
+				#define ASSIGN(name)																															\
+					if (config.contains((#name)))																												\
+					{																																			\
+						std::string setting_last_comment = config.at(#name).comments().back();																	\
+						if (setting_last_comment.starts_with("# Ver: "))																						\
+						{																																		\
+							setting_last_comment.erase(0, 7); const auto s_version = shared::utils::version_t::from_string(setting_last_comment);				\
+							if (vars.##name.m_version <= s_version && s_version <= current_comp_version)														\
+							{																																	\
+								switch (vars.##name.get_type())																									\
+								{																																\
+								case (var_type_boolean):																										\
+										vars.##name.set_var(shared::common::toml_ext::to_bool(config.at(#name), vars.##name.get_as<bool>()), true); break;		\
+								case (var_type_integer):																										\
+										vars.##name.set_var(shared::common::toml_ext::to_int(config.at(#name), vars.##name.get_as<int>()), true); break;		\
+								case (var_type_value):																											\
+										vars.##name.set_var(shared::common::toml_ext::to_float(config.at(#name), vars.##name.get_as<float>()), true); break;	\
+								case (var_type_vec2):																											\
+								case (var_type_vec3):																											\
+								case (var_type_vec4):																											\
+										const auto vec = to_vec(config.at(#name), vars.##name.get_type(), vars.##name.get_as<float*>());						\
+										vars.##name.set_vec(vec.data(), true); break;																			\
+								}																																\
+								if (!is_addon_toml_file) { vars.##name.set_dirty(false); vars.##name.set_base_user_from_current(); } else { vars.##name.set_dirty(true); } \
+							} else { shared::common::log("CompSettings", std::format("Not using saved value for {} because default setting was updated in a recent update.", vars.##name.m_name), shared::common::LOG_TYPE::LOG_TYPE_WARN); } \
+						} else { if (is_addon_toml_file) { shared::common::log("CompSettings", std::format("Missing version info for {} - skipping.", vars.##name.m_name), shared::common::LOG_TYPE::LOG_TYPE_WARN); } } \
+					}
 
-			#define ASSIGN(name)																															\
-				if (config.contains((#name)))																												\
-				{																																			\
-					std::string setting_last_comment = config.at(#name).comments().back();																	\
-					if (setting_last_comment.starts_with("# Ver: "))																						\
-					{																																		\
-						setting_last_comment.erase(0, 7);																									\
-						if (vars.##name.m_version <= shared::utils::version_t::from_string(setting_last_comment))											\
-						{																																	\
-							switch (vars.##name.get_type())																									\
-							{																																\
-							case (var_type_boolean):																										\
-									vars.##name.set_var(shared::common::toml_ext::to_bool(config.at(#name), vars.##name.get_as<bool>()), true); break;		\
-							case (var_type_integer):																										\
-									vars.##name.set_var(shared::common::toml_ext::to_int(config.at(#name), vars.##name.get_as<int>()), true); break;		\
-							case (var_type_value):																											\
-									vars.##name.set_var(shared::common::toml_ext::to_float(config.at(#name), vars.##name.get_as<float>()), true); break;	\
-							case (var_type_vec2):																											\
-							case (var_type_vec3):																											\
-							case (var_type_vec4):																											\
-									const auto vec = to_vec(config.at(#name), vars.##name.get_type(), vars.##name.get_as<float*>());						\
-									vars.##name.set_vec(vec.data(), true); break;																			\
-							} \
-						} else { shared::common::log("CompSettings", std::format("Not using saved value for {} because default setting was updated in a recent update.", vars.##name.m_name), shared::common::LOG_TYPE::LOG_TYPE_WARN); } \
-					} \
-				}
+				
 
 				// remix related settings
 				ASSIGN(manual_game_resolution_enabled);
@@ -346,9 +352,38 @@ namespace gta4
 		return true;
 	}
 
-	comp_settings::comp_settings()
+	void comp_settings::load_comp_settings_only()
 	{
 		parse_toml();
+	}
+
+	void comp_settings::load_all_settings()
+	{
+		shared::common::log("CompSetting", "Reading 'rtx_comp/comp_settings.toml' ...", shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
+		parse_toml();
+
+		// Process all addon comp-settings files in inverse alphabetical order (lower to higher priority)
+		const auto addon_comp_settings_files = shared::utils::get_sorted_files("rtx_comp\\addon_settings", ".toml", true, false);
+		for (const auto& file_name : addon_comp_settings_files)
+		{
+			try
+			{
+				shared::common::log("CompSetting", std::format("> Parsing Addon CompSetting 'rtx_comp/addon_settings/{}' ...", file_name), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
+				parse_toml(true, file_name);
+
+			}
+			catch (const toml::file_io_error& err) {
+				shared::common::log("CompSetting", std::format("Failed to parse addon compsetting file '{}': {}", file_name, err.what()), shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
+			}
+			catch (const toml::syntax_error& err) {
+				shared::common::log("CompSetting", std::format("Syntax error in addon compsetting file '{}': {}", file_name, err.what()), shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
+			}
+		}
+	}
+
+	comp_settings::comp_settings()
+	{
+		load_all_settings();
 
 		// -----
 		m_initialized = true;

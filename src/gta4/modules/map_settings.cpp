@@ -631,6 +631,8 @@ namespace gta4
 			// (in case light overrides were parsed after ignored/allowed lights)
 			rebuild_lights_from_toml_info();
 
+			// ------------------
+
 			// ####################
 			// parse 'ANTICULL' table
 			if (config.contains("ANTICULL"))

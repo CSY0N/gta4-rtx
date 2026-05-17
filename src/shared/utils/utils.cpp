@@ -266,8 +266,12 @@ namespace shared::utils
 		}
 	}
 
-	// Helper function to get sorted files from a directory
-	std::vector<std::string> get_sorted_files(const std::string& dir_path, const std::string_view& file_ext)
+	// Helper function to get alphabetically sorted files from a directory (numbers before letters)
+	/// @param dir_path			sub dir inside root_path
+	/// @param file_ext			file ext	
+	/// @param invert_order		inverse alphabetical order 
+	/// @param full_path		return full path with filename or only filename
+	std::vector<std::string> get_sorted_files(const std::string& dir_path, const std::string_view& file_ext, bool invert_order, bool full_path)
 	{
 		std::vector<std::string> files;
 		std::filesystem::path dir(shared::globals::root_path + "\\" + dir_path);
@@ -278,14 +282,19 @@ namespace shared::utils
 
 		for (const auto& entry : std::filesystem::directory_iterator(dir))
 		{
-			if (entry.is_regular_file() && entry.path().extension() == file_ext) {
-				files.push_back(entry.path().string());
+			if (entry.is_regular_file() && entry.path().extension() == file_ext) 
+			{
+				if (full_path) {
+					files.push_back(entry.path().string());
+				} else {
+					files.push_back(entry.path().filename().string());
+				}
 			}
 		}
 
 		// Sort alphabetically (numbers before letters)
-		std::sort(files.begin(), files.end(), [](const std::string& a, const std::string& b) {
-			return a < b;
+		std::sort(files.begin(), files.end(), [invert_order](const std::string& a, const std::string& b) {
+			return invert_order ? a > b : a < b;
 		});
 
 		return files;

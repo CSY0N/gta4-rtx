@@ -38,6 +38,7 @@ namespace gta4
 				m_frametime_ptr = game_frametime;
 			}
 
+			shared::common::log("RemixVars", "Parsing 'rtx.conf' ...", shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
 			parse_rtx_options();
 			m_initialized = true;
 		}
@@ -350,18 +351,19 @@ namespace gta4
 	}
 
 	/**
-	 * Parses a .conf within the map_configs folder lerps to contained values
-	 * @param conf_name				config name without extension
+	 * Parses a .conf within the specified directory and lerps to contained values
+	 * @param sub_dir				config name without extension
+	 * @param file_name				name of config without extension
 	 * @param identifier			unique identifier so one can check if it exists within the interpolate_stack
 	 * @param ease					[EASE_TYPE] ease mode
 	 * @param duration				duration of the transition (in seconds)
 	 * @param delay					delay transition start (in seconds)
 	 * @param delay_transition_back	delay between end of transition and transition back to the initial starting value (in seconds) - only active if value > 0
 	 */
-	void remix_vars::parse_and_apply_conf_with_lerp(const std::string& conf_name, const std::uint64_t& identifier, const EASE_TYPE ease, const float duration, const float delay, const float delay_transition_back)
+	void remix_vars::parse_and_apply_conf_with_lerp(const std::string& sub_dir, const std::string& file_name, const std::uint64_t& identifier, const EASE_TYPE ease, const float duration, const float delay, const float delay_transition_back)
 	{
 		std::ifstream file;
-		if (shared::utils::open_file_homepath("rtx_comp\\map_configs", conf_name, file))
+		if (shared::utils::open_file_homepath(sub_dir, file_name, file))
 		{
 			std::string input;
 			while (std::getline(file, input))
@@ -383,7 +385,6 @@ namespace gta4
 					if (const auto o = get_option(pair[0].c_str()); o)
 					{
 						const auto& v = string_to_option_value(o->second.type, pair[1]);
-
 						remix_vars::get()->add_interpolate_entry(identifier, o, v, duration, delay, delay_transition_back, ease);
 						//DEBUG_PRINT("[VAR-LERP] Start lerping var: %s to: %s\n", o->first.c_str(), pair[1].c_str());
 					}
@@ -391,9 +392,8 @@ namespace gta4
 			}
 
 			file.close();
-		}
-		else {
-			shared::common::log("RemixVars", std::format("Failed to find config: {} in \"rtx_comp\\map_configs\"", conf_name.c_str()), shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
+		} else {
+			shared::common::log("RemixVars", std::format("Failed to find config: {} in \"rtx_comp\\map_configs\"", sub_dir.c_str()), shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
 		}
 	}
 
@@ -538,11 +538,27 @@ namespace gta4
 		}
 	}
 
+	void remix_vars::init_once_on_init()
+	{
+		if (const auto v = remix_vars::get();
+					  !v->m_init_once_on_init)
+		{
+			v->m_init_once_on_init = true;
+
+			// Process all addon remix conf files in inverse alphabetical order (lower to higher priority)
+			const auto addon_comp_settings_files = shared::utils::get_sorted_files("rtx_comp\\addon_settings", ".conf", true, false);
+			for (const auto& file_path : addon_comp_settings_files) 
+			{
+				shared::common::log("RemixVars", std::format("> Parsing Addon Config 'rtx_comp/addon_settings/{}' ...", file_path), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
+				parse_and_apply_conf_with_lerp("rtx_comp\\addon_settings", file_path, 0, EASE_TYPE_LINEAR, 0);
+			}
+		}
+	}
 
 	void remix_vars::init_once_on_ingame_frame()
 	{
 		if (const auto v = remix_vars::get(); 
-			!v->m_init_once_on_ingame_frame)
+					  !v->m_init_once_on_ingame_frame)
 		{
 			v->m_init_once_on_ingame_frame = true;
 
@@ -568,9 +584,15 @@ namespace gta4
 	// Called on d3d9ex::D3D9Device::EndScene
 	void remix_vars::on_client_frame()
 	{
+		if (const auto v = remix_vars::get(); !v) {
+			return;
+		}
+
 		const auto gs = comp_settings::get();
 		if (shared::common::remix_api::is_initialized())
 		{
+			init_once_on_init();
+
 			if (game::is_in_game)
 			{
 				// called in gta4::on_begin_scene_cb() otherwise

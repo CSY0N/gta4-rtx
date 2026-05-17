@@ -20,7 +20,10 @@ namespace gta4
 		}
 
 		static void write_toml();
-		static bool parse_toml();
+		static bool parse_toml(bool is_addon_toml_file = false, std::string addon_file_name = "");
+
+		static void load_comp_settings_only();
+		static void load_all_settings();
 
 		union var_value
 		{
@@ -92,15 +95,16 @@ namespace gta4
 	
 			const char* get_str_value(bool get_default = false) const
 			{
-				const auto pvec = !get_default ? &m_var.value[0] : &m_var_default.value[0];
-	
+				const bool is_dirty = get_dirty_state();
+				const auto pvec = !get_default ? (is_dirty ? &m_var_base_user.value[0] : &m_var.value[0]) : &m_var_default.value[0];
+
 				switch (m_type)
 				{
 				case var_type_boolean:
-					return shared::utils::va("%s", (!get_default ? m_var.boolean : m_var_default.boolean) ? "true" : "false");
+					return shared::utils::va("%s", (!get_default ? (is_dirty ? m_var_base_user.boolean : m_var.boolean) : m_var_default.boolean) ? "true" : "false");
 	
 				case var_type_integer:
-					return shared::utils::va("%d", !get_default ? m_var.integer : m_var_default.integer);
+					return shared::utils::va("%d", !get_default ? (is_dirty ? m_var_base_user.integer : m_var.integer) : m_var_default.integer);
 	
 				case var_type_value:
 					return shared::utils::va("%.2f", pvec[0]);
@@ -144,8 +148,7 @@ namespace gta4
 				return nullptr;
 			}
 	
-			std::string get_ver_string() const
-			{
+			std::string get_ver_string() const {
 				return std::format("{}.{}.{}", this->m_version.major, this->m_version.minor, this->m_version.patch);
 			}
 
@@ -159,6 +162,8 @@ namespace gta4
 				}
 
 				out += "# Type: " + std::string(this->get_str_type()) + " || Default: " + std::string(this->get_str_value(true));
+				out += "\n\n Use [MIDDLE MOUSE] to RESET to default values.";
+				out += this->get_dirty_state() ? "\n ! DIRTY - Modified by ADDON_SETTINGS file. Value ignored when saving !" : "";
 				return out;
 			}
 
@@ -268,6 +273,10 @@ namespace gta4
 				return m_type;
 			}
 
+			void set_base_user_from_current() {
+				m_var_base_user = m_var;
+			}
+
 			// sets var and writes toml (bool)
 			void set_var(const bool boolean, bool no_toml_update = false)
 			{
@@ -325,14 +334,38 @@ namespace gta4
 				}
 			}
 
+			bool get_dirty_state() const {
+				return m_dirty;
+			}
+
+			void set_dirty(bool state) {
+				m_dirty = state;
+			}
+
+			// reset setting to base user
+			void reset_base() 
+			{
+				m_var = m_var_base_user;
+				m_dirty = false;
+			}
+
+			// reset setting to default settings
+			void reset_default() 
+			{
+				m_var = m_var_default;
+				m_dirty = false;
+			}
+
 			const char* m_name;
 			const char* m_desc;
 			shared::utils::version_t m_version;
 	
 		private:
 			var_value m_var;
+			var_value m_var_base_user;
 			var_value m_var_default;
 			var_type m_type;
+			bool m_dirty = false;
 		};
 
 		private:
