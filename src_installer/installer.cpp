@@ -649,8 +649,14 @@ int main()
 	std::cout << "\n" << std::setw(2);
 	Sleep(200);
 	
+	
+	log_default(true);
+	std::cout << "Grand Theft Auto IV - RTX Remix Compatibility Mod Installer (github.com/xoxor4d/gta4-rtx)\n";
 	log_default();
-	std::cout << "Select the GTAIV directory by selecting your GTAIV.exe ...\n";
+	std::cout << "- Make sure that you've placed both the installer and the 'GTAIV-Remix-CompatibilityMod-X.X.X.zip' into the same folder.\n";
+	std::cout << "- If installation fails, refer to the release page on GitHub for manual install instructions.\n\n";
+
+	std::cout << "Select your GTAIV.exe inside the GTAIV directory to continue ...\n";
 	Sleep(500);
 
 	// select GTAIV.exe
@@ -737,10 +743,9 @@ int main()
 	if (found_zip.empty()) 
 	{
 		log_error("Could not find any zip starting with 'GTAIV-Remix-CompatibilityMod'.");
+		std::cout << "Installation might be incomplete. Download and place the .zip next to the installer or install manually.\n";
 		std::cout << "Checking for Remix Base Mod updates ...\n\n";
 		skip_rtx_comp_install = true;
-		//MessageBoxA(nullptr, "Could not find 'GTAIV-Remix-CompatibilityMod.zip' in the installer directory.", "Error", MB_ICONERROR);
-		//return 1;
 	}
 	
 	bool has_remix_comp_mod = false;
@@ -833,8 +838,7 @@ int main()
 
 			if (!opt_install_fusion_fix_fork) {
 				log_error("Not replacing installed FusionFix version. This might lead to issues.\n");
-			}
-			else {
+			} else {
 				std::cout << "Installing RTXRemix FusionFix Fork.\n\n";
 			}
 		}
@@ -890,7 +894,7 @@ int main()
 			}
 
 			// steam launch args warning
-			MessageBoxA(nullptr, "Make sure to remove ALL launch arguments from Steam properties for GTA IV!\n", "IMPORTANT", MB_OK | MB_ICONWARNING);
+			MessageBoxA(nullptr, "If you run the game from Steam, make sure to remove ALL launch arguments from Steam properties for GTA IV!\n", "IMPORTANT", MB_OK | MB_ICONWARNING);
 		}
 
 		// backup some files
@@ -924,10 +928,10 @@ int main()
 		{
 			log_error(
 				"Failed to extract 'GTAIV-Remix-CompatibilityMod' files from 'GTAIV-Remix-CompatibilityMod.zip'\n"
-				"> Aborting installation. Please extract files manually.");
+				"> Please extract files manually.");
 
 			MessageBoxA(nullptr, "Something went wrong.\nCheck console.", "Error", MB_ICONERROR);
-			return 0;
+			//return 0;
 		}
 
 		std::cout << "> Done!\n";
@@ -1048,7 +1052,8 @@ int main()
 			{
 				log_error(
 					"Download failed.\n"
-					"Manually download:\n" + std::string(base_mod_zip_url) + "\n\n"
+					"Manually download from:\n" + std::string(base_mod_zip_url) + "\n"
+					"Or from a mirror found in the release notes on GitHub.\n\n"
 					"Extract contents to:\n" + mods_dir.string());
 				
 				MessageBoxA(nullptr,
@@ -1094,7 +1099,7 @@ int main()
 		if (!commit_file_exists) 
 		{
 			log_blue(true);
-			std::cout << "\n\nRequired: Download and extract the base remix-mod?\n";
+			std::cout << "\n\nRequired: Download and extract the base remix-mod? You can skip this if you installed it manually.\n";
 			log_default();
 
 			// Print full info (including links) to console so the user can copy them
@@ -1110,43 +1115,45 @@ int main()
 			if (user_choice != IDYES) 
 			{
 				MessageBoxA(nullptr,
-							"Base remix-mod is required to continue.\n\n"
-							"Installation cannot proceed without it.",
-							"Base Remix-Mod Required",
-							MB_OK | MB_ICONERROR);
+							"The base-remix-mod is required for the game to function properly.\n\n"
+							"Make sure to install it via the installer or manually.",
+							"(See release notes on GitHub)",
+							MB_OK);
 
-				return 0;
+				//return 0;
 			}
-
-			// Fetch SHA first so we can name the zip file
-			std::cout << "Fetching latest commit SHA from GitHub...\n";
-			const auto latest_sha = get_latest_github_commit_sha(base_mod_repo_owner, base_mod_repo_name, base_mod_branch);
-			
-			if (latest_sha.empty()) 
+			else
 			{
-				log_error("Failed to fetch commit SHA from GitHub. Network error or API failure.");
-				MessageBoxA(nullptr, "Failed to fetch commit information from GitHub.\nPlease check your internet connection.", "Error", MB_ICONERROR);
-				return 0;
-			}
+				// Fetch SHA first so we can name the zip file
+				std::cout << "Fetching latest commit SHA from GitHub...\n";
+				const auto latest_sha = get_latest_github_commit_sha(base_mod_repo_owner, base_mod_repo_name, base_mod_branch);
 
-			// Download and extract
-			if (!download_and_extract_base_mod(latest_sha)) {
-				return 0;
-			}
+				if (latest_sha.empty())
+				{
+					log_error("Failed to fetch commit SHA from GitHub. Network error or API failure.");
+					MessageBoxA(nullptr, "Failed to fetch commit information from GitHub.\nPlease check your internet connection.", "Error", MB_ICONERROR);
+					return 0;
+				}
 
-			std::cout << "> Done!\n\n";
+				// Download and extract
+				if (!download_and_extract_base_mod(latest_sha)) {
+					return 0;
+				}
 
-			// Save the commit SHA
-			if (write_file_to_disk(commit_file_str, latest_sha)) 
-			{
-				std::cout << "Saved commit SHA: " << latest_sha << "\n";
-				std::cout << "Commit file saved to: " << commit_file_str << "\n";
-			} 
-			else 
-			{
-				log_yellow(true);
-				std::cout << "[WARN] Failed to save commit file to: " << commit_file_str << "\n";
-				log_default();
+				std::cout << "> Done!\n\n";
+
+				// Save the commit SHA
+				if (write_file_to_disk(commit_file_str, latest_sha))
+				{
+					std::cout << "Saved commit SHA: " << latest_sha << "\n";
+					std::cout << "Commit file saved to: " << commit_file_str << "\n";
+				}
+				else
+				{
+					log_yellow(true);
+					std::cout << "[WARN] Failed to save commit file to: " << commit_file_str << "\n";
+					log_default();
+				}
 			}
 		} 
 		else // commit_file_exists
@@ -1187,13 +1194,12 @@ int main()
 								log_default();
 							}
 						}
-					} 
-					else {
+					} else {
 						std::cout << "Skipping base mod update.\n\n";
 					}
 				} 
 				else 
-					{
+				{
 					log_yellow(true);
 					std::cout << "[WARN] Could not fetch latest commit SHA for comparison.\n\n";
 					log_default();
@@ -1251,7 +1257,8 @@ int main()
 			{
 				log_error(
 					"Download failed.\n"
-					"Manually download:\n" + std::string(autopbr_mod_zip_url) + "\n\n"
+					"Manually download:\n" + std::string(autopbr_mod_zip_url) + "\n"
+					"Or from a mirror found in the release notes on GitHub.\n\n"
 					"Extract contents to:\n" + mods_dir.string());
 				
 				MessageBoxA(nullptr,
@@ -1315,7 +1322,7 @@ int main()
 				"Download size: ~1.5 GB", 
 				"AutoPBR Remix-Mod", MB_YESNO | MB_ICONQUESTION);
 			
-			if (user_choice == IDYES) 
+			if (user_choice == IDYES)
 			{
 				// Fetch SHA first so we can name the zip file
 				std::cout << "Fetching latest commit SHA from GitHub...\n";
