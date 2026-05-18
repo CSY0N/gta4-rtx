@@ -247,13 +247,14 @@ namespace shared::utils
 					static bool validate_patterns = common::flags::has_flag("validate_patterns");
 					const auto place = reinterpret_cast<DWORD>(base + i + offset);
 					{
-
+#if DEBUG
 						if (description) {
 							shared::common::log("Hook", std::format("Found pattern @ (0x{:X}) ({})", place, description), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
 						}
 						else {
 							shared::common::log("Hook", std::format("Found pattern @ (0x{:X})", place), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
 						}
+#endif
 
 						if (validate_patterns) 
 						{
