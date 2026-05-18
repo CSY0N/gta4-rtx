@@ -1117,6 +1117,154 @@ namespace gta4
 		}
 	}
 
+	std::vector<std::string> get_presets(const std::string& dir_path)
+	{
+		std::vector<std::string> presets;
+		std::unordered_set<std::string> unique_presets;
+
+		std::filesystem::path dir(shared::globals::root_path + "\\" + dir_path);
+
+		if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+			return presets;
+		}
+
+		for (const auto& entry : std::filesystem::directory_iterator(dir))
+		{
+			if (!entry.is_regular_file()) {
+				continue;
+			}
+
+			const auto ext = entry.path().extension().string();
+
+			if (ext == ".toml" || ext == ".conf") {
+				unique_presets.insert(entry.path().stem().string());
+			}
+		}
+
+		presets.assign(unique_presets.begin(), unique_presets.end());
+		std::sort(presets.begin(), presets.end());
+
+		return presets;
+	}
+
+	void compsetting_presets_container()
+	{
+		//const auto& im = imgui::get();
+		static std::vector<std::string> presets;
+
+		if (static bool initial_setup = false; !initial_setup)
+		{
+			presets = get_presets("rtx_comp\\addon_settings\\presets");
+			initial_setup = true;
+		}
+
+		ImGui::Spacing(0, 4);
+		ImGui::TextUnformatted( "Setting Presets to quickly change the look of the game.\n"
+								"Files can be found in 'rtx_comp/addon_settings/presets'");
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+
+		const auto two_row_button_size = ImVec2((ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 1) / 2.0f, 0);
+
+		if (ImGui::Button(ICON_FA_REDO "   Reset Settings", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+		{
+			if (!ImGui::IsPopupOpen("Reset Settings?")) {
+				ImGui::OpenPopup("Reset Settings?");
+			}
+		} TT("Reset everything back to how the game initially set things up\n"
+			 "by reloading the comp_settings file and all addon files stored in 'rtx_comp/addon_settings/");
+
+		ImGui::SameLine();
+		if (ImGui::Button("Refresh List", two_row_button_size))
+		{
+			presets = get_presets("rtx_comp\\addon_settings\\presets");
+		} TT("Refresh presets found in 'rtx_comp/addon_settings/presets'")
+
+		// Listbox
+
+		static int selected_preset = -1;
+
+		auto apply_config = []()
+			{
+				// comp settings (TOML)
+				shared::common::log("ImGui", std::format("Preset: Parsing Addon CompSetting 'rtx_comp/addon_settings/presets/{}' ...", presets[selected_preset]), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
+				comp_settings::parse_toml("presets\\" + presets[selected_preset] + ".toml");
+
+				// remix config (CONF)
+				shared::common::log("ImGui", std::format("Preset: Parsing Addon Config 'rtx_comp/addon_settings/presets/{}' ...", presets[selected_preset]), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
+				remix_vars::parse_and_apply_conf_with_lerp("rtx_comp\\addon_settings\\presets\\", presets[selected_preset] + ".conf", selected_preset, remix_vars::EASE_TYPE_LINEAR, 1);
+			};
+
+		if (ImGui::BeginListBox("##preset_list", ImVec2(-FLT_MIN, 80.0f)))
+		{
+			for (auto i = 0u; i < presets.size(); ++i)
+			{
+				const bool is_selected = (selected_preset == static_cast<int>(i));
+
+				if (ImGui::Selectable(presets[i].c_str(), is_selected)) {
+					selected_preset = static_cast<int>(i);
+				}
+
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+					apply_config();
+				}
+
+				if (is_selected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndListBox();
+		} TT("List of available presets. Double click to apply.");
+
+		if (ImGui::Button("Apply Selected Preset", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+		{
+			if (selected_preset >= 0 && selected_preset < static_cast<int>(presets.size())) {
+				apply_config();
+			}
+		}
+
+		// popup
+		if (ImGui::BeginPopupModal("Reset Settings?", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+		{
+			shared::imgui::draw_background_blur();
+			ImGui::Spacing(0.0f, 0.0f);
+
+			const auto half_width = ImGui::GetContentRegionMax().x * 0.5f;
+			const auto line1_str = "You'll loose all unsaved changes if you continue!   ";
+			const auto line2_str = "To save your changes, use:";
+			const auto line3_str = "Save Current Settings";
+
+			ImGui::Spacing();
+			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line1_str).x * 0.5f));
+			ImGui::TextUnformatted(line1_str);
+
+			ImGui::Spacing();
+			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line2_str).x * 0.5f));
+			ImGui::TextUnformatted(line2_str);
+
+			ImGui::PushFont(shared::imgui::font::BOLD);
+			ImGui::SetCursorPosX(5.0f + half_width - (ImGui::CalcTextSize(line3_str).x * 0.5f));
+			ImGui::TextUnformatted(line3_str);
+			ImGui::PopFont();
+
+			ImGui::Spacing(0, 8);
+			ImGui::Spacing(0, 0); ImGui::SameLine();
+
+			ImVec2 button_size(half_width - 6.0f - ImGui::GetStyle().WindowPadding.x, 0.0f);
+			if (ImGui::Button("Reload", button_size))
+			{
+				comp_settings::load_all_settings();
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine(0, 6.0f);
+			if (ImGui::Button("Cancel", button_size)) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
 	void compsettings_var_reset_logic(comp_settings::variable& var)
 	{
 		std::string popup_id = "Reset "s + var.m_name + " ?";
@@ -2172,8 +2320,15 @@ namespace gta4
 		// quick commands
 		{
 			static float cont_quickcmd_height = 0.0f;
-			cont_quickcmd_height = ImGui::Widget_ContainerWithCollapsingTitle("Quick Commands", cont_quickcmd_height, cont_compsettings_quick_cmd,
-				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+			cont_quickcmd_height = ImGui::Widget_ContainerWithCollapsingTitle("Quick Commands", cont_quickcmd_height, 
+				cont_compsettings_quick_cmd, true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+		}
+
+		// setting presets
+		{
+			static float cont_setting_presets_height = 0.0f;
+			cont_setting_presets_height = ImGui::Widget_ContainerWithCollapsingTitle("Setting Presets", cont_setting_presets_height, 
+				compsetting_presets_container, true, ICON_FA_DOLLY_FLATBED, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
 		}
 
 		// rendering related
@@ -5426,6 +5581,7 @@ namespace gta4
 			ADD_TAB("WIP", tab_wip);
 			ADD_TAB("Comp Settings", tab_compsettings);
 			ADD_TAB("Map Settings", tab_map_settings);
+
 			ADD_TAB("Utilities", tab_utilities);
 			ADD_TAB("Dev", tab_dev);
 			ADD_TAB("About", tab_about);

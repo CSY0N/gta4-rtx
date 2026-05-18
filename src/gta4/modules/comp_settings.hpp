@@ -20,7 +20,7 @@ namespace gta4
 		}
 
 		static void write_toml();
-		static bool parse_toml(bool is_addon_toml_file = false, std::string addon_file_name = "");
+		static bool parse_toml(std::string addon_file_name = "");
 
 		static void load_comp_settings_only();
 		static void load_all_settings();

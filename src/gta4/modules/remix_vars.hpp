@@ -138,7 +138,7 @@ namespace gta4
 		static option_value		string_to_option_value(OPTION_TYPE type, const std::string& str);
 		static option_s			string_to_option(const std::string& str);
 		static void				parse_rtx_options();
-		static void				parse_and_apply_conf_with_lerp(const std::string& sub_dir, const std::string& file_name, const std::uint64_t& identifier, const EASE_TYPE ease, float duration, float delay = 0.0f, float delay_transition_back = 0.0f);
+		static void				parse_and_apply_conf_with_lerp(const std::string& sub_dir, const std::string& file_name, const std::uint64_t& identifier, const EASE_TYPE ease = EASE_TYPE::EASE_TYPE_LINEAR, float duration = 0.0f, float delay = 0.0f, float delay_transition_back = 0.0f);
 
 		//static void			reset(std::string map_name);
 		static void				init_once_on_init();

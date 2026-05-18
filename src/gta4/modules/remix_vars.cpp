@@ -393,7 +393,7 @@ namespace gta4
 
 			file.close();
 		} else {
-			shared::common::log("RemixVars", std::format("Failed to find config: {} in \"rtx_comp\\map_configs\"", sub_dir.c_str()), shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
+			shared::common::log("RemixVars", std::format("Failed to find config: {} in {}", file_name, sub_dir), shared::common::LOG_TYPE::LOG_TYPE_WARN, true);
 		}
 	}
 
@@ -545,13 +545,15 @@ namespace gta4
 		{
 			v->m_init_once_on_init = true;
 
+#if 1
 			// Process all addon remix conf files in inverse alphabetical order (lower to higher priority)
 			const auto addon_comp_settings_files = shared::utils::get_sorted_files("rtx_comp\\addon_settings", ".conf", true, false);
-			for (const auto& file_path : addon_comp_settings_files) 
+			for (const auto& file_name : addon_comp_settings_files) 
 			{
-				shared::common::log("RemixVars", std::format("> Parsing Addon Config 'rtx_comp/addon_settings/{}' ...", file_path), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
-				parse_and_apply_conf_with_lerp("rtx_comp\\addon_settings", file_path, 0, EASE_TYPE_LINEAR, 0);
+				shared::common::log("RemixVars", std::format("> Parsing Addon Config 'rtx_comp/addon_settings/{}' ...", file_name), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
+				parse_and_apply_conf_with_lerp("rtx_comp\\addon_settings", file_name, 0, EASE_TYPE_LINEAR, 1);
 			}
+#endif
 		}
 	}
 
@@ -621,157 +623,159 @@ namespace gta4
 					rr_particle_mode->second.type = OPTION_TYPE::OPTION_TYPE_INT; // float by default
 					remix_vars::option_value val { .integer = (gs->emissive_alpha_blend_hack._bool() ? 1 : 0) };
 					set_option(rr_particle_mode, val, false, gs->emissive_alpha_blend_hack._bool()); // only override constantly when hack is enabled
-				}
-			}
 
-			// --- transitions
 
-			if (!is_paused())
-			{
-				if (!interpolate_stack.empty())
-				{
-					// remove completed transitions - we do that in-front of the loop so that the final values (complete) can be used for the entire frame
-					auto completed_condition = [](const interpolate_entry_s& ip)
-						{
-							//if (ip._complete)
-							//{
-								//int break_me = 1;
-								//DEBUG_PRINT("[VAR-LERP] Complete: %s\n", ip.option->first.c_str());
-							//}
 
-							return ip._complete;
-						};
+					// --- transitions
 
-					const auto it = std::remove_if(interpolate_stack.begin(), interpolate_stack.end(), completed_condition);
-					interpolate_stack.erase(it, interpolate_stack.end());
-
-					// #
-
-					//const auto globalv = interfaces::get()->m_globals;
-					//const auto delta_abs = globalv->absoluteframetime;
-
-					for (auto& ip : interpolate_stack)
+					if (!is_paused())
 					{
-						ip._time_elapsed += get()->get_frametime(); //globalv->frametime;
-
-						// initial 'time_elapsed' value can be negative because of transition delay
-						// or if transitioning backwards with delay 
-						if (ip._time_elapsed < 0.0f) {
-							continue;
-						}
-
-						const auto f = ip._time_elapsed / ip.time_duration;
-						const bool transition_time_exceeded = ip._time_elapsed >= ip.time_duration;
-
-						switch (ip.type)
+						if (!interpolate_stack.empty())
 						{
-						case OPTION_TYPE_INT:
-						{
-							if (!transition_time_exceeded)
+							// remove completed transitions - we do that in-front of the loop so that the final values (complete) can be used for the entire frame
+							auto completed_condition = [](const interpolate_entry_s& ip)
+								{
+									//if (ip._complete)
+									//{
+										//int break_me = 1;
+										//DEBUG_PRINT("[VAR-LERP] Complete: %s\n", ip.option->first.c_str());
+									//}
+
+									return ip._complete;
+								};
+
+							const auto it = std::remove_if(interpolate_stack.begin(), interpolate_stack.end(), completed_condition);
+							interpolate_stack.erase(it, interpolate_stack.end());
+
+							// #
+
+							//const auto globalv = interfaces::get()->m_globals;
+							//const auto delta_abs = globalv->absoluteframetime;
+
+							for (auto& ip : interpolate_stack)
 							{
-								float temp = (float)ip.option->second.current.integer;
-								lerp_float(&temp, (float)ip.start.integer, (float)ip.goal.integer, f, ip.style);
-								ip.option->second.current.integer = (int)temp;
+								ip._time_elapsed += get()->get_frametime(); //globalv->frametime;
 
-								ip._complete = ip.option->second.current.integer == ip.goal.integer;
+								// initial 'time_elapsed' value can be negative because of transition delay
+								// or if transitioning backwards with delay 
+								if (ip._time_elapsed < 0.0f) {
+									continue;
+								}
+
+								const auto f = ip._time_elapsed / ip.time_duration;
+								const bool transition_time_exceeded = ip._time_elapsed >= ip.time_duration;
+
+								switch (ip.type)
+								{
+								case OPTION_TYPE_INT:
+								{
+									if (!transition_time_exceeded)
+									{
+										float temp = (float)ip.option->second.current.integer;
+										lerp_float(&temp, (float)ip.start.integer, (float)ip.goal.integer, f, ip.style);
+										ip.option->second.current.integer = (int)temp;
+
+										ip._complete = ip.option->second.current.integer == ip.goal.integer;
+									}
+									else
+									{
+										ip.option->second.current.integer = ip.goal.integer;
+										ip._complete = true;
+									}
+									break;
+								}
+
+								case OPTION_TYPE_FLOAT:
+								{
+									if (!transition_time_exceeded)
+									{
+										lerp_float(&ip.option->second.current.value, ip.start.value, ip.goal.value, f, ip.style);
+										ip._complete = shared::utils::float_equal(ip.option->second.current.value, ip.goal.value);
+									}
+									else
+									{
+										ip.option->second.current.value = ip.goal.value;
+										ip._complete = true;
+									}
+									break;
+								}
+
+								case OPTION_TYPE_VEC2:
+								{
+									if (!transition_time_exceeded)
+									{
+										lerp_float(&ip.option->second.current.vector[0], ip.start.vector[0], ip.goal.vector[0], f, ip.style);
+										lerp_float(&ip.option->second.current.vector[1], ip.start.vector[1], ip.goal.vector[1], f, ip.style);
+										ip._complete = shared::utils::float_equal(ip.option->second.current.vector[0], ip.goal.vector[0])
+											&& shared::utils::float_equal(ip.option->second.current.vector[1], ip.goal.vector[1]);
+									}
+									else
+									{
+										ip.option->second.current.vector[0] = ip.goal.vector[0];
+										ip.option->second.current.vector[1] = ip.goal.vector[1];
+										ip._complete = true;
+									}
+									break;
+								}
+
+								case OPTION_TYPE_VEC3:
+								{
+									if (!transition_time_exceeded)
+									{
+										lerp_float(&ip.option->second.current.vector[0], ip.start.vector[0], ip.goal.vector[0], f, ip.style);
+										lerp_float(&ip.option->second.current.vector[1], ip.start.vector[1], ip.goal.vector[1], f, ip.style);
+										lerp_float(&ip.option->second.current.vector[2], ip.start.vector[2], ip.goal.vector[2], f, ip.style);
+										ip._complete = shared::utils::float_equal(ip.option->second.current.vector[0], ip.goal.vector[0])
+											&& shared::utils::float_equal(ip.option->second.current.vector[1], ip.goal.vector[1])
+											&& shared::utils::float_equal(ip.option->second.current.vector[2], ip.goal.vector[2]);
+									}
+									else
+									{
+										ip.option->second.current.vector[0] = ip.goal.vector[0];
+										ip.option->second.current.vector[1] = ip.goal.vector[1];
+										ip.option->second.current.vector[2] = ip.goal.vector[2];
+										ip._complete = true;
+									}
+									break;
+								}
+
+								case OPTION_TYPE_BOOL:
+								{
+									// "complete" the transition when the rest finishes
+									if (transition_time_exceeded) {
+										ip._complete = true;
+									}
+
+									// on forward transition: set goal on start of transition
+									// on backward transition: set goal when transition is completed
+									if (!transition_time_exceeded && ip._in_backwards_transition) {
+										break;
+									}
+
+									ip.option->second.current.enabled = ip.goal.enabled;
+									break;
+								}
+
+								case OPTION_TYPE_NONE:
+									ip._complete = true; // remove none type
+									continue;
+								}
+
+								if (!ip.option->second.not_a_remix_var) {
+									set_option(ip.option, ip.option->second.current, false, true);
+								}
+
+								// detect completion of first transition - check / setup backwards transition
+								if (ip._complete && !ip._in_backwards_transition && ip.time_delay_transition_back > 0.0f)
+								{
+									// swap start/goal
+									std::swap(ip.start, ip.goal);
+
+									ip._time_elapsed = -ip.time_delay_transition_back;
+									ip._in_backwards_transition = true;
+									ip._complete = false;
+								}
 							}
-							else
-							{
-								ip.option->second.current.integer = ip.goal.integer;
-								ip._complete = true;
-							}
-							break;
-						}
-
-						case OPTION_TYPE_FLOAT:
-						{
-							if (!transition_time_exceeded)
-							{
-								lerp_float(&ip.option->second.current.value, ip.start.value, ip.goal.value, f, ip.style);
-								ip._complete = shared::utils::float_equal(ip.option->second.current.value, ip.goal.value);
-							}
-							else
-							{
-								ip.option->second.current.value = ip.goal.value;
-								ip._complete = true;
-							}
-							break;
-						}
-
-						case OPTION_TYPE_VEC2:
-						{
-							if (!transition_time_exceeded)
-							{
-								lerp_float(&ip.option->second.current.vector[0], ip.start.vector[0], ip.goal.vector[0], f, ip.style);
-								lerp_float(&ip.option->second.current.vector[1], ip.start.vector[1], ip.goal.vector[1], f, ip.style);
-								ip._complete = shared::utils::float_equal(ip.option->second.current.vector[0], ip.goal.vector[0])
-									&& shared::utils::float_equal(ip.option->second.current.vector[1], ip.goal.vector[1]);
-							}
-							else
-							{
-								ip.option->second.current.vector[0] = ip.goal.vector[0];
-								ip.option->second.current.vector[1] = ip.goal.vector[1];
-								ip._complete = true;
-							}
-							break;
-						}
-
-						case OPTION_TYPE_VEC3:
-						{
-							if (!transition_time_exceeded)
-							{
-								lerp_float(&ip.option->second.current.vector[0], ip.start.vector[0], ip.goal.vector[0], f, ip.style);
-								lerp_float(&ip.option->second.current.vector[1], ip.start.vector[1], ip.goal.vector[1], f, ip.style);
-								lerp_float(&ip.option->second.current.vector[2], ip.start.vector[2], ip.goal.vector[2], f, ip.style);
-								ip._complete = shared::utils::float_equal(ip.option->second.current.vector[0], ip.goal.vector[0])
-									&& shared::utils::float_equal(ip.option->second.current.vector[1], ip.goal.vector[1])
-									&& shared::utils::float_equal(ip.option->second.current.vector[2], ip.goal.vector[2]);
-							}
-							else
-							{
-								ip.option->second.current.vector[0] = ip.goal.vector[0];
-								ip.option->second.current.vector[1] = ip.goal.vector[1];
-								ip.option->second.current.vector[2] = ip.goal.vector[2];
-								ip._complete = true;
-							}
-							break;
-						}
-
-						case OPTION_TYPE_BOOL:
-						{
-							// "complete" the transition when the rest finishes
-							if (transition_time_exceeded) {
-								ip._complete = true;
-							}
-
-							// on forward transition: set goal on start of transition
-							// on backward transition: set goal when transition is completed
-							if (!transition_time_exceeded && ip._in_backwards_transition) {
-								break;
-							}
-
-							ip.option->second.current.enabled = ip.goal.enabled;
-							break;
-						}
-
-						case OPTION_TYPE_NONE:
-							ip._complete = true; // remove none type
-							continue;
-						}
-
-						if (!ip.option->second.not_a_remix_var) {
-							remix_vars::get()->set_option(ip.option, ip.option->second.current, false);
-						}
-
-						// detect completion of first transition - check / setup backwards transition
-						if (ip._complete && !ip._in_backwards_transition && ip.time_delay_transition_back > 0.0f)
-						{
-							// swap start/goal
-							std::swap(ip.start, ip.goal);
-
-							ip._time_elapsed = -ip.time_delay_transition_back;
-							ip._in_backwards_transition = true;
-							ip._complete = false;
 						}
 					}
 				}

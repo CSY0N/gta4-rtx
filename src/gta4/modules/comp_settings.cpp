@@ -45,9 +45,9 @@ namespace gta4
 
 	/// Func used to parse and set comp settings
 	/// @param 	is_addon_toml_file	if is addon setting file or not
-	/// @param  addon_file_name		file name (with ext) of addon file
+	/// @param  addon_file_name		not empty = addon parse mode - file name (with ext) of addon file
 	/// @return						true if parsed successfully or if defaults were written if no file found, false if parsing failed
-	bool comp_settings::parse_toml(bool is_addon_toml_file, std::string addon_file_name)
+	bool comp_settings::parse_toml(std::string addon_file_name)
 	{
 		// helper
 		auto to_vec = [](const toml::value& entry, const var_type type, float* default_vec = nullptr)
@@ -96,15 +96,9 @@ namespace gta4
 
 #ifndef asd // DEBUG
 
-		std::ifstream file;
-		if (!is_addon_toml_file ? shared::utils::open_file_homepath("rtx_comp", "comp_settings.toml", file) : true)
+		const bool is_addon_toml_file = !addon_file_name.empty();
+		if (std::filesystem::exists(!is_addon_toml_file ? "rtx_comp\\comp_settings.toml" : "rtx_comp\\addon_settings\\" + addon_file_name))
 		{
-			if (!is_addon_toml_file)
-			{
-				// file exists
-				file.close();
-			}
-
 			try
 			{
 				auto config = toml::parse(!is_addon_toml_file ? "rtx_comp\\comp_settings.toml" : "rtx_comp\\addon_settings\\" + addon_file_name);
@@ -344,6 +338,8 @@ namespace gta4
 				shared::common::log("CompSettings", "Not writing defaults! Please check 'comp_settings.toml' or remove the file to re-generate it on next startup!", shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
 				return false;
 			}
+		} else {
+			shared::common::log("CompSettings", std::format("Failed to find config: {}", !is_addon_toml_file ? "rtx_comp\\comp_settings.toml" : "rtx_comp\\addon_settings\\" + addon_file_name), shared::common::LOG_TYPE::LOG_TYPE_WARN, true);
 		}
 #endif
 
@@ -362,6 +358,7 @@ namespace gta4
 		shared::common::log("CompSetting", "Reading 'rtx_comp/comp_settings.toml' ...", shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
 		parse_toml();
 
+#if 1
 		// Process all addon comp-settings files in inverse alphabetical order (lower to higher priority)
 		const auto addon_comp_settings_files = shared::utils::get_sorted_files("rtx_comp\\addon_settings", ".toml", true, false);
 		for (const auto& file_name : addon_comp_settings_files)
@@ -369,7 +366,7 @@ namespace gta4
 			try
 			{
 				shared::common::log("CompSetting", std::format("> Parsing Addon CompSetting 'rtx_comp/addon_settings/{}' ...", file_name), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
-				parse_toml(true, file_name);
+				parse_toml(file_name);
 
 			}
 			catch (const toml::file_io_error& err) {
@@ -379,6 +376,7 @@ namespace gta4
 				shared::common::log("CompSetting", std::format("Syntax error in addon compsetting file '{}': {}", file_name, err.what()), shared::common::LOG_TYPE::LOG_TYPE_ERROR, true);
 			}
 		}
+#endif
 	}
 
 	comp_settings::comp_settings()
