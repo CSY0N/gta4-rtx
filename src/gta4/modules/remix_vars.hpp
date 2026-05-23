@@ -1,4 +1,5 @@
 #pragma once
+#include <shared_mutex>
 
 namespace gta4
 {
@@ -123,8 +124,9 @@ namespace gta4
 		};
 
 		typedef std::pair<const std::string, option_s>* option_handle;
-		static inline std::unordered_map<std::string, option_s> options;
-		static inline std::unordered_map<std::string, option_s> custom_options;
+		std::unordered_map<std::string, option_s> options;
+		std::unordered_map<std::string, option_s> custom_options;
+		mutable std::shared_mutex mutex_;
 
 		static option_handle	add_custom_option(const std::string& name, const option_s& o);
 		static option_handle	get_custom_option(const char* o);
@@ -138,30 +140,26 @@ namespace gta4
 		static option_value		string_to_option_value(OPTION_TYPE type, const std::string& str);
 		static option_s			string_to_option(const std::string& str);
 		static void				parse_rtx_options();
-		static void				parse_and_apply_conf_with_lerp(const std::string& sub_dir, const std::string& file_name, const std::uint64_t& identifier, const EASE_TYPE ease = EASE_TYPE::EASE_TYPE_LINEAR, float duration = 0.0f, float delay = 0.0f, float delay_transition_back = 0.0f);
+		static void				parse_and_apply_conf(const std::string& sub_dir, const std::string& file_name,float delay = 0.0f);
 
 		//static void			reset(std::string map_name);
 		static void				init_once_on_init();
-		static void				init_once_on_ingame_frame();
+		static bool				init_once_on_ingame_frame();
 		static void				on_client_frame();
 
 		struct interpolate_entry_s
 		{
-			std::uint64_t identifier;
 			option_handle option;
 			option_value start;
 			option_value goal;
 			OPTION_TYPE type;
-			EASE_TYPE style;
-			float time_duration;
-			float time_delay_transition_back;
 			float _time_elapsed;
 			bool _in_backwards_transition;
 			bool _complete;
 		};
 
 		static inline std::vector<interpolate_entry_s> interpolate_stack;
-		bool add_interpolate_entry(const std::uint64_t& identifier, option_handle handle, const option_value& goal, float duration, float delay, float delay_transition_back, EASE_TYPE ease, const std::string& remix_var_name = "");
+		bool add_interpolate_entry(option_handle handle, const option_value& goal, float delay, const std::string& remix_var_name = "");
 
 		static bool is_paused()
 		{

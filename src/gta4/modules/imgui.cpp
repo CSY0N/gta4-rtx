@@ -1191,7 +1191,7 @@ namespace gta4
 
 				// remix config (CONF)
 				shared::common::log("ImGui", std::format("Preset: Parsing Addon Config 'rtx_comp/addon_settings/presets/{}' ...", presets[selected_preset]), shared::common::LOG_TYPE::LOG_TYPE_DEFAULT, false);
-				remix_vars::parse_and_apply_conf_with_lerp("rtx_comp\\addon_settings\\presets\\", presets[selected_preset] + ".conf", selected_preset, remix_vars::EASE_TYPE_LINEAR, 1);
+				remix_vars::parse_and_apply_conf("rtx_comp\\addon_settings\\presets\\", presets[selected_preset] + ".conf", 1);
 			};
 
 		if (ImGui::BeginListBox("##preset_list", ImVec2(-FLT_MIN, 80.0f)))
