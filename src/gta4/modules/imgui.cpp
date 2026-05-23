@@ -1163,9 +1163,7 @@ namespace gta4
 								"Files can be found in 'rtx_comp/addon_settings/presets'");
 		ImGui::Spacing(0, SEPARATOR_SPACING);
 
-		const auto two_row_button_size = ImVec2((ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 1) / 2.0f, 0);
-
-		if (ImGui::Button(ICON_FA_REDO "   Reset Settings", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+		if (ImGui::Button(ICON_FA_REDO "   Reset Settings", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0)))
 		{
 			if (!ImGui::IsPopupOpen("Reset Settings?")) {
 				ImGui::OpenPopup("Reset Settings?");
@@ -1174,7 +1172,7 @@ namespace gta4
 			 "by reloading the comp_settings file and all addon files stored in 'rtx_comp/addon_settings/");
 
 		ImGui::SameLine();
-		if (ImGui::Button("Refresh List", two_row_button_size))
+		if (ImGui::Button("Refresh List", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
 		{
 			presets = get_presets("rtx_comp\\addon_settings\\presets");
 		} TT("Refresh presets found in 'rtx_comp/addon_settings/presets'")

@@ -1,0 +1,5 @@
+# Remix sets 'rtx.di.initialSampleCount' to hardcoded values on start.
+# Setting this value to anything greater 0 constantly sets the remix variable with this value.
+# Type: INT || Default: 60
+# Ver: 1.3.0
+# remix_override_rtxdi_samplecount = 40             # remove '#' to uncomment

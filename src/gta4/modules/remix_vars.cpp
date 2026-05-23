@@ -185,7 +185,7 @@ namespace gta4
 
 			if (!var_str.empty())
 			{
-				const auto result = shared::common::remix_api::get().m_bridge.SetConfigVariable(o->first.c_str(), var_str.c_str());
+				/*const auto result =*/ shared::common::remix_api::get().m_bridge.SetConfigVariable(o->first.c_str(), var_str.c_str());
 
 				//shared::common::log("RemixVars", std::format("Set {} to {} - {}", o->first, var_str, result == REMIXAPI_ERROR_CODE_SUCCESS ? "SUCCESS" : "FAIL"));
 				
