@@ -1,12 +1,41 @@
 ﻿#include "std_include.hpp"
 #include "natives.hpp"
 #include "imgui.hpp"
+#include "remix_vars.hpp"
 
 namespace gta4
 {
 	void on_cgame_process_hk()
 	{
 		const auto im = imgui::get();
+
+		if (static auto once = false; !once)
+		{
+			once = true;
+
+			// TODO: hack to fix issues with SSS-fixing commit (that makes head mesh invisible)
+			// use remix options to force blas rebuilds
+
+			const auto minimize = remix_vars::get_option("rtx.minimizeBlasMerging");
+			const auto merge = remix_vars::get_option("rtx.forceMergeAllMeshes");
+
+			if (minimize && merge)
+			{
+				remix_vars::option_value on { .enabled = true };
+				remix_vars::option_value off { .enabled = false };
+
+				remix_vars::get()->add_interpolate_entry(minimize, on, 18);
+				remix_vars::get()->add_interpolate_entry(minimize, off, 24);
+
+				remix_vars::get()->add_interpolate_entry(merge, on, 28);
+				remix_vars::get()->add_interpolate_entry(merge, off, 36);
+
+				remix_vars::get()->add_interpolate_entry(merge, off, 40);
+				remix_vars::get()->add_interpolate_entry(minimize, off, 40);
+			}
+		}
+
+		// ----
 
 		if (im->m_freecam_mode)
 		{
