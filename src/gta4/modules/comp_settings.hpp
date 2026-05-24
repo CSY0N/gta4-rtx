@@ -1318,7 +1318,7 @@ namespace gta4
 				("Enables automatic adjustment of 'rtx.volumetrics.atmosphereHeightMeters' based on timecycle settings.\n"
 				"Also influences 'rtx.volumetrics.transmittanceMeasurementDistanceMeters' based on low/high transmittance offsets."),
 				"1.3.0",
-				true
+				false
 			};
 
 			variable timecycle_skyhorizonheight_scalar = {
