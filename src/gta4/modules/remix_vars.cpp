@@ -506,8 +506,10 @@ namespace gta4
 			// rtx.particles.forceScreenSpaceCollision needs to be FALSE upon starting the game so that the toggle works properly
 			{
 				const auto cs = comp_settings::get();
-				const auto particles_forceScreenSpaceCollision = get_option("rtx.particles.forceScreenSpaceCollision");
-				if (particles_forceScreenSpaceCollision->second.current.enabled == cs->remix_override_enable_particle_tlas_collision._bool())
+				
+				if (const auto particles_forceScreenSpaceCollision = get_option("rtx.particles.forceScreenSpaceCollision"); 
+					particles_forceScreenSpaceCollision &&
+					particles_forceScreenSpaceCollision->second.current.enabled == cs->remix_override_enable_particle_tlas_collision._bool())
 				{
 					option_value val{ .enabled = !cs->remix_override_enable_particle_tlas_collision._bool() };
 					set_option(particles_forceScreenSpaceCollision, val, false, true);
