@@ -553,30 +553,30 @@ namespace gta4
 					rr_particle_mode->second.type = OPTION_TYPE::OPTION_TYPE_INT; // float by default
 					option_value val { .integer = (gs->emissive_alpha_blend_hack._bool() ? 1 : 0) };
 					set_option(rr_particle_mode, val, false, gs->emissive_alpha_blend_hack._bool()); // only override constantly when hack is enabled
+				}
 
-					if (!is_paused())
+				if (!is_paused())
+				{
+					if (!interpolate_stack.empty())
 					{
-						if (!interpolate_stack.empty())
+						for (auto& ip : interpolate_stack)
 						{
-							for (auto& ip : interpolate_stack)
-							{
-								ip._time_elapsed += get()->get_frametime();
+							ip._time_elapsed += get()->get_frametime();
 
-								// check if delayed
-								if (ip._time_elapsed < 0.0f) {
-									continue;
-								}
-
-								set_option(ip.option, ip.goal, false, true);
-								ip._complete = true;
-
-								auto completed_condition = [](const interpolate_entry_s& ip) {
-										return ip._complete;
-									};
-
-								const auto it = std::remove_if(interpolate_stack.begin(), interpolate_stack.end(), completed_condition);
-								interpolate_stack.erase(it, interpolate_stack.end());
+							// check if delayed
+							if (ip._time_elapsed < 0.0f) {
+								continue;
 							}
+
+							set_option(ip.option, ip.goal, false, true);
+							ip._complete = true;
+
+							auto completed_condition = [](const interpolate_entry_s& ip) {
+								return ip._complete;
+							};
+
+							const auto it = std::remove_if(interpolate_stack.begin(), interpolate_stack.end(), completed_condition);
+							interpolate_stack.erase(it, interpolate_stack.end());
 						}
 					}
 				}

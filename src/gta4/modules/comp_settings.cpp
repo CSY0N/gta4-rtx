@@ -280,6 +280,7 @@ namespace gta4
 
 				// timecycle related settings
 				ASSIGN(timecycle_set_on_endscene);
+				ASSIGN(timecycle_use_remix_atmos_system);
 				ASSIGN(timecycle_wetness_enabled);
 				ASSIGN(timecycle_wetness_world_scalar);
 				ASSIGN(timecycle_wetness_world_offset);

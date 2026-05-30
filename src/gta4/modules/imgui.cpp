@@ -821,6 +821,98 @@ namespace gta4
 		{
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
+			/* clear, partlyCloudy, overcast, hazy, foggy, drizzle, rainstorm, thunderstorm, snow, blizzard,
+				 * sandstorm, smoggy. Empty string to return to dormant. */
+
+			if (ImGui::Button("clear")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "clear");
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("partlyCloudy")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "partlyCloudy");
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("overcast")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "overcast");
+			}
+
+			if (ImGui::Button("drizzle")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "drizzle");
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("rainstorm")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "rainstorm");
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("thunderstorm")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "thunderstorm");
+			}
+
+			ImGui::Separator();
+
+			static float trans_val = 0.0f;
+			ImGui::SliderFloat("Transition Val", &trans_val, -1.0f, 1.0f);
+			TT("-1 to disable absolute");
+
+			if (ImGui::Button("Use Absolute Value")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_absolute", std::to_string(trans_val).c_str());
+			}
+
+			ImGui::Separator();
+
+			static float trans_blend_val = 0.0f;
+			ImGui::SliderFloat("Transition Blend Val", &trans_blend_val, 0.0f, 10.0f);
+			TT("Blend time in s");
+
+			if (ImGui::Button("Use Blend Value")) {
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_absolute", "-1.0");
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_seconds", std::to_string(trans_blend_val).c_str());
+			}
+
+			ImGui::Separator();
+
+			static bool use_game_tc = false;
+			ImGui::Checkbox("Use Game TC", &use_game_tc);
+
+			if (use_game_tc)
+			{
+				std::string w;
+				switch (*game::weather_type_new)
+				{
+				case game::WEATHER_EXTRASUNNY:
+					w = "clear"; break;
+				case game::WEATHER_SUNNY:
+					w = "smoggy"; break;
+				case game::WEATHER_SUNNY_WINDY:
+					w = "partlyCloudy"; break;
+				case game::WEATHER_CLOUDY:
+					w = "overcast"; break;
+				case game::WEATHER_RAIN:
+					w = "rainstorm"; break;
+				case game::WEATHER_DRIZZLE:
+					w = "drizzle"; break;
+				case game::WEATHER_FOGGY:
+					w = "foggy"; break;
+				case game::WEATHER_LIGHTNING:
+					w = "thunderstorm"; break;
+				default:
+					w = "clear"; break;
+				}
+
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", w.c_str());
+				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_absolute", std::to_string(*game::weather_change_value).c_str());
+
+				ImGui::TextUnformatted(w.c_str());
+				ImGui::SameLine();
+				ImGui::TextUnformatted(std::to_string(*game::weather_change_value).c_str());
+			}
+
+			ImGui::Separator();
+
 			ImGui::SliderInt("Used Timecycle for Remix Translation ..", &im->m_dbg_used_timecycle, -1, 2, "%d", ImGuiSliderFlags_AlwaysClamp);
 			TT("Sets the Timecycle to be used to translate its settings to fitting remix variables.\n"
 				"-1: No override\n0: Timecycle 1 (World/Interior)\n1: Timecycle 2 (World/Interior)\n3: Timecycle 3 (Cutscenes)");
@@ -1774,6 +1866,8 @@ namespace gta4
 
 		compsettings_bool_widget("Set TimeCycle Variables on EndScene", gs->timecycle_set_on_endscene);
 
+		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
+
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Fog ");
 		ImGui::Spacing(0, 4);
@@ -2235,6 +2329,9 @@ namespace gta4
 		ImGui::SeparatorText(" Timecycle ");
 		ImGui::Spacing(0, 4);
 
+		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
+
+		ImGui::Spacing(0, 4);
 		ImGui::BeginDisabled(!gs->timecycle_bloom_enabled.get_as<bool>());
 		{
 			compsettings_bool_widget("Clamp Min Intensity at Night", gs->timecycle_bloom_night_min_clamp_enabled);
