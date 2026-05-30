@@ -93,6 +93,10 @@ namespace gta4
 		return lhs;
 	}
 
+	constexpr RemixModifier operator~(RemixModifier e) {
+		return static_cast<RemixModifier>(~static_cast<std::uint32_t>(e));
+	}
+
 	// can't use remixapi_InstanceCategoryFlags as they don't match up with InstanceCategories
 	enum class InstanceCategories : uint32_t
 	{
@@ -212,6 +216,9 @@ namespace gta4
 		return lhs;
 	}
 
+	constexpr InstanceCategories operator~(InstanceCategories e) {
+		return static_cast<InstanceCategories>(~static_cast<std::uint32_t>(e));
+	}
 
 	class drawcall_mod_context
 	{
@@ -652,7 +659,7 @@ namespace gta4
 		HRESULT on_draw_primitive(IDirect3DDevice9* dev, const D3DPRIMITIVETYPE& PrimitiveType, const UINT& StartVertex, const UINT& PrimitiveCount);
 		HRESULT on_draw_indexed_prim(IDirect3DDevice9* dev, const D3DPRIMITIVETYPE& PrimitiveType, const INT& BaseVertexIndex, const UINT& MinVertexIndex, const UINT& NumVertices, const UINT& startIndex, const UINT& primCount);
 
-		static void set_remix_modifier(IDirect3DDevice9* dev, RemixModifier mod);
+		static void set_remix_modifier(IDirect3DDevice9* dev, RemixModifier mod, bool remove_mod = false);
 		static void set_remix_emissive_intensity(IDirect3DDevice9* dev, float intensity, bool no_overrides = false);
 
 		enum eWetnessFlags : uint8_t
@@ -674,7 +681,7 @@ namespace gta4
 
 		static void set_remix_temp_float01(IDirect3DDevice9* dev, float value);
 		static void set_remix_temp_float02(IDirect3DDevice9* dev,  float value);
-		static void set_remix_texture_categories(IDirect3DDevice9* dev, const InstanceCategories& cat);
+		static void set_remix_texture_categories(IDirect3DDevice9* dev, const InstanceCategories& cat, bool remove_category = false);
 		static void set_remix_texture_hash(IDirect3DDevice9* dev, const std::uint32_t& hash);
 
 		bool m_triggered_remix_injection = false;

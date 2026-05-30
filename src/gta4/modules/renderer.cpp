@@ -79,10 +79,15 @@ namespace gta4
 
 	// Uses unused Renderstate 149 to set per drawcall modifiers
 	// ~ req. runtime changes
-	void renderer::set_remix_modifier(IDirect3DDevice9* dev, RemixModifier mod)
+	void renderer::set_remix_modifier(IDirect3DDevice9* dev, RemixModifier mod, bool remove_mod)
 	{
 		dc_ctx.save_rs(dev, RS_149_REMIX_MODIFIER);
-		dc_ctx.modifiers.remix_modifier |= mod;
+
+		if (remove_mod) {
+			dc_ctx.modifiers.remix_modifier &= ~mod;
+		} else {
+			dc_ctx.modifiers.remix_modifier |= mod;
+		}
 
 		dev->SetRenderState((D3DRENDERSTATETYPE)RS_149_REMIX_MODIFIER, static_cast<DWORD>(dc_ctx.modifiers.remix_modifier));
 	}
@@ -188,10 +193,16 @@ namespace gta4
 
 	// Uses unused Renderstate 42 to set remix texture categories
 	// ~ req. runtime changes
-	void renderer::set_remix_texture_categories(IDirect3DDevice9* dev, const InstanceCategories& cat)
+	void renderer::set_remix_texture_categories(IDirect3DDevice9* dev, const InstanceCategories& cat, bool remove_category)
 	{
 		dc_ctx.save_rs(dev, RS_42_TEXTURE_CATEGORY);
-		dc_ctx.modifiers.remix_instance_categories |= cat;
+
+		if (remove_category) {
+			dc_ctx.modifiers.remix_instance_categories &= ~cat;
+		} else {
+			dc_ctx.modifiers.remix_instance_categories |= cat;
+		}
+		
 		dev->SetRenderState((D3DRENDERSTATETYPE)RS_42_TEXTURE_CATEGORY, static_cast<DWORD>(dc_ctx.modifiers.remix_instance_categories));
 	}
 
@@ -206,7 +217,7 @@ namespace gta4
 
 	// ---
 
-	void on_constant_matDiffuseColor(IDirect3DDevice9* dev, const Vector& color)
+	void on_constant_matDiffuseColor(IDirect3DDevice9* dev, const Vector& color, bool prevent_vertex_color = false)
 	{
 		auto& ctx = renderer::get()->dc_ctx;
 		const auto cs = comp_settings::get();
@@ -219,7 +230,7 @@ namespace gta4
 		ctx.modifiers.is_vehicle_paint = true;
 
 		// Enable VertexColor usage (+ tFactor) on vehicles without needing to manually assign the beam category
-		if (cs->vehicle_force_vertex_colors._bool()) 
+		if (cs->vehicle_force_vertex_colors._bool() && !prevent_vertex_color) 
 		{
 			renderer::set_remix_modifier(dev, RemixModifier::EnableVertexColor); 
 			renderer::set_remix_texture_categories(dev, InstanceCategories::Beam);
@@ -963,8 +974,8 @@ namespace gta4
 					{
 						if (g_is_rendering_vehicle)
 						{
-							if (register_num == 66u && is_gta_vehicle_shader /*&& !ctx.info.shader_name.ends_with("sive.fxc")*/) {
-								on_constant_matDiffuseColor(shared::globals::d3d_device, constant_data_struct->constants[dataPoolIndex].float_arr); 
+							if (register_num == 66u && is_gta_vehicle_shader) {
+								on_constant_matDiffuseColor(shared::globals::d3d_device, constant_data_struct->constants[dataPoolIndex].float_arr);
 							}
 							else if (register_num == 72u && pidx == GTA_VEHICLE_LIGHTSEMISSIVE)
 							{
@@ -2830,6 +2841,14 @@ namespace gta4
 
 			if (ctx.modifiers.dual_render_mode_vehicle_livery)
 			{
+				// Prevent VertexColor usage (+ tFactor) on livery
+				// - have to remove modifier here because we can not prevent setting these modifiers for livery in 'SetupPixelShaderAndConstants' 
+				if (gs->vehicle_force_vertex_colors._bool())
+				{
+					renderer::set_remix_modifier(dev, RemixModifier::EnableVertexColor, true);
+					renderer::set_remix_texture_categories(dev, InstanceCategories::Beam, true);
+				}
+
 				ctx.save_rs(dev, D3DRS_ALPHABLENDENABLE);
 				dev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 
