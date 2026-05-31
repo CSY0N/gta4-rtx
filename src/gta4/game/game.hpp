@@ -56,6 +56,7 @@ namespace gta4::game
 	extern TimeCycleParams* m_pCurrentTimeCycleParams_Cutscene;
 	extern uint8_t* m_game_clock_hours;
 	extern uint8_t* m_game_clock_minutes;
+	extern uint8_t* m_game_clock_seconds;
 
 	//extern CLightSource* m_renderLights;
 	//extern std::uint32_t* m_numRenderLights;

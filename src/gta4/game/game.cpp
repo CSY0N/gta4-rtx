@@ -55,6 +55,7 @@ namespace gta4::game
 	TimeCycleParams* m_pCurrentTimeCycleParams_Cutscene = nullptr;
 	uint8_t* m_game_clock_hours = nullptr;
 	uint8_t* m_game_clock_minutes = nullptr;
+	uint8_t* m_game_clock_seconds = nullptr;
 
 	//CLightSource* m_renderLights = nullptr;
 	//std::uint32_t* m_numRenderLights = nullptr;
@@ -332,6 +333,7 @@ namespace gta4::game
 			found_pattern_count += 2u;
 			m_game_clock_hours = (uint8_t*)*(DWORD*)(offset + 1u);
 			m_game_clock_minutes = (uint8_t*)*(DWORD*)(offset + 10u);
+			m_game_clock_seconds = (uint8_t*)*(DWORD*)(offset + 19u);
 		} total_pattern_count += 2u;
 
 		PATTERN_OFFSET_DWORD_PTR_CAST_TYPE(weather_change_value, float*, "F3 0F 10 0D ? ? ? ? 8B 15 ? ? ? ? 0F 2F C1", 4, 0xA2E7E8);
