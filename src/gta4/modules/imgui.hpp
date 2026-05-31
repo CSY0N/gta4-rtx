@@ -122,6 +122,8 @@ namespace gta4
 
 		int m_dbg_tag_exp_hair_as_index = -1;
 
+		bool m_dbg_force_distant_light_translation = false;
+		bool m_dbg_manual_atmos_system = false;
 		int m_dbg_used_timecycle = -1;
 		bool m_dbg_debug_single_frame_timecycle_remix_vars = false;
 

@@ -714,6 +714,9 @@ namespace gta4
 			ImGui::SeparatorText("Directional Light Info");
 			ImGui::Spacing(0, 4);
 
+			ImGui::Checkbox("Force Directional Light Translation", &im->m_dbg_force_distant_light_translation);
+			TT("Force Translation even when Remix Atmosphere System is active.");
+
 			for (auto i = 0u; i < 2; i++)
 			{
 				auto& def = game::g_directionalLights[i];
@@ -819,99 +822,111 @@ namespace gta4
 		ImGui::Spacing(0, TREENODE_SPACING);
 		if (ImGui::TreeNode("Timecycle related ..."))
 		{
+			const auto bridge = shared::common::remix_api::get().m_bridge;
+
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
-			/* clear, partlyCloudy, overcast, hazy, foggy, drizzle, rainstorm, thunderstorm, snow, blizzard,
+			ImGui::SeparatorText("Remix Atmos System");
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
+
+			ImGui::Checkbox("Atmos System - Manual Mode", &im->m_dbg_manual_atmos_system);
+
+			ImGui::BeginDisabled(!im->m_dbg_manual_atmos_system);
+			{
+				/* clear, partlyCloudy, overcast, hazy, foggy, drizzle, rainstorm, thunderstorm, snow, blizzard,
 				 * sandstorm, smoggy. Empty string to return to dormant. */
 
-			if (ImGui::Button("clear")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "clear");
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("partlyCloudy")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "partlyCloudy");
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("overcast")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "overcast");
-			}
-
-			if (ImGui::Button("drizzle")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "drizzle");
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("rainstorm")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "rainstorm");
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("thunderstorm")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", "thunderstorm");
-			}
-
-			ImGui::Separator();
-
-			static float trans_val = 0.0f;
-			ImGui::SliderFloat("Transition Val", &trans_val, -1.0f, 1.0f);
-			TT("-1 to disable absolute");
-
-			if (ImGui::Button("Use Absolute Value")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_absolute", std::to_string(trans_val).c_str());
-			}
-
-			ImGui::Separator();
-
-			static float trans_blend_val = 0.0f;
-			ImGui::SliderFloat("Transition Blend Val", &trans_blend_val, 0.0f, 10.0f);
-			TT("Blend time in s");
-
-			if (ImGui::Button("Use Blend Value")) {
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_absolute", "-1.0");
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_seconds", std::to_string(trans_blend_val).c_str());
-			}
-
-			ImGui::Separator();
-
-			static bool use_game_tc = false;
-			ImGui::Checkbox("Use Game TC", &use_game_tc);
-
-			if (use_game_tc)
-			{
-				std::string w;
-				switch (*game::weather_type_new)
-				{
-				case game::WEATHER_EXTRASUNNY:
-					w = "clear"; break;
-				case game::WEATHER_SUNNY:
-					w = "smoggy"; break;
-				case game::WEATHER_SUNNY_WINDY:
-					w = "partlyCloudy"; break;
-				case game::WEATHER_CLOUDY:
-					w = "overcast"; break;
-				case game::WEATHER_RAIN:
-					w = "rainstorm"; break;
-				case game::WEATHER_DRIZZLE:
-					w = "drizzle"; break;
-				case game::WEATHER_FOGGY:
-					w = "foggy"; break;
-				case game::WEATHER_LIGHTNING:
-					w = "thunderstorm"; break;
-				default:
-					w = "clear"; break;
+				if (ImGui::Button("clear")) {
+					bridge.SetGameValue("__weather.target", "clear");
 				}
 
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.target", w.c_str());
-				shared::common::remix_api::get().m_bridge.SetGameValue("__weather.blend_absolute", std::to_string(*game::weather_change_value).c_str());
-
-				ImGui::TextUnformatted(w.c_str());
 				ImGui::SameLine();
-				ImGui::TextUnformatted(std::to_string(*game::weather_change_value).c_str());
+				if (ImGui::Button("partlyCloudy")) {
+					bridge.SetGameValue("__weather.target", "partlyCloudy");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("overcast")) {
+					bridge.SetGameValue("__weather.target", "overcast");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("drizzle")) {
+					bridge.SetGameValue("__weather.target", "drizzle");
+				}
+
+				if (ImGui::Button("foggy")) {
+					bridge.SetGameValue("__weather.target", "foggy");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("rainstorm")) {
+					bridge.SetGameValue("__weather.target", "rainstorm");
+				}
+
+				if (ImGui::Button("thunderstorm")) {
+					bridge.SetGameValue("__weather.target", "thunderstorm");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("smoggy")) {
+					bridge.SetGameValue("__weather.target", "smoggy");
+				}
+
+				ImGui::Separator();
+
+				static float trans_val = 0.0f;
+				ImGui::SliderFloat("Absolute Val", &trans_val, -1.0f, 1.0f);
+				TT("-1 to disable absolute");
+
+				if (ImGui::Button("Apply Absolute Value")) {
+					bridge.SetGameValue("__weather.blend_absolute", std::to_string(trans_val).c_str());
+				}
+
+				ImGui::Separator();
+
+				static float trans_blend_val = 0.0f;
+				ImGui::SliderFloat("Transition Blend Val", &trans_blend_val, 0.0f, 10.0f);
+				TT("Blend time in s");
+
+				if (ImGui::Button("Apply Blend Value"))
+				{
+					bridge.SetGameValue("__weather.blend_absolute", "-1.0");
+					bridge.SetGameValue("__weather.blend_seconds", std::to_string(trans_blend_val).c_str());
+				}
+
+				ImGui::EndDisabled();
 			}
 
 			ImGui::Separator();
+
+			static char str_buff[512] = {};
+			static uint32_t str_len = 0u;
+
+			bridge.GetGameValue("__weather.current", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_current = str_buff;
+
+			bridge.GetGameValue("__weather.target", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_target = str_buff;
+
+			bridge.GetGameValue("__weather.previous", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_previous = str_buff;
+
+			bridge.GetGameValue("__weather.blend_absolute", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_blend_absolute = str_buff;
+
+			bridge.GetGameValue("__weather.blend_progress", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_blend_progress = str_buff;
+
+			ImGui::TextUnformatted(std::format("__weather.current: {}", weather_current).c_str());
+			ImGui::TextUnformatted(std::format("__weather.target: {}", weather_target).c_str());
+			ImGui::TextUnformatted(std::format("__weather.previous: {}", weather_previous).c_str());
+			ImGui::TextUnformatted(std::format("__weather.blend_absolute: {}", weather_blend_absolute).c_str());
+			ImGui::TextUnformatted(std::format("__weather.blend_progress: {}", weather_blend_progress).c_str());
+
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
+			ImGui::Separator();
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
 			ImGui::SliderInt("Used Timecycle for Remix Translation ..", &im->m_dbg_used_timecycle, -1, 2, "%d", ImGuiSliderFlags_AlwaysClamp);
 			TT("Sets the Timecycle to be used to translate its settings to fitting remix variables.\n"
@@ -1867,6 +1882,7 @@ namespace gta4
 		compsettings_bool_widget("Set TimeCycle Variables on EndScene", gs->timecycle_set_on_endscene);
 
 		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
+		const bool using_atmos = gs->timecycle_use_remix_atmos_system._bool();
 
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Fog ");
@@ -1874,7 +1890,7 @@ namespace gta4
 
 		{
 			compsettings_bool_widget("Enable FogColor Logic", gs->timecycle_fogcolor_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_fogcolor_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->timecycle_fogcolor_enabled.get_as<bool>() || using_atmos);
 			{
 				compsettings_float_widget("FogColor Base Strength", gs->timecycle_fogcolor_base_strength, 0.0f, 0.0f, 0.005f);
 				compsettings_float_widget("FogColor Influence Scalar", gs->timecycle_fogcolor_influence_scalar, 0.0f, 0.0f, 0.005f);
@@ -1900,7 +1916,7 @@ namespace gta4
 
 		{
 			compsettings_bool_widget("Enable FogDensity Logic", gs->timecycle_fogdensity_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_fogdensity_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->timecycle_fogdensity_enabled.get_as<bool>() || using_atmos);
 			{
 				compsettings_float_widget("FogDensity Influence Scalar", gs->timecycle_fogdensity_influence_scalar, 0.0f, 0.0f, 0.005f);
 
@@ -1952,7 +1968,7 @@ namespace gta4
 
 		{
 			compsettings_bool_widget("Enable SkyLight Logic", gs->timecycle_skylight_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>() || using_atmos);
 			{
 				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 0.0f, 0.005f);
 				compsettings_float_widget("SkyLight Bad Weather Offset", gs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);

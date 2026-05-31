@@ -106,7 +106,7 @@ namespace gta4
 				}
 			}
 
-			const auto using_atmos = gs->timecycle_use_remix_atmos_system.get_as<bool>();
+			const auto using_atmos = gs->timecycle_use_remix_atmos_system.get_as<bool>() || im->m_dbg_manual_atmos_system;
 
 			static auto rtxSkybrightness = vars->get_option("rtx.skyBrightness");
 			if (!using_atmos && gs->timecycle_skylight_enabled.get_as<bool>() && rtxSkybrightness)
@@ -342,11 +342,9 @@ namespace gta4
 				im->m_timecyc_curr_volumetricsTransmittanceMeasurementDistanceMeters = val.value;
 			}
 
-			if (using_atmos)
+			if (using_atmos && !im->m_dbg_manual_atmos_system)
 			{
 				const auto bridge = shared::common::remix_api::get().m_bridge;
-
-				
 
 				switch (*game::weather_type_new)
 				{

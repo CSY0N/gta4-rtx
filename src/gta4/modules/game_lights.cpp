@@ -112,7 +112,7 @@ namespace gta4
 		const auto& updateframe = rml->get_updateframe();
 
 		// sun without remix atmosphere system
-		if (!gs->timecycle_use_remix_atmos_system._bool() && game::g_directionalLights)
+		if ((!gs->timecycle_use_remix_atmos_system._bool() || im->m_dbg_force_distant_light_translation) && game::g_directionalLights)
 		{
 			auto& def = game::g_directionalLights[0];
 			auto& l = rml->get_distant_light();
@@ -203,6 +203,7 @@ namespace gta4
 
 				const int& hour = *game::m_game_clock_hours;
 				const int& minute = *game::m_game_clock_minutes;
+				const int& seconds = *game::m_game_clock_seconds;
 
 				auto lerp = [](const float& a, const float& b, const float& t) -> float {
 					return a + (b - a) * t;
@@ -226,22 +227,25 @@ namespace gta4
 						}
 
 						// 3h → 6h (-90 → 0)
-						if (t >= 3.0f && t < 5.0f) {
-							return lerp(-90.0f, 0.0f, (t - 3.0f) / 2.0f);
+						if (t >= 3.0f && t < 6.0f) {
+							return lerp(-90.0f, 0.0f, (t - 3.0f) / 3.0f);
 						}
 
-						// sunrise: 5h → 6h (0 → 30)
-						if (t >= 5.0f && t < 6.0f) {
-							return lerp(0.0f, 30.0f, (t - 5.0f) / 1.0f);
+						// sunrise: 6h → 7h (0 → 30)
+						if (t >= 6.0f && t < 7.0f) {
+							return lerp(0.0f, 30.0f, (t - 6.0f) / 1.0f);
 						}
 
-						// in out between 6 → 20
+						// in out between 7 → 20
 						return daytime_return_val;
 					};
 
 				float moon_elevation = sun_elevation;
 
-				float t = static_cast<float>(hour) + static_cast<float>(minute) / 60.0f;
+				float t = static_cast<float>(hour)
+						+ static_cast<float>(minute) / 60.0f
+						+ static_cast<float>(seconds) / 3600.0f;
+
 				sun_elevation = get_sun_elevation(t, sun_elevation);
 
 				const auto& v1 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_elevation));
