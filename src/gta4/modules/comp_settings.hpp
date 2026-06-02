@@ -584,6 +584,15 @@ namespace gta4
 				false
 			};
 
+			variable translate_game_lights_no_volumetrics_on_filler_lights =
+			{
+				"translate_game_lights_no_volumetrics_on_filler_lights",
+				("Enable to disable volumetric influence of filler lights\n"
+				 "to prevent random floating fog bubbles."),
+				"1.3.1",
+				false
+			};
+
 			variable translate_game_light_radius_scalar =
 			{
 				"translate_game_light_radius_scalar",

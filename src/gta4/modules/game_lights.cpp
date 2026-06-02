@@ -291,8 +291,7 @@ namespace gta4
 						// we need this light in the active list to visualize it
 						if (im->m_dbg_visualize_api_light_hashes) {
 							add_zero_intensity_light = true;
-						}
-						else {
+						} else {
 							continue;
 						}
 					}

@@ -1715,6 +1715,8 @@ namespace gta4
 		compsettings_bool_widget("Translate Game Lights", gs->translate_game_lights);
 		compsettings_bool_widget("Ignore Filler Lights", gs->translate_game_lights_ignore_filler_lights);
 
+		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
+
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Radius Scalar", gs->translate_game_light_radius_scalar, 0.0f, 0.0f, 0.005f));
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Intensity Scalar", gs->translate_game_light_intensity_scalar, 0.0f, 0.0f, 0.005f));
 
@@ -2206,6 +2208,9 @@ namespace gta4
 		ImGui::SeparatorText(" Version 1.3.X ");
 		ImGui::Spacing(0, 4);
 
+		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
+		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
+
 		ImGui::Widget_CategoryWithVerticalLabel("Anti Culling", [&]()
 			{
 				ImGui::PushID("exac");
@@ -2345,9 +2350,6 @@ namespace gta4
 		ImGui::SeparatorText(" Timecycle ");
 		ImGui::Spacing(0, 4);
 
-		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
-
-		ImGui::Spacing(0, 4);
 		ImGui::BeginDisabled(!gs->timecycle_bloom_enabled.get_as<bool>());
 		{
 			compsettings_bool_widget("Clamp Min Intensity at Night", gs->timecycle_bloom_night_min_clamp_enabled);

@@ -196,6 +196,7 @@ namespace gta4
 				// light translation related settings
 				ASSIGN(translate_game_lights);
 				ASSIGN(translate_game_lights_ignore_filler_lights);
+				ASSIGN(translate_game_lights_no_volumetrics_on_filler_lights);
 				ASSIGN(translate_game_light_radius_scalar);
 				ASSIGN(translate_game_light_intensity_scalar);
 				ASSIGN(translate_game_light_softness_offset);
