@@ -988,8 +988,7 @@ extern "C" {
     PFN_remixapi_CreateMesh         CreateMesh;
     PFN_remixapi_CreateMeshBatched  CreateMeshBatched;
     PFN_remixapi_DestroyMesh        DestroyMesh;
-    PFN_remixapi_SetupCamera        SetupCamera;
-    PFN_remixapi_SetCameraMediumMaterial SetCameraMediumMaterial;
+	PFN_remixapi_SetupCamera        SetupCamera;
     PFN_remixapi_DrawInstance       DrawInstance;
     PFN_remixapi_CreateLight        CreateLight;
     PFN_remixapi_CreateLightBatched CreateLightBatched;
@@ -1016,6 +1015,8 @@ extern "C" {
 
     PFN_remixapi_Startup            Startup;
     PFN_remixapi_Present            Present;
+
+	PFN_remixapi_SetCameraMediumMaterial SetCameraMediumMaterial;
     // NOTE: REMIXAPI_PTR is required so the calling convention matches the
     // actual remixapi_GetUIState / remixapi_SetUIState entry functions
     // (which are __stdcall via REMIXAPI_CALL). On x64 this is moot — there's
