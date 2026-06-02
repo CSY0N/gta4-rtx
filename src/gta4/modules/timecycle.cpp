@@ -3,6 +3,7 @@
 
 #include "comp_settings.hpp"
 #include "imgui.hpp"
+#include "natives.hpp"
 #include "remix_vars.hpp"
 #include "shared/common/remix_api.hpp"
 
@@ -356,7 +357,17 @@ namespace gta4
 				case game::WEATHER_SUNNY_WINDY:
 					bridge.SetGameValue("__weather.target", "partlyCloudy"); break;
 				case game::WEATHER_CLOUDY:
-					bridge.SetGameValue("__weather.target", "overcast"); break;
+					bridge.SetGameValue("__weather.target", "overcast"); 
+
+					// disable cloud shadow when in interiors
+					static auto rtx_weather_preset_overcast_overcast_cloudShadowStrength = vars->get_option("rtx.weather.preset.overcast.overcast_cloudShadowStrength");
+					if (rtx_weather_preset_overcast_overcast_cloudShadowStrength)
+					{
+						val.value = natives::get()->IsInteriorScene() ? 0.0f : 0.75f;
+						vars->add_interpolate_entry(rtx_weather_preset_overcast_overcast_cloudShadowStrength, val, 0.1f);
+					}
+					
+					break;
 				case game::WEATHER_RAIN:
 					bridge.SetGameValue("__weather.target", "rainstorm"); break;
 				case game::WEATHER_DRIZZLE:
