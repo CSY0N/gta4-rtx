@@ -24,19 +24,18 @@ namespace shared::common
 			CONSOLE_SCREEN_BUFFER_INFO info;
 			GetConsoleScreenBufferInfo(hOut, &info);
 
-			// Desired sizes
-			SHORT newWidth = 500;
-			SHORT newHeight = std::max((SHORT)(info.srWindow.Bottom + 1), (SHORT)300);
+			const SHORT new_width = 500;
+			const SHORT new_height = std::max((SHORT)(info.srWindow.Bottom + 1), (SHORT)300);
 
-			// Step 1: Shrink window temporarily to avoid SetConsoleScreenBufferSize failure
+			// shrink window temporarily to avoid SetConsoleScreenBufferSize failure
 			SMALL_RECT rect = { 0, 0, 1, 1 };
 			SetConsoleWindowInfo(hOut, TRUE, &rect);
 
-			// Step 2: Apply new buffer size
-			COORD newSize = { newWidth, newHeight };
-			SetConsoleScreenBufferSize(hOut, newSize);
+			// apply buffer size
+			COORD new_size = { new_width, new_height };
+			SetConsoleScreenBufferSize(hOut, new_size);
 
-			// Step 3: Resize visible window (optional)
+			// resize visible window
 			rect = { 0, 0, (SHORT)(120 - 1), (SHORT)(40 - 1) };
 			SetConsoleWindowInfo(hOut, TRUE, &rect);
         }
@@ -123,23 +122,24 @@ namespace shared::common
 		default:                         return "UNKNOWN";
 		}
 	}
-
+	
+	inline std::mutex log_mutex;
 	inline std::ofstream log_file;
-	inline bool log_file_initiated = false;
+	inline std::once_flag log_file_init_flag;
 
 	inline void init_log_file()
 	{
-		if (!log_file_initiated)
-		{
-			log_file_initiated = true;
-
-			const std::string file_path = shared::globals::root_path + "\\rtx_comp\\logfile.txt";
-			log_file.open(file_path, std::ios::out | std::ios::trunc);
-		}
+		std::call_once(log_file_init_flag, []()
+			{
+				const std::string file_path = shared::globals::root_path + "\\rtx_comp\\logfile.txt";
+				log_file.open(file_path, std::ios::out | std::ios::trunc);
+			});
 	}
 
 	inline void log(const std::string_view& module_str, const std::string_view& msg, LOG_TYPE type = LOG_TYPE::LOG_TYPE_DEFAULT, bool highlight = false, bool newline_infront = false)
 	{
+		std::lock_guard<std::mutex> lock(log_mutex);
+
 		auto colorize = [](const LOG_TYPE& t, const bool h)
 			{
 				switch (t)
