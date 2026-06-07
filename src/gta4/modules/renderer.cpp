@@ -2133,17 +2133,26 @@ namespace gta4
 				ctx.save_rs(dev, D3DRS_TEXTUREFACTOR);
 				dev->SetRenderState(D3DRS_TEXTUREFACTOR, D3DCOLOR_COLORVALUE(0, 0, 0, 1.0f)); 
 
-				// i swear this did something at one point?!
-				//D3DXMATRIX mat = *game::pCurrentWorldTransform;
-				//mat.m[0][0] *= 0.999f; //im->m_debug_vector2.y + 1.0f; //0.99f; 0.999f
-				//mat.m[1][1] *= 0.999f; //im->m_debug_vector2.y + 1.0f;
-				//mat.m[2][2] *= 0.999f; //im->m_debug_vector2.y + 1.0f; 
-				//dev->SetTransform(D3DTS_WORLD, &mat);
-
 				ctx.modifiers.dual_render = true;
 				ctx.modifiers.dual_render_mode_emissive_offset = true;
 
-				renderer::set_remix_texture_categories(dev, InstanceCategories::IgnoreOpacityMicromap);
+				/*bool using_dev_cat = false;
+				if (im->m_dbg_int_01 != -1) 
+				{
+					set_remix_texture_categories(dev, (InstanceCategories)(1 << im->m_dbg_int_01));
+					using_dev_cat = true;
+				}
+
+				if (im->m_dbg_int_02 != -1) 
+				{
+					set_remix_texture_categories(dev, (InstanceCategories)(1 << im->m_dbg_int_02));
+					using_dev_cat = true;
+				}
+
+				if (!using_dev_cat) {*/
+					// IgnoreTransparencyLayer to fix z fighting
+					renderer::set_remix_texture_categories(dev, InstanceCategories::IgnoreOpacityMicromap | InstanceCategories::IgnoreTransparencyLayer);
+				//}
 			}
 
 			// check if trees should be rendered with shaders
@@ -2354,13 +2363,12 @@ namespace gta4
 				if (viewport && viewport->wp)
 				{
 					/*if (im->m_dbg_debug_bool03) {
-										render_with_ff = true;
-									}*/
+						render_with_ff = true;
+					}*/
 
-					auto proj = game::pViewports->sceneviewport->proj;
+					//auto proj = game::pViewports->sceneviewport->proj;
 
-					auto linear_map = [](double x, double x0, double y0, double x1, double y1) -> double
-						{
+					auto linear_map = [](double x, double x0, double y0, double x1, double y1) -> double {
 							return (x - x0) * (y1 - y0) / (x1 - x0) + y0;
 						};
 
@@ -2961,8 +2969,6 @@ namespace gta4
 			// BLEND emissive mode
 			if (ctx.modifiers.dual_render_mode_emissive_offset)
 			{
-				//ctx.restore_render_state(dev, (D3DRENDERSTATETYPE)42); // InstanceCategories
-
 				ctx.restore_texture_stage_state(dev, D3DTSS_COLOROP);
 				ctx.restore_texture_stage_state(dev, D3DTSS_COLORARG1);
 
@@ -2970,12 +2976,10 @@ namespace gta4
 				dev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);  
 
 				//dev->SetTransform(D3DTS_WORLD, &shared::globals::IDENTITY); 
-
-				// i swear this did something at one point?!
 				D3DXMATRIX mat = *game::pCurrentWorldTransform;
-				mat.m[0][0] = 1.001f; //im->m_debug_vector2.z + 1.00f; //  1.005f
-				mat.m[1][1] = 1.001f; //im->m_debug_vector2.z + 1.00f;
-				mat.m[2][2] = 1.001f; //im->m_debug_vector2.z + 1.00f;
+				mat.m[0][0] = 0.999f;
+				mat.m[1][1] = 0.999f;
+				mat.m[2][2] = 0.999f;
 				dev->SetTransform(D3DTS_WORLD, &mat);
 
 				ctx.save_rs(dev, D3DRS_BLENDOP);
@@ -3007,9 +3011,13 @@ namespace gta4
 					set_remix_texture_hash(dev, hash);
 				}
 
-				// re-draw surface
-				//dev->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount/* - 1*/);
-				//redrew = true;
+				/*if (im->m_dbg_int_03 != -1) {
+					set_remix_texture_categories(dev, (InstanceCategories)(1 << im->m_dbg_int_03));
+				}
+
+				if (im->m_dbg_int_04 != -1) {
+					set_remix_texture_categories(dev, (InstanceCategories)(1 << im->m_dbg_int_04));
+				}*/
 			}
 
 			if (!redrew)
@@ -3033,8 +3041,8 @@ namespace gta4
 
 					dev->SetTransform(D3DTS_WORLD, &mat);
 
-					ctx.save_texture(dev, 0);
-					dev->SetTexture(0, tex_addons::veh_light_ems_glass); 
+					//ctx.save_texture(dev, 0);
+					//dev->SetTexture(0, tex_addons::veh_light_ems_glass); 
 
 					ctx.save_rs(dev, D3DRS_ALPHABLENDENABLE);
 					dev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE); 
