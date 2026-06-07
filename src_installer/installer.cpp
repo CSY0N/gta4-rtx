@@ -12,8 +12,13 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
+#include <conio.h>
 
 #pragma comment(lib, "winhttp.lib")
+
+static const char* line_pad = "  ";
+#define PAD line_pad
+#define PAD_INL "  "
 
 inline void log_red(bool highlight = false)
 {
@@ -63,7 +68,7 @@ void log_default(bool highlight = false)
 void log_error(const std::string& msg)
 {
 	log_red(true);
-	std::cout << "\n[!] " << msg << "\n";
+	std::cout << "\n" << PAD << "[!] " << msg << "\n";
 	log_default();
 }
 
@@ -506,9 +511,8 @@ bool download_file_to_path(const std::wstring& url, const std::filesystem::path&
 				float downloaded_MB = (float)total_bytes_downloaded / (1024.0f * 1024.0f);
 				
 				// Display downloaded size and speed
-				std::cout 
-					<< "\rDownloading: " << std::fixed << std::setprecision(1) 
-					<< downloaded_MB << " MB - " << speed_MBps << " MB/s    ";
+				std::cout << "\r"
+					<< PAD << "Downloading: " << std::fixed << std::setprecision(1) << downloaded_MB << " MB - " << speed_MBps << " MB/s    ";
 
 				std::cout.flush();
 				
@@ -532,9 +536,8 @@ bool download_file_to_path(const std::wstring& url, const std::filesystem::path&
 
 		float speed_MBps = speed / (1024.0f * 1024.0f);
 
-		std::cout 
-			<< "\rDownloaded: " << std::fixed << std::setprecision(1) 
-			<< downloadedMB << " MB - " << speed_MBps << " MB/s    \n";
+		std::cout << "\r"
+			<< PAD << "Downloaded: " << std::fixed << std::setprecision(1) << downloadedMB << " MB - " << speed_MBps << " MB/s    \n";
 
 		std::cout.flush();
 	}
@@ -556,7 +559,8 @@ bool extract_single_file_from_zip(const std::filesystem::path& zip_path, const s
 
 	// Find the file in the zip
 	int file_index = mz_zip_reader_locate_file(&zip, file_path_in_zip.c_str(), nullptr, 0);
-	if (file_index < 0) {
+	if (file_index < 0) 
+	{
 		mz_zip_reader_end(&zip);
 		return false;
 	}
@@ -641,22 +645,777 @@ bool extract_zip(const std::filesystem::path& zip_path, const std::string& targe
 	return result;
 }
 
-// 
-// 
+std::filesystem::path get_installer_dir()
+{
+	wchar_t buf[MAX_PATH] = { 0 };
+	GetModuleFileNameW(nullptr, buf, MAX_PATH);
+	return std::filesystem::path(buf).parent_path();
+}
+
+std::string quote_arg(const std::string& arg)
+{
+	std::string quoted = "\"";
+	for (char c : arg)
+	{
+		if (c == '"') {
+			quoted += "\\\"";
+		} else {
+			quoted += c;
+		}
+	}
+
+	quoted += "\"";
+	return quoted;
+}
+
+bool run_process(const std::string& command, const std::filesystem::path& working_dir, DWORD* exit_code = nullptr, bool capture_output = false)
+{
+	STARTUPINFOA si = {};
+	PROCESS_INFORMATION pi = {};
+	si.cb = sizeof(si);
+
+	std::string mutable_command = command;
+	std::string working_dir_str = working_dir.empty() ? "" : working_dir.string();
+	char* cwd = working_dir_str.empty() ? nullptr : working_dir_str.data();
+
+	HANDLE read_pipe = nullptr;
+	HANDLE write_pipe = nullptr;
+
+	if (capture_output)
+	{
+		SECURITY_ATTRIBUTES sa = {};
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = TRUE;
+
+		if (CreatePipe(&read_pipe, &write_pipe, &sa, 0))
+		{
+			SetHandleInformation(read_pipe, HANDLE_FLAG_INHERIT, 0);
+			si.dwFlags |= STARTF_USESTDHANDLES;
+			si.hStdOutput = write_pipe;
+			si.hStdError = write_pipe;
+			si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+		}
+		else {
+			capture_output = false;
+		}
+	}
+
+	if (!CreateProcessA(nullptr, mutable_command.data(), nullptr, nullptr, TRUE, 0, nullptr, cwd, &si, &pi))
+	{
+		if (exit_code) {
+			*exit_code = GetLastError();
+		}
+
+		if (read_pipe) {
+			CloseHandle(read_pipe);
+		}
+		if (write_pipe) {
+			CloseHandle(write_pipe);
+		}
+
+		return false;
+	}
+
+	if (capture_output)
+	{
+		// Close our copy of the write end so reads finish when the child exits
+		CloseHandle(write_pipe);
+		write_pipe = nullptr;
+
+		bool at_line_start = true;
+		char buffer[4096];
+		DWORD bytes_read = 0;
+
+		while (ReadFile(read_pipe, buffer, sizeof(buffer), &bytes_read, nullptr) && bytes_read > 0)
+		{
+			for (DWORD i = 0; i < bytes_read; i++)
+			{
+				const char c = buffer[i];
+
+				// Pad the first visible character of each line/redraw
+				if (at_line_start && c != '\n' && c != '\r') {
+					std::cout << PAD;
+					at_line_start = false;
+				}
+
+				std::cout << c;
+
+				if (c == '\n' || c == '\r') {
+					at_line_start = true;
+				}
+			}
+
+			std::cout.flush();
+		}
+
+		CloseHandle(read_pipe);
+		read_pipe = nullptr;
+	}
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+
+	DWORD code = 1;
+	GetExitCodeProcess(pi.hProcess, &code);
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+
+	if (exit_code) {
+		*exit_code = code;
+	}
+
+	return code == 0;
+}
+
+int select_console_option(const std::string& prompt, const std::vector<std::string>& options)
+{
+	if (options.empty()) {
+		return -1;
+	}
+
+	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD old_mode = 0;
+	bool restore_mode = GetConsoleMode(input, &old_mode);
+
+	if (restore_mode) {
+		SetConsoleMode(input, old_mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
+	}
+
+	log_default(true);
+	std::cout << PAD << prompt << "\n";
+	log_default(false);
+
+	CONSOLE_SCREEN_BUFFER_INFO csbi = {};
+	GetConsoleScreenBufferInfo(output, &csbi);
+	COORD start = csbi.dwCursorPosition;
+	int selected = 0;
+
+	auto render = [&]()
+	{
+		SetConsoleCursorPosition(output, start);
+
+		for (size_t i = 0; i < options.size(); i++) {
+			std::cout << PAD << " - [" << (selected == (int)i ? "x" : " ") << "] " << options[i] << "\n";
+		}
+
+		log_blue(true);
+		std::cout << "\n" << PAD << " >>> Use Up/Down and Enter to select.                      \n";
+		log_default();
+		std::cout.flush();
+	};
+
+	render();
+
+	while (true)
+	{
+		int key = _getch();
+
+		if (key == 13) {
+			break;
+		}
+
+		if (key == 224 || key == 0)
+		{
+			key = _getch();
+
+			if (key == 72) {
+				selected = (selected + (int)options.size() - 1) % (int)options.size();
+			} else if (key == 80) {
+				selected = (selected + 1) % (int)options.size();
+			}
+
+			render();
+		}
+	}
+
+	if (restore_mode) {
+		SetConsoleMode(input, old_mode);
+	}
+
+	std::cout << "\n";
+	return selected;
+}
+
+enum class DeliveryMode
+{
+	Zip,
+	Git
+};
+
+struct RemoteModConfig
+{
+	std::string display_name;
+	std::string repo_owner;
+	std::string repo_name;
+	std::string branch;
+	std::string repo_url;
+	std::string zip_url;
+	std::string zip_inner_mods_github;
+	std::string zip_inner_mods_flat;
+	std::string mod_folder_name;
+	std::string commit_file_name;
+	std::string delivery_file_name;
+	bool required = false;
+	std::string missing_prompt;
+	std::string missing_description;
+	std::string update_prompt;
+};
+
+std::filesystem::path remote_mods_dir(const std::string& game_dir) {
+	return std::filesystem::path(game_dir) / "rtx-remix" / "mods";
+}
+
+std::filesystem::path remote_mod_target_dir(const std::string& game_dir, const RemoteModConfig& config) {
+	return remote_mods_dir(game_dir) / config.mod_folder_name;
+}
+
+std::filesystem::path remote_mod_commit_file(const std::string& game_dir, const RemoteModConfig& config) {
+	return remote_mods_dir(game_dir) / config.commit_file_name;
+}
+
+std::filesystem::path remote_mod_delivery_file(const std::string& game_dir, const RemoteModConfig& config) {
+	return remote_mods_dir(game_dir) / config.delivery_file_name;
+}
+
+std::filesystem::path remote_mod_git_dir(const std::string& game_dir, const RemoteModConfig& config) {
+	return std::filesystem::path(game_dir) / "rtx-remix" / ".installer_git" / (config.repo_name + ".git");
+}
+
+bool directory_has_entries(const std::filesystem::path& dir)
+{
+	if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+		return false;
+	}
+
+	return std::filesystem::directory_iterator(dir) != std::filesystem::directory_iterator();
+}
+
+bool sparse_git_metadata_exists(const std::string& game_dir, const RemoteModConfig& config) {
+	return std::filesystem::exists(remote_mod_git_dir(game_dir, config) / "config");
+}
+
+std::string delivery_mode_to_string(DeliveryMode mode) {
+	return mode == DeliveryMode::Git ? "git" : "zip";
+}
+
+bool read_delivery_mode(const std::string& game_dir, const RemoteModConfig& config, DeliveryMode& mode)
+{
+	const std::string content = trim_whitespace(read_file_from_disk(remote_mod_delivery_file(game_dir, config).string()));
+
+	if (content == "delivery=git" || content == "git")
+	{
+		mode = DeliveryMode::Git;
+		return true;
+	}
+
+	if (content == "delivery=zip" || content == "zip")
+	{
+		mode = DeliveryMode::Zip;
+		return true;
+	}
+
+	return false;
+}
+
+bool write_delivery_mode(const std::string& game_dir, const RemoteModConfig& config, DeliveryMode mode)
+{
+	return write_file_to_disk(remote_mod_delivery_file(game_dir, config).string(), "delivery=" + delivery_mode_to_string(mode) + "\n");
+}
+
+DeliveryMode select_delivery_mode()
+{
+	const int choice = select_console_option(
+		"\n  Select how the base and optional AutoPBR mods should be installed/updated:",
+		{
+			"Use Git checkout (RECOMMENDED, only download new/modified files without redownloading everything.",
+			"Use GitHub zip downloads (Downloads the complete mod even if only a single file has changed since the installer was last run.)"
+		});
+
+	return choice == 0 ? DeliveryMode::Git : DeliveryMode::Zip;
+}
+
+bool ensure_mingit_available(std::filesystem::path& git_exe)
+{
+	const std::filesystem::path mingit_dir = get_installer_dir() / "mingit";
+	git_exe = mingit_dir / "cmd" / "git.exe";
+
+	if (std::filesystem::exists(git_exe)) {
+		return true;
+	}
+
+	static const wchar_t* mingit_url = L"https://github.com/git-for-windows/git/releases/download/v2.54.0.windows.1/MinGit-2.54.0-64-bit.zip";
+	const std::filesystem::path mingit_zip = get_installer_dir() / "MinGit-2.54.0-64-bit.zip";
+
+	log_yellow(true);
+	std::cout << "\n" << PAD << "MinGit was not found next to the installer. Downloading standalone Git ...\n";
+	log_default();
+
+	if (!download_file_to_path(mingit_url, mingit_zip))
+	{
+		log_error("Failed to download MinGit. Git install/update mode cannot continue.");
+		return false;
+	}
+
+	log_yellow(true);
+	std::cout << "\n" << PAD << "Extracting MinGit ...\n\n";
+	log_default();
+
+	try {
+		std::filesystem::create_directories(mingit_dir);
+	} catch (...)
+	{
+		log_error("Failed to create MinGit extraction folder.");
+		return false;
+	}
+
+	if (!extract_zip(mingit_zip, mingit_dir.string()))
+	{
+		log_error("Failed to extract MinGit. Git install/update mode cannot continue.");
+		return false;
+	}
+
+	if (!std::filesystem::exists(git_exe))
+	{
+		log_error("MinGit was extracted, but cmd\\git.exe was not found.");
+		return false;
+	}
+
+	return true;
+}
+
+bool run_git(const std::filesystem::path& git_exe, const std::filesystem::path& git_dir, const std::filesystem::path& work_tree, const std::string& args, DWORD* exit_code = nullptr)
+{
+	std::string command = quote_arg(git_exe.string()) +
+		" --git-dir=" + quote_arg(git_dir.string()) +
+		" --work-tree=" + quote_arg(work_tree.string()) +
+		" " + args;
+
+	return run_process(command, work_tree, exit_code, true);
+}
+
+bool git_has_head(const std::filesystem::path& git_exe, const std::filesystem::path& git_dir, const std::filesystem::path& work_tree)
+{
+	DWORD code = 1;
+	run_git(git_exe, git_dir, work_tree, "rev-parse --verify HEAD", &code);
+	return code == 0;
+}
+
+bool git_path_has_local_changes(const std::filesystem::path& git_exe, const std::filesystem::path& git_dir, const std::filesystem::path& work_tree, const std::string& sparse_path)
+{
+	DWORD code = 0;
+
+	run_git(git_exe, git_dir, work_tree, "diff --quiet -- " + quote_arg(sparse_path), &code);
+	if (code != 0) {
+		return true;
+	}
+
+	run_git(git_exe, git_dir, work_tree, "diff --cached --quiet -- " + quote_arg(sparse_path), &code);
+	return code != 0;
+}
+
+bool ensure_sparse_git_repo(const std::filesystem::path& git_exe, const std::string& game_dir, const RemoteModConfig& config)
+{
+	const std::filesystem::path work_tree = std::filesystem::path(game_dir) / "rtx-remix";
+	const std::filesystem::path git_dir = remote_mod_git_dir(game_dir, config);
+
+	try 
+	{
+		std::filesystem::create_directories(work_tree);
+		std::filesystem::create_directories(git_dir);
+		std::filesystem::create_directories(git_dir / "info");
+	} catch (...) 
+	{
+		log_error("Failed to create Git metadata folders.");
+		return false;
+	}
+
+	if (!std::filesystem::exists(git_dir / "config"))
+	{
+		std::string command = quote_arg(git_exe.string()) + " --git-dir=" + quote_arg(git_dir.string()) + " init";
+		if (!run_process(command, work_tree, nullptr, true)) 
+		{
+			log_error("Failed to initialize Git metadata for " + config.display_name + ".");
+			return false;
+		}
+	}
+
+	run_git(git_exe, git_dir, work_tree, "config core.worktree " + quote_arg(work_tree.string()));
+	run_git(git_exe, git_dir, work_tree, "config core.sparseCheckout true");
+	run_git(git_exe, git_dir, work_tree, "config core.sparseCheckoutCone false");
+
+	const std::string sparse_path = "mods/" + config.mod_folder_name;
+	if (!write_file_to_disk((git_dir / "info" / "sparse-checkout").string(), "/" + sparse_path + "/\n"))
+	{
+		log_error("Failed to write sparse checkout configuration.");
+		return false;
+	}
+
+	DWORD code = 0;
+	run_git(git_exe, git_dir, work_tree, "remote get-url origin", &code);
+
+	if (code == 0) {
+		run_git(git_exe, git_dir, work_tree, "remote set-url origin " + quote_arg(config.repo_url));
+	} else {
+		run_git(git_exe, git_dir, work_tree, "remote add origin " + quote_arg(config.repo_url));
+	}
+
+	return true;
+}
+
+bool install_or_update_git_mod(const std::string& game_dir, const RemoteModConfig& config, const std::string& latest_sha, bool replace_existing_confirmed = false)
+{
+	std::filesystem::path git_exe;
+	if (!ensure_mingit_available(git_exe)) {
+		return false;
+	}
+
+	if (!ensure_sparse_git_repo(git_exe, game_dir, config)) {
+		return false;
+	}
+
+	const std::filesystem::path work_tree = std::filesystem::path(game_dir) / "rtx-remix";
+	const std::filesystem::path git_dir = remote_mod_git_dir(game_dir, config);
+	const std::string sparse_path = "mods/" + config.mod_folder_name;
+	const std::filesystem::path target_dir = remote_mod_target_dir(game_dir, config);
+
+	bool force_update = false;
+	const bool has_head = git_has_head(git_exe, git_dir, work_tree);
+
+	if (!has_head && directory_has_entries(target_dir))
+	{
+		std::string message = config.mod_folder_name + " already exists.\n\n";
+					message += "Replace this folder so Git can manage future updates?";
+
+		const int res = replace_existing_confirmed ? IDYES : MessageBoxA(nullptr, message.c_str(), (config.display_name + " Existing Files").c_str(), MB_YESNO | MB_ICONQUESTION);
+
+		if (res != IDYES)
+		{
+			std::cout << PAD << "Skipping " << config.display_name << " Git install because existing files were kept.\n\n";
+			return false;
+		}
+
+		try {
+			std::filesystem::remove_all(target_dir);
+		} catch (...) 
+		{
+			log_error("Failed to clear existing " + config.mod_folder_name + " folder.");
+			return false;
+		}
+
+		force_update = true;
+	}
+
+	if (has_head && git_path_has_local_changes(git_exe, git_dir, work_tree, sparse_path))
+	{
+		std::string message = "Local changes were detected in " + config.mod_folder_name + ".\n\n";
+					message += "Force update and overwrite Git-managed files for this mod?";
+
+		const int res = MessageBoxA(nullptr, message.c_str(), (config.display_name + " Local Changes").c_str(), MB_YESNO | MB_ICONQUESTION);
+
+		if (res != IDYES)
+		{
+			std::cout << PAD << "Skipping " << config.display_name << " update because local changes were detected.\n\n";
+			return false;
+		}
+
+		force_update = true;
+	}
+
+	std::cout << "\n" << PAD << "Fetching " << config.display_name << " via Git sparse checkout ...\n";
+	if (!run_git(git_exe, git_dir, work_tree, "fetch --progress --depth=1 origin " + quote_arg(config.branch)))
+	{
+		log_error("Failed to fetch " + config.display_name + " from GitHub.");
+		return false;
+	}
+
+	const std::string checkout_args = std::string("checkout --progress ") + (force_update ? "-f " : "") + "-B installer FETCH_HEAD";
+	if (!run_git(git_exe, git_dir, work_tree, checkout_args))
+	{
+		std::string message = "Git could not update " + config.display_name + ".\n\n";
+					message += "Force update and overwrite Git-managed files for this mod?";
+
+		const int res = MessageBoxA(nullptr, message.c_str(), (config.display_name + " Update Failed").c_str(), MB_YESNO | MB_ICONQUESTION);
+
+		if (res != IDYES) {
+			return false;
+		}
+
+		if (!run_git(git_exe, git_dir, work_tree, "checkout --progress -f -B installer FETCH_HEAD"))
+		{
+			log_error("Force update failed for " + config.display_name + ".");
+			return false;
+		}
+	}
+
+	if (!write_file_to_disk(remote_mod_commit_file(game_dir, config).string(), latest_sha)) 
+	{
+		log_yellow(true);
+		std::cout << PAD << "[WARN] Failed to update commit file.\n\n";
+		log_default();
+	}
+
+	if (!write_delivery_mode(game_dir, config, DeliveryMode::Git)) 
+	{
+		log_yellow(true);
+		std::cout << PAD << "[WARN] Failed to write delivery marker.\n\n";
+		log_default();
+	}
+
+	log_default(true);
+	std::cout << "\n" << PAD << "> Updated " << config.display_name << " via Git.\n\n";
+	log_default(false);
+	return true;
+}
+
+bool download_and_extract_zip_mod(const std::string& game_dir, const RemoteModConfig& config, const std::string& sha)
+{
+	const std::filesystem::path mods_dir = remote_mods_dir(game_dir);
+	const std::string short_sha = get_short_sha(sha);
+	const std::filesystem::path zip_path = get_installer_dir() / (config.repo_name + "-" + short_sha + ".zip");
+
+	std::cout << "\n" << PAD << "Downloading " << config.display_name << " zip to:\n" << PAD << "> " << zip_path.string() << "\n\n";
+
+	std::wstring zip_url_w(config.zip_url.begin(), config.zip_url.end());
+	if (!download_file_to_path(zip_url_w, zip_path))
+	{
+		log_error(
+			"Download failed.\n"
+			PAD_INL "Manually download from:\n" PAD_INL + config.zip_url + "\n\n"
+			PAD_INL "Extract contents to:\n" PAD_INL + mods_dir.string());
+
+		MessageBoxA(nullptr,
+					("Failed to download " + config.display_name + ".\n\nPlease try again or proceed manually.\nCheck the console for more details.").c_str(),
+					"Error",
+					MB_ICONERROR);
+
+		return false;
+	}
+
+	log_yellow(true);
+	std::cout << "\n" << PAD << "Extracting " << config.display_name << " into rtx-remix/mods ...\n";
+	log_default();
+
+	bool ok_extract = extract_zip(zip_path, mods_dir.string(), config.zip_inner_mods_github);
+
+	if (!ok_extract) {
+		ok_extract = extract_zip(zip_path, mods_dir.string(), config.zip_inner_mods_flat);
+	}
+
+	if (!ok_extract)
+	{
+		log_error(
+			"Failed to extract " + config.display_name + ".\n"
+			PAD_INL "You can extract it manually from:\n" PAD_INL + zip_path.string() + "\n\n"
+			PAD_INL "Extract contents to:\n" PAD_INL + mods_dir.string());
+
+		MessageBoxA(nullptr,
+					("[!] Failed to extract " + config.display_name + ".\n\nCheck the console for more details.\n").c_str(),
+					"Error",
+					MB_ICONERROR);
+
+		return false;
+	}
+
+	if (!write_file_to_disk(remote_mod_commit_file(game_dir, config).string(), sha)) 
+	{
+		log_yellow(true);
+		std::cout << PAD << "[WARN] Failed to update commit file.\n\n";
+		log_default();
+	}
+
+	if (!write_delivery_mode(game_dir, config, DeliveryMode::Zip)) 
+	{
+		log_yellow(true);
+		std::cout << PAD << "[WARN] Failed to write delivery marker.\n\n";
+		log_default();
+	}
+
+	std::cout << PAD << "> Done!\n\n";
+	return true;
+}
+
+bool install_or_update_remote_mod(const std::string& game_dir, const RemoteModConfig& config, DeliveryMode selected_mode, bool selected_mode_valid)
+{
+	const std::filesystem::path mods_dir = remote_mods_dir(game_dir);
+	const std::filesystem::path commit_file = remote_mod_commit_file(game_dir, config);
+	const std::filesystem::path target_dir = remote_mod_target_dir(game_dir, config);
+
+	try {
+		std::filesystem::create_directories(mods_dir);
+	} catch (...) 
+	{
+		log_error("Failed to create rtx-remix\\mods.");
+		return false;
+	}
+
+	log_default(true);
+	std::cout << "\n" << PAD << "----------- " << config.display_name << " ----------------------------------------------- \n";
+	log_default(false);
+
+	DeliveryMode mode = selected_mode;
+	if (!selected_mode_valid && !read_delivery_mode(game_dir, config, mode)) {
+		mode = select_delivery_mode();
+	}
+
+	if (const bool commit_file_exists = std::filesystem::exists(commit_file) && std::filesystem::is_regular_file(commit_file); 
+		!commit_file_exists)
+	{
+		log_blue(true);
+		std::cout << PAD << config.missing_prompt << "\n";
+		log_default();
+
+		std::cout
+			<< PAD << config.missing_description << "\n\n"
+			<< PAD << "Repo:\n" << PAD << "> " << config.repo_url << "\n\n"
+			<< PAD << "This will install into:\n" << PAD << "> " << target_dir.string() << "\n";
+
+		const int user_choice = MessageBoxA(nullptr, config.missing_prompt.c_str(), config.display_name.c_str(), MB_YESNO | MB_ICONQUESTION);
+		if (user_choice != IDYES)
+		{
+			if (config.required)
+			{
+				MessageBoxA(nullptr,
+							"The base-remix-mod is required for the game to function properly.\n\n"
+							"Make sure to install it via the installer or manually.",
+							"(See release notes on GitHub)",
+							MB_OK);
+			} else {
+				std::cout << PAD << "Skipping " << config.display_name << " installation.\n\n";
+			}
+
+			return false;
+		}
+
+		std::cout << PAD << "Fetching latest commit SHA from GitHub...\n\n";
+		const auto latest_sha = get_latest_github_commit_sha(config.repo_owner, config.repo_name, config.branch);
+
+		if (latest_sha.empty())
+		{
+			log_error("Failed to fetch commit SHA from GitHub. Network error or API failure.");
+			return false;
+		}
+
+		if (mode == DeliveryMode::Git) {
+			return install_or_update_git_mod(game_dir, config, latest_sha);
+		}
+
+		return download_and_extract_zip_mod(game_dir, config, latest_sha);
+	}
+
+	// Offer to migrate an existing zip install to Git management
+	bool convert_zip_to_git = false;
+	if (mode == DeliveryMode::Zip)
+	{
+		const int convert_choice = MessageBoxA(nullptr,
+			(config.display_name + " is currently installed via zip download.\n\n"
+			"Convert it to be Git-managed so future updates only download changed files?").c_str(),
+			(config.display_name + " - Convert to Git").c_str(),
+			MB_YESNO | MB_ICONQUESTION);
+
+		if (convert_choice == IDYES)
+		{
+			mode = DeliveryMode::Git;
+			convert_zip_to_git = true;
+			std::cout << PAD << "Converting " << config.display_name << " to Git management ...\n";
+		}
+	}
+
+	std::cout << "\n" << PAD << "Checking latest " << config.repo_name << " commit SHA...\n";
+	int comparison = compare_commit_sha(commit_file.string(), config.repo_owner, config.repo_name, config.branch);
+
+	if (comparison == 0)
+	{
+		std::cout << PAD << "Installed " << config.display_name << " matches GitHub (up to date).\n";
+
+		if (mode == DeliveryMode::Git &&
+			(!sparse_git_metadata_exists(game_dir, config) || !std::filesystem::exists(target_dir)))
+		{
+			const std::string latest_sha = trim_whitespace(read_file_from_disk(commit_file.string()));
+			if (!latest_sha.empty()) {
+				return install_or_update_git_mod(game_dir, config, latest_sha, convert_zip_to_git);
+			}
+		}
+
+		write_delivery_mode(game_dir, config, mode);
+		return true;
+	}
+
+	if (comparison == -2)
+	{
+		log_yellow(true);
+		std::cout << PAD << "[WARN] Could not check " << config.display_name << " commit SHA (network error or file issue).\n\n";
+		log_default();
+		return false;
+	}
+
+	std::string local_sha = trim_whitespace(read_file_from_disk(commit_file.string()));
+	std::string latest_sha = get_latest_github_commit_sha(config.repo_owner, config.repo_name, config.branch);
+
+	if (latest_sha.empty())
+	{
+		log_yellow(true);
+		std::cout << PAD << "[WARN] Could not fetch latest commit SHA for comparison.\n\n";
+		log_default();
+		return false;
+	}
+
+	std::cout << "\n"
+		<< PAD << "A newer version of the " << config.repo_name << " is available on GitHub.\n"
+		<< PAD << "Current commit: " + (local_sha.empty() ? "Unknown" : local_sha) + "\n"
+		<< PAD << "Latest commit: " + latest_sha + "\n"
+		<< PAD << "Repo: " + config.repo_url + "\n\n";
+
+	const int user_choice = MessageBoxA(nullptr, config.update_prompt.c_str(), (config.display_name + " Update Available").c_str(), MB_YESNO | MB_ICONQUESTION);
+	if (user_choice != IDYES)
+	{
+		std::cout << PAD << "Skipping " << config.display_name << " update.\n\n";
+		return true;
+	}
+
+	if (mode == DeliveryMode::Git) {
+		return install_or_update_git_mod(game_dir, config, latest_sha, convert_zip_to_git);
+	}
+
+	return download_and_extract_zip_mod(game_dir, config, latest_sha);
+}
+
+void setup_console_window()
+{
+	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO info = {};
+
+	if (!GetConsoleScreenBufferInfo(output, &info)) {
+		return;
+	}
+
+	const SHORT width = 146;
+	const SHORT height = 40;
+	const SHORT buffer_height = std::max<SHORT>(height, info.dwSize.Y);
+
+	SMALL_RECT small_window = { 0, 0, 1, 1 };
+	SetConsoleWindowInfo(output, TRUE, &small_window);
+
+	COORD buffer_size = { width, buffer_height };
+	SetConsoleScreenBufferSize(output, buffer_size);
+
+	SMALL_RECT window = { 0, 0, width - 1, height - 1 };
+	SetConsoleWindowInfo(output, TRUE, &window);
+}
 
 int main()
 {
-	std::cout << "\n" << std::setw(2);
-	Sleep(200);
-	
-	
-	log_default(true);
-	std::cout << "Grand Theft Auto IV - RTX Remix Compatibility Mod Installer (github.com/xoxor4d/gta4-rtx)\n";
-	log_default();
-	std::cout << "- Make sure that you've placed both the installer and the 'GTAIV-Remix-CompatibilityMod-X.X.X.zip' into the same folder.\n";
-	std::cout << "- If installation fails, refer to the release page on GitHub for manual install instructions.\n\n";
+	setup_console_window();
 
-	std::cout << "Select your GTAIV.exe inside the GTAIV directory to continue ...\n";
+	std::cout << "\n";
+	Sleep(200);
+
+	log_default(true);
+	std::cout << PAD << "Grand Theft Auto IV - RTX Remix Compatibility Mod Installer (github.com/xoxor4d/gta4-rtx)\n";
+	log_default();
+	std::cout << PAD << "- Make sure you've placed both the installer and the 'GTAIV-Remix-CompatibilityMod-X.X.X.zip' into the same folder.\n";
+	std::cout << PAD << "- If installation fails, refer to the release page on GitHub for manual install instructions.\n\n\n";
+
+	std::cout << PAD << "Select your GTAIV.exe inside the GTAIV directory to continue ...\n";
 	Sleep(500);
 
 	// select GTAIV.exe
@@ -677,81 +1436,88 @@ int main()
 		return 1;
 	}
 	
-	std::cout << "> Using Path: '" << game_dir << "'\n\n";
-	
-	// Find zip file first (needed for version comparison)
-	static const wchar_t* zip_prefix = L"GTAIV-Remix-CompatibilityMod";
-	static const std::string zip_prefix_str = "GTAIV-Remix-CompatibilityMod";
-	std::filesystem::path found_zip;
+	std::cout << PAD << "> Using Path: '" << game_dir << "'\n\n\n";
 
-	auto installer_path = []()
-		{
-			wchar_t buf[MAX_PATH] = { 0 };
-			GetModuleFileNameW(nullptr, buf, MAX_PATH);
-			return std::filesystem::path(buf).parent_path();
-		};
+	bool has_remix_comp_mod = file_exists(game_dir + "\\d3d9.dll") &&
+		file_exists(game_dir + "\\a_gta4-rtx.asi");
 
-	// Collect all matching zip files with their versions
-	std::vector<std::pair<std::filesystem::path, std::vector<int>>> zip_candidates;
-
-	for (const auto& entry : std::filesystem::directory_iterator(installer_path()))
+	bool update_remote_mods_only = false;
+	if (has_remix_comp_mod)
 	{
-		if (!entry.is_regular_file()) {
-			continue;
-		}
-
-		const auto& p = entry.path();
-		if (p.extension() == L".zip" && p.stem().wstring().starts_with(zip_prefix))
-		{
-			// Extract version from filename: GTAIV-Remix-CompatibilityMod-X.Y.Z.zip
-			std::string stem = p.stem().string();
-			std::string version_str;
-			
-			if (stem.length() > zip_prefix_str.length()) 
+		const int reinstall_choice = select_console_option(
+			"RTX Remix Compatibility Mod was already detected. What do you want to do?",
 			{
-				// Skip the prefix and any leading dash
-				version_str = stem.substr(zip_prefix_str.length());
-				if (!version_str.empty() && version_str[0] == '-') {
-					version_str = version_str.substr(1);
-				}
-			}
-			
-			std::vector<int> version = parse_version(version_str);
-			zip_candidates.push_back({p, version});
-		}
+				"Full reinstall/update of the compatibility mod, base mod, and optional AutoPBR mod",
+				"Only check for updates for the base remix mod and optional AutoPBR mod"
+			});
+
+		update_remote_mods_only = reinstall_choice == 1;
 	}
 
-	// Find the zip with the highest version
-	if (!zip_candidates.empty())
-	{
-		found_zip = zip_candidates[0].first;
-		std::vector<int> best_version = zip_candidates[0].second;
-		
-		for (size_t i = 1; i < zip_candidates.size(); i++) 
-		{
-			if (version_greater_than(zip_candidates[i].second, best_version)) 
-			{
-				found_zip = zip_candidates[i].first;
-				best_version = zip_candidates[i].second;
-			}
-		}
-		
-		std::cout << "> Found compatibility mod: " << found_zip.filename().string() << "\n";
-	}
-
-	bool skip_rtx_comp_install = false;
-	if (found_zip.empty()) 
-	{
-		log_error("Could not find any zip starting with 'GTAIV-Remix-CompatibilityMod'.");
-		std::cout << "Installation might be incomplete. Download and place the .zip next to the installer or install manually.\n";
-		std::cout << "Checking for Remix Base Mod updates ...\n\n";
-		skip_rtx_comp_install = true;
-	}
-	
-	bool has_remix_comp_mod = false;
-
+	bool skip_rtx_comp_install = update_remote_mods_only;
 	if (!skip_rtx_comp_install)
 	{
+		// Find zip file first (needed for version comparison)
+		static const wchar_t* zip_prefix = L"GTAIV-Remix-CompatibilityMod";
+		static const std::string zip_prefix_str = "GTAIV-Remix-CompatibilityMod";
+		std::filesystem::path found_zip;
+
+		// Collect all matching zip files with their versions
+		std::vector<std::pair<std::filesystem::path, std::vector<int>>> zip_candidates;
+
+		for (const auto& entry : std::filesystem::directory_iterator(get_installer_dir()))
+		{
+			if (!entry.is_regular_file()) {
+				continue;
+			}
+
+			const auto& p = entry.path();
+			if (p.extension() == L".zip" && p.stem().wstring().starts_with(zip_prefix))
+			{
+				// Extract version from filename: GTAIV-Remix-CompatibilityMod-X.Y.Z.zip
+				std::string stem = p.stem().string();
+				std::string version_str;
+
+				if (stem.length() > zip_prefix_str.length())
+				{
+					// Skip the prefix and any leading dash
+					version_str = stem.substr(zip_prefix_str.length());
+					if (!version_str.empty() && version_str[0] == '-') {
+						version_str = version_str.substr(1);
+					}
+				}
+
+				std::vector<int> version = parse_version(version_str);
+				zip_candidates.push_back({ p, version });
+			}
+		}
+
+		// Find the zip with the highest version
+		if (!zip_candidates.empty())
+		{
+			found_zip = zip_candidates[0].first;
+			std::vector<int> best_version = zip_candidates[0].second;
+
+			for (size_t i = 1; i < zip_candidates.size(); i++)
+			{
+				if (version_greater_than(zip_candidates[i].second, best_version))
+				{
+					found_zip = zip_candidates[i].first;
+					best_version = zip_candidates[i].second;
+				}
+			}
+
+			std::cout << "Using compatibility mod zip: " << found_zip.filename().string() << "\n";
+		}
+
+		if (found_zip.empty())
+		{
+			log_error("Could not find any zip starting with 'GTAIV-Remix-CompatibilityMod'.");
+			std::cout << PAD << "Installation might be incomplete. Download and place the .zip next to the installer or install manually.\n";
+			std::cout << PAD << "Checking for Remix Base Mod updates ...\n\n";
+			skip_rtx_comp_install = true;
+		}
+
 		// Validate zip file exists and is readable
 		if (!std::filesystem::exists(found_zip) || !std::filesystem::is_regular_file(found_zip))
 		{
@@ -760,7 +1526,7 @@ int main()
 			return 1;
 		}
 
-		std::cout << "Checking for FusionFix presence ...\n";
+		std::cout << PAD << "Checking for FusionFix presence ...\n";
 		Sleep(500);
 
 
@@ -779,7 +1545,7 @@ int main()
 		const bool has_rtxremix_fusionfix_marker = file_exists(game_dir + "\\plugins\\GTAIV.EFLC.FusionFix.RTXRemix.txt");
 
 		if (has_remix_comp_mod) {
-			std::cout << "> Detected another version of the RTX Remix Compatibility Mod. Updating ... \n";
+			std::cout << PAD << "> Detected another version of the RTX Remix Compatibility Mod. Updating ... \n";
 		}
 
 		bool opt_install_fusion_fix_fork = false;
@@ -807,28 +1573,12 @@ int main()
 			{
 				// Versions match, skip update
 				opt_install_fusion_fix_fork = false;
-				std::cout << "> RTXRemix FusionFix fork is up to date (version: " << existing_version << "). Skipping update.\n\n";
+				std::cout << PAD << "> RTXRemix FusionFix fork is up to date (version: " << existing_version << "). Skipping update.\n\n";
 			}
 			else
 			{
-				// Versions differ, ask user if they want to update
-				/*std::string message = "A newer version of the RTXRemix FusionFix fork is available.\n\n";
-				message += "Current version: " + (existing_version.empty() ? "Unknown" : existing_version) + "\n";
-				message += "New version: " + (zip_version.empty() ? "Unknown" : zip_version) + "\n\n";
-				message += "Do you want to update?";
-
-				const auto res = MessageBoxA(nullptr, message.c_str(), "FusionFix Update", MB_YESNO | MB_ICONQUESTION);
-				opt_install_fusion_fix_fork = (res == IDYES);*/
 				opt_install_fusion_fix_fork = true; 
-				//if (opt_install_fusion_fix_fork) {
-					std::cout << "> Updating RTXRemix FusionFix fork from " << existing_version << " to " << zip_version << ".\n\n";
-				//}
-				/*else
-				{
-					log_yellow(true);
-					std::cout << "> Skipping RTXRemix FusionFix fork update.\n\n";
-					log_default();
-				}*/
+				std::cout << PAD << "> Updating RTXRemix FusionFix fork from " << existing_version << " to " << zip_version << ".\n\n";
 			}
 		}
 		else if (has_original_fusion_fix)
@@ -839,7 +1589,7 @@ int main()
 			if (!opt_install_fusion_fix_fork) {
 				log_error("Not replacing installed FusionFix version. This might lead to issues.\n");
 			} else {
-				std::cout << "Installing RTXRemix FusionFix Fork.\n\n";
+				std::cout << PAD << "Installing RTXRemix FusionFix Fork.\n\n";
 			}
 		}
 		else
@@ -857,7 +1607,7 @@ int main()
 				if (extract_single_file_from_zip(found_zip, "_installer_options/FusionFix_RTXRemixFork/plugins/GTAIV.EFLC.FusionFix.RTXRemix.txt", marker_path))
 				{
 					log_blue(true);
-					std::cout << "Extracted RTXRemix FusionFix marker file.\n\n";
+					std::cout << PAD << "Extracted RTXRemix FusionFix marker file.\n\n";
 					log_default();
 				}
 				else
@@ -874,7 +1624,7 @@ int main()
 			{
 				const auto res = MessageBoxA(nullptr, "Install FusionFix fork specifically tailored for RTX Remix? (Recommended)", "FusionFix", MB_YESNO | MB_ICONQUESTION);
 				opt_install_fusion_fix_fork = res == IDYES;
-				std::cout << (opt_install_fusion_fix_fork ? "Installing FusionFix RTXRemix Fork." : "Not installing FusionFix RTXRemix Fork.") << "\n\n";
+				std::cout << PAD << (opt_install_fusion_fix_fork ? "Installing FusionFix RTXRemix Fork." : "Not installing FusionFix RTXRemix Fork.") << "\n\n";
 			}
 		}
 
@@ -884,12 +1634,17 @@ int main()
 		// Only ask about display mode and Steam args if this is a fresh install (a_gta4-rtx.asi doesn't exist)
 		if (!has_remix_comp_mod)
 		{
-			if (const auto res = MessageBoxA(nullptr, "Setup GTA IV to run in fullscreen/borderless mode?\n(Choose No if you want to run the game in windowed mode)", "Display mode", MB_YESNO | MB_ICONQUESTION))
+			if (const auto res = MessageBoxA(nullptr, "Setup GTA IV to run in fullscreen-borderless mode?\n(Choose No if you want to run the game in windowed mode)", "Display mode", MB_YESNO | MB_ICONQUESTION))
 			{
 				if (res == IDNO) {
 					fullscreen = false;
-				} else {
-					std::cout << "If you are having trouble with launching the game in fullscreen:\n> Go into 'rtx_comp/game_settings.toml'\n> Set 'manual_game_resolution_enabled' to 'true'\n> Set your desired resolution via 'manual_game_resolution'\n\n";
+				} else 
+				{
+					std::cout  
+						<< PAD << "If you are having trouble with launching the game in fullscreen:\n"
+						<< PAD << "> Go into 'rtx_comp/game_settings.toml'\n"
+						<< PAD << "> Set 'manual_game_resolution_enabled' to 'true'\n"
+						<< PAD << "> Set your desired resolution via 'manual_game_resolution'\n\n";
 				}
 			}
 
@@ -904,7 +1659,7 @@ int main()
 			(game_dir + "\\rtx_comp\\comp_settings.toml.bak").c_str(),
 			MOVEFILE_REPLACE_EXISTING))
 		{
-			std::cout << "Renamed 'comp_settings.toml' to 'comp_settings.toml.bak'\n";
+			std::cout << PAD << "Renamed 'comp_settings.toml' to 'comp_settings.toml.bak'\n";
 		}
 		Sleep(25);
 
@@ -912,14 +1667,14 @@ int main()
 			(game_dir + "\\rtx.conf").c_str(),
 			(game_dir + "\\rtx.conf.bak").c_str(), MOVEFILE_REPLACE_EXISTING))
 		{
-			std::cout << "Renamed 'rtx.conf' to 'rtx.conf.bak'\n";
+			std::cout << PAD << "Renamed 'rtx.conf' to 'rtx.conf.bak'\n";
 		}
 		Sleep(25);
 
 		// extract comp files
 
 		log_yellow(true);
-		std::cout << "Extracting zip ...\n";
+		std::cout << "\n" << PAD << "Extracting compatibility zip ...\n";
 		log_default();
 
 		Sleep(100); // Small delay before extraction
@@ -928,13 +1683,13 @@ int main()
 		{
 			log_error(
 				"Failed to extract 'GTAIV-Remix-CompatibilityMod' files from 'GTAIV-Remix-CompatibilityMod.zip'\n"
-				"> Please extract files manually.");
+				PAD_INL "> Please extract files manually.");
 
 			MessageBoxA(nullptr, "Something went wrong.\nCheck console.", "Error", MB_ICONERROR);
 			//return 0;
 		}
 
-		std::cout << "> Done!\n";
+		std::cout << PAD << "> Done!\n";
 
 		Sleep(100); // Small delay between extractions
 
@@ -1009,422 +1764,60 @@ int main()
 		}
 	}
 
+	std::cout << "\n" << PAD << "Proceeding with remix mods ...\n";
+
 	// --------------
 	// Base Remix Mod
 
+	const RemoteModConfig base_mod = 
 	{
-		static const char* base_mod_repo_owner = "xoxor4d";
-		static const char* base_mod_repo_name = "gta4-rtx-base-mod";
-		static const char* base_mod_branch = "master";
-		static const char* base_mod_repo_url = "https://github.com/xoxor4d/gta4-rtx-base-mod";
-		static const char* base_mod_zip_url = "https://github.com/xoxor4d/gta4-rtx-base-mod/archive/refs/heads/master.zip";
-		static const char* base_mod_zip_inner_mods_github = "gta4-rtx-base-mod-master/mods";
-		static const char* base_mod_zip_inner_mods_flat = "mods";
-		
-		auto get_installer_dir = []()
-		{
-			wchar_t buf[MAX_PATH] = { 0 };
-			GetModuleFileNameW(nullptr, buf, MAX_PATH);
-			return std::filesystem::path(buf).parent_path();
-		};
-		
-		const std::filesystem::path mods_dir = std::filesystem::path(game_dir) / "rtx-remix" / "mods";
-		const std::filesystem::path commit_file = mods_dir / "gta4rtx_commit.txt";
-		const std::string commit_file_str = commit_file.string();
-		
-		// Ensure mods directory exists
-		std::filesystem::create_directories(mods_dir);
+		"Base Remix-Mod",
+		"xoxor4d",
+		"gta4-rtx-base-mod",
+		"master",
+		"https://github.com/xoxor4d/gta4-rtx-base-mod",
+		"https://github.com/xoxor4d/gta4-rtx-base-mod/archive/refs/heads/master.zip",
+		"gta4-rtx-base-mod-master/mods",
+		"mods",
+		"gta4rtx",
+		"gta4rtx_commit.txt",
+		"gta4rtx_delivery.txt",
+		true,
+		"Required: Download and extract the base remix-mod? You can skip this if you've installed it manually.",
+		"It contains actual remix replacements such as PBR textures, mesh fixes etc.\n" PAD_INL "Download size: ~1GB",
+		"A newer version of the base remix mod is available on GitHub.\n\n" PAD_INL "Would you like to update?"
+	};
 
-		// Helper function to download and extract base mod with SHA-based naming
-		auto download_and_extract_base_mod = [&](const std::string& sha) -> bool
-		{
-			const std::string short_sha = get_short_sha(sha);
-			const std::filesystem::path base_zip_path = get_installer_dir() / ("gta4-rtx-base-mod-" + short_sha + ".zip");
+	const RemoteModConfig autopbr_mod = 
+	{
+		"AutoPBR Remix-Mod",
+		"xoxor4d",
+		"gta4-rtx-autopbr-mod",
+		"master",
+		"https://github.com/xoxor4d/gta4-rtx-autopbr-mod",
+		"https://github.com/xoxor4d/gta4-rtx-autopbr-mod/archive/refs/heads/master.zip",
+		"gta4-rtx-autopbr-mod-master/mods",
+		"mods",
+		"z_gta4rtx_autopbr",
+		"gta4rtx_autopbr_commit.txt",
+		"gta4rtx_autopbr_delivery.txt",
+		false,
+		"Optional: Download and extract the AutoPBR remix-mod?\n" PAD_INL "You can skip this if you're not interested or if you've installed it manually.",
+		"It contains ~18k automatically converted PBR materials.\n" PAD_INL "Download size: ~1GB",
+		"A newer version of the AutoPBR mod is available on GitHub.\n\n" PAD_INL "Would you like to update?"
+	};
 
-			// Download the zip
-			std::cout << "\nDownloading base mod zip to:\n> " << base_zip_path.string() << "\n\n";
+	bool has_selected_delivery_mode = false;
+	DeliveryMode selected_delivery_mode = DeliveryMode::Zip;
 
-			// Convert char* to wstring
-			std::string zip_url_str(base_mod_zip_url);
-			std::wstring zip_url_w(zip_url_str.begin(), zip_url_str.end());
-
-			if (!download_file_to_path(zip_url_w, base_zip_path))
-			{
-				log_error(
-					"Download failed.\n"
-					"Manually download from:\n" + std::string(base_mod_zip_url) + "\n"
-					"Or from a mirror found in the release notes on GitHub.\n\n"
-					"Extract contents to:\n" + mods_dir.string());
-				
-				MessageBoxA(nullptr,
-							"Failed to download base remix-mod.\n\n"
-							"Please try again or proceed manually.\n"
-							"Check the console for more details.",
-							"Error",
-							MB_ICONERROR);
-
-				return false;
-			}
-			
-			// Extract the mods folder
-			log_yellow(true);
-			std::cout << "\nExtracting base mod into rtx-remix/mods ...\n";
-			log_default();
-			bool ok_extract = extract_zip(base_zip_path, mods_dir.string(), base_mod_zip_inner_mods_github);
-
-			if (!ok_extract) { // Fallback for archives that have 'mods/...' at the root
-				ok_extract = extract_zip(base_zip_path, mods_dir.string(), base_mod_zip_inner_mods_flat);
-			}
-			
-			if (!ok_extract) 
-			{
-				log_error(
-					"Failed to extract base remix-mod.\n"
-					"You can extract it manually from:\n" + base_zip_path.string() + "\n\n"
-					"Extract contents to:\n" + mods_dir.string());
-
-				MessageBoxA(nullptr,
-							"[!] Failed to extract base remix-mod.\n\nCheck the console for more details.\n",
-							"Error",
-							MB_ICONERROR);
-
-				return false;
-			}
-
-			return true;
-		};
-
-		// Check if commit file exists
-		const bool commit_file_exists = std::filesystem::exists(commit_file) && std::filesystem::is_regular_file(commit_file);
-		if (!commit_file_exists) 
-		{
-			log_blue(true);
-			std::cout << "\n\nRequired: Download and extract the base remix-mod? You can skip this if you installed it manually.\n";
-			log_default();
-
-			// Print full info (including links) to console so the user can copy them
-			std::cout
-				<< "This contains actual remix replacements such as PBR textures, mesh fixes etc.\n\n"
-				<< "Direct zip link:\n> " << base_mod_zip_url << "\n\n"
-				<< "Repo:\n> " << base_mod_repo_url << "\n\n"
-				<< "This will place the downloaded zip next to the installer, then extract the 'mods' folder into:\n> "
-				<< mods_dir.string() << "\n";
-
-			const int user_choice = MessageBoxA(nullptr, "Required: Download and extract the base remix-mod?", "Base Remix-Mod", MB_YESNO | MB_ICONQUESTION);
-			
-			if (user_choice != IDYES) 
-			{
-				MessageBoxA(nullptr,
-							"The base-remix-mod is required for the game to function properly.\n\n"
-							"Make sure to install it via the installer or manually.",
-							"(See release notes on GitHub)",
-							MB_OK);
-
-				//return 0;
-			}
-			else
-			{
-				// Fetch SHA first so we can name the zip file
-				std::cout << "Fetching latest commit SHA from GitHub...\n";
-				const auto latest_sha = get_latest_github_commit_sha(base_mod_repo_owner, base_mod_repo_name, base_mod_branch);
-
-				if (latest_sha.empty())
-				{
-					log_error("Failed to fetch commit SHA from GitHub. Network error or API failure.");
-					MessageBoxA(nullptr, "Failed to fetch commit information from GitHub.\nPlease check your internet connection.", "Error", MB_ICONERROR);
-					return 0;
-				}
-
-				// Download and extract
-				if (!download_and_extract_base_mod(latest_sha)) {
-					return 0;
-				}
-
-				std::cout << "> Done!\n\n";
-
-				// Save the commit SHA
-				if (write_file_to_disk(commit_file_str, latest_sha))
-				{
-					std::cout << "Saved commit SHA: " << latest_sha << "\n";
-					std::cout << "Commit file saved to: " << commit_file_str << "\n";
-				}
-				else
-				{
-					log_yellow(true);
-					std::cout << "[WARN] Failed to save commit file to: " << commit_file_str << "\n";
-					log_default();
-				}
-			}
-		} 
-		else // commit_file_exists
-		{
-			// File exists, compare with GitHub
-			std::cout << "\nChecking latest gta4-rtx-base-mod commit SHA...\n";
-			int comparison = compare_commit_sha(commit_file_str, base_mod_repo_owner, base_mod_repo_name, base_mod_branch);
-			
-			if (comparison == 0) {
-				std::cout << "Installed base-mod matches GitHub (up to date).\n";
-			} 
-			else if (comparison == 1) 
-			{
-				std::string local_sha = trim_whitespace(read_file_from_disk(commit_file_str));
-				std::string latest_sha = get_latest_github_commit_sha(base_mod_repo_owner, base_mod_repo_name, base_mod_branch);
-				
-				if (!latest_sha.empty()) 
-				{
-					std::cout
-						<< "\nA newer version of the gta4-rtx-base-mod is available on GitHub.\n"
-						<< "Current commit: " + (local_sha.empty() ? "Unknown" : local_sha) + "\n"
-						<< "Latest commit: " + latest_sha + "\n"
-						<< "Repo: " + std::string(base_mod_repo_url) + "\n\n";
-
-					const int user_choice = MessageBoxA(nullptr, "A newer version of the base mod is available on GitHub.\nWould you like to update?", "Base Mod Update Available", MB_YESNO | MB_ICONQUESTION);
-					if (user_choice == IDYES) 
-					{
-						// Download and extract the update
-						if (download_and_extract_base_mod(latest_sha))
-						{
-							// Only update commit file after successful download and extraction
-							if (write_file_to_disk(commit_file_str, latest_sha)) {
-								std::cout << "Updated commit SHA to: " << latest_sha << "\n\n";
-							} else 
-								{
-								log_yellow(true);
-								std::cout << "[WARN] Failed to update commit file.\n\n";
-								log_default();
-							}
-						}
-					} else {
-						std::cout << "Skipping base mod update.\n\n";
-					}
-				} 
-				else 
-				{
-					log_yellow(true);
-					std::cout << "[WARN] Could not fetch latest commit SHA for comparison.\n\n";
-					log_default();
-				}
-			} 
-			else if (comparison == -2) 
-			{
-				log_yellow(true);
-				std::cout << "[WARN] Could not check commit SHA (network error or file issue).\n\n";
-				log_default();
-			}
-		}
+	if (!read_delivery_mode(game_dir, base_mod, selected_delivery_mode)) 
+	{
+		selected_delivery_mode = select_delivery_mode();
+		has_selected_delivery_mode = true;
 	}
 
-	// --------------
-	// AutoPBR Remix Mod (Optional)
-
-	{
-		static const char* autopbr_mod_repo_owner = "xoxor4d";
-		static const char* autopbr_mod_repo_name = "gta4-rtx-autopbr-mod";
-		static const char* autopbr_mod_branch = "master";
-		static const char* autopbr_mod_repo_url = "https://github.com/xoxor4d/gta4-rtx-autopbr-mod";
-		static const char* autopbr_mod_zip_url = "https://github.com/xoxor4d/gta4-rtx-autopbr-mod/archive/refs/heads/master.zip";
-		static const char* autopbr_mod_zip_inner_mods_github = "gta4-rtx-autopbr-mod-master/mods";
-		static const char* autopbr_mod_zip_inner_mods_flat = "mods";
-		
-		auto get_installer_dir = []()
-		{
-			wchar_t buf[MAX_PATH] = { 0 };
-			GetModuleFileNameW(nullptr, buf, MAX_PATH);
-			return std::filesystem::path(buf).parent_path();
-		};
-		
-		const std::filesystem::path mods_dir = std::filesystem::path(game_dir) / "rtx-remix" / "mods";
-		const std::filesystem::path commit_file = mods_dir / "gta4rtx_autopbr_commit.txt";
-		const std::string commit_file_str = commit_file.string();
-		
-		// Ensure mods directory exists
-		std::filesystem::create_directories(mods_dir);
-
-		// Helper function to download and extract autopbr mod with SHA-based naming
-		auto download_and_extract_autopbr_mod = [&](const std::string& sha) -> bool
-		{
-			const std::string short_sha = get_short_sha(sha);
-			const std::filesystem::path autopbr_zip_path = get_installer_dir() / ("gta4-rtx-autopbr-mod-" + short_sha + ".zip");
-
-			// Download the zip
-			std::cout << "\nDownloading AutoPBR mod zip to:\n> " << autopbr_zip_path.string() << "\n\n";
-
-			// Convert char* to wstring
-			std::string zip_url_str(autopbr_mod_zip_url);
-			std::wstring zip_url_w(zip_url_str.begin(), zip_url_str.end());
-
-			if (!download_file_to_path(zip_url_w, autopbr_zip_path))
-			{
-				log_error(
-					"Download failed.\n"
-					"Manually download:\n" + std::string(autopbr_mod_zip_url) + "\n"
-					"Or from a mirror found in the release notes on GitHub.\n\n"
-					"Extract contents to:\n" + mods_dir.string());
-				
-				MessageBoxA(nullptr,
-							"Failed to download AutoPBR remix-mod.\n\n"
-							"Please try again or proceed manually.\n"
-							"Check the console for more details.",
-							"Error",
-							MB_ICONERROR);
-
-				return false;
-			}
-			
-			// Extract the mods folder
-			log_yellow(true);
-			std::cout << "\nExtracting AutoPBR mod into rtx-remix/mods ...\n";
-			log_default();
-			bool ok_extract = extract_zip(autopbr_zip_path, mods_dir.string(), autopbr_mod_zip_inner_mods_github);
-
-			if (!ok_extract) { // Fallback for archives that have 'mods/...' at the root
-				ok_extract = extract_zip(autopbr_zip_path, mods_dir.string(), autopbr_mod_zip_inner_mods_flat);
-			}
-			
-			if (!ok_extract) 
-			{
-				log_error(
-					"Failed to extract AutoPBR remix-mod.\n"
-					"You can extract it manually from:\n" + autopbr_zip_path.string() + "\n\n"
-					"Extract contents to:\n" + mods_dir.string());
-
-				MessageBoxA(nullptr,
-							"[!] Failed to extract AutoPBR remix-mod.\n\nCheck the console for more details.\n",
-							"Error",
-							MB_ICONERROR);
-
-				return false;
-			}
-
-			return true;
-		};
-
-		// Check if commit file exists
-		const bool commit_file_exists = std::filesystem::exists(commit_file) && std::filesystem::is_regular_file(commit_file);
-		if (!commit_file_exists) 
-		{
-			log_blue(true);
-			std::cout << "\n\nOptional: Download and extract the AutoPBR remix-mod?\n";
-			log_default();
-
-			// Print full info (including links) to console so the user can copy them
-			std::cout
-				<< "This contains automatically converted PBR materials for textures.\n"
-				<< "Download size: ~1.5 GB\n\n"
-				<< "Direct zip link:\n> " << autopbr_mod_zip_url << "\n\n"
-				<< "Repo:\n> " << autopbr_mod_repo_url << "\n\n"
-				<< "This will place the downloaded zip next to the installer, then extract the 'mods' folder into:\n> "
-				<< mods_dir.string() << "\n";
-
-			const int user_choice = MessageBoxA(nullptr, 
-				"Optional: Download and extract the AutoPBR remix-mod?\n\n"
-				"This contains automatically converted PBR materials for textures.\n\n"
-				"Download size: ~1.5 GB", 
-				"AutoPBR Remix-Mod", MB_YESNO | MB_ICONQUESTION);
-			
-			if (user_choice == IDYES)
-			{
-				// Fetch SHA first so we can name the zip file
-				std::cout << "Fetching latest commit SHA from GitHub...\n";
-				const auto latest_sha = get_latest_github_commit_sha(autopbr_mod_repo_owner, autopbr_mod_repo_name, autopbr_mod_branch);
-				
-				if (latest_sha.empty()) 
-				{
-					log_yellow(true);
-					std::cout << "[WARN] Failed to fetch commit SHA from GitHub. Network error or API failure.\n";
-					std::cout << "Skipping AutoPBR mod installation.\n\n";
-					log_default();
-				}
-				else
-				{
-					// Download and extract
-					if (download_and_extract_autopbr_mod(latest_sha))
-					{
-						std::cout << "> Done!\n\n";
-
-						// Save the commit SHA
-						if (write_file_to_disk(commit_file_str, latest_sha)) 
-						{
-							std::cout << "Saved commit SHA: " << latest_sha << "\n";
-							std::cout << "Commit file saved to: " << commit_file_str << "\n";
-						} 
-						else 
-						{
-							log_yellow(true);
-							std::cout << "[WARN] Failed to save commit file to: " << commit_file_str << "\n";
-							log_default();
-						}
-					}
-				}
-			}
-			else
-			{
-				std::cout << "Skipping AutoPBR mod installation.\n\n";
-			}
-		} 
-		else // commit_file_exists
-		{
-			// File exists, compare with GitHub
-			std::cout << "\nChecking latest gta4-rtx-autopbr-mod commit SHA...\n";
-			int comparison = compare_commit_sha(commit_file_str, autopbr_mod_repo_owner, autopbr_mod_repo_name, autopbr_mod_branch);
-			
-			if (comparison == 0) {
-				std::cout << "Installed AutoPBR mod matches GitHub (up to date).\n";
-			} 
-			else if (comparison == 1) 
-			{
-				std::string local_sha = trim_whitespace(read_file_from_disk(commit_file_str));
-				std::string latest_sha = get_latest_github_commit_sha(autopbr_mod_repo_owner, autopbr_mod_repo_name, autopbr_mod_branch);
-				
-				if (!latest_sha.empty()) 
-				{
-					std::cout
-						<< "\nA newer version of the gta4-rtx-autopbr-mod is available on GitHub.\n"
-						<< "Current commit: " + (local_sha.empty() ? "Unknown" : local_sha) + "\n"
-						<< "Latest commit: " + latest_sha + "\n"
-						<< "Repo: " + std::string(autopbr_mod_repo_url) + "\n\n";
-
-					const int user_choice = MessageBoxA(nullptr, 
-						"A newer version of the AutoPBR mod is available on GitHub.\n\n"
-						"Download size: ~1.8 GB\n\n"
-						"Would you like to update?", 
-						"AutoPBR Mod Update Available", MB_YESNO | MB_ICONQUESTION);
-
-					if (user_choice == IDYES) 
-					{
-						// Download and extract the update
-						if (download_and_extract_autopbr_mod(latest_sha))
-						{
-							// Only update commit file after successful download and extraction
-							if (write_file_to_disk(commit_file_str, latest_sha)) {
-								std::cout << "Updated commit SHA to: " << latest_sha << "\n\n";
-							} else 
-							{
-								log_yellow(true);
-								std::cout << "[WARN] Failed to update commit file.\n\n";
-								log_default();
-							}
-						}
-					} 
-					else {
-						std::cout << "Skipping AutoPBR mod update.\n\n";
-					}
-				} 
-				else 
-				{
-					log_yellow(true);
-					std::cout << "[WARN] Could not fetch latest commit SHA for comparison.\n\n";
-					log_default();
-				}
-			} 
-			else if (comparison == -2) 
-			{
-				log_yellow(true);
-				std::cout << "[WARN] Could not check AutoPBR commit SHA (network error or file issue).\n\n";
-				log_default();
-			}
-		}
-	}
+	install_or_update_remote_mod(game_dir, base_mod, selected_delivery_mode, true);
+	install_or_update_remote_mod(game_dir, autopbr_mod, selected_delivery_mode, has_selected_delivery_mode);
 
 	// Only prompt about DirectX if this is a fresh install (a_gta4-rtx.asi doesn't exist)
 	if (!skip_rtx_comp_install && !has_remix_comp_mod)
@@ -1436,11 +1829,13 @@ int main()
 	}
 
 	log_green(true);
-	std::cout << 
-		"\nDone! - If you run into issues, visit: https://github.com/xoxor4d/gta4-rtx/wiki/Troubleshooting---Guides or create an issue on the GitHub repository.\n"
-		"> Please include the external console log (rtx_comp/logfile.txt)\n"
-		"> The log files from 'rtx-remix/logs'\n"
-		"> A short description and anything else that might help to identify the issue.\n";
+	std::cout << "\n"
+		<< PAD << "Done! - If you run into issues, visit:\n"
+		<< PAD << "https://github.com/xoxor4d/gta4-rtx/wiki/Troubleshooting---Guides\n\n"
+		<< PAD << "You can reach out for help on discord or create an issue on the GitHub repository.\n"
+		<< PAD << "> Please include the external console log (rtx_comp/logfile.txt)\n"
+		<< PAD << "> The log files from 'rtx-remix/logs'\n"
+		<< PAD << "> A short description and anything else that might help to identify the issue.\n";
 	log_default();
 
 	MessageBoxA(nullptr, "Installation complete!\nYou can now launch GTA IV.", "Success", MB_ICONINFORMATION);
