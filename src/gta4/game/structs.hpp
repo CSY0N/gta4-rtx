@@ -618,11 +618,14 @@ namespace gta4::game
 		float aspect;
 		float nearclip;
 		float farclip;
-		char pad_0x02C8[8];
-		float scalex;
-		float scaley;
-		char pad_0x02D8[24];
-		bool isPersp;
+		float scalex; // 0x2C8 streaming half-extent X (sub_AE95E0 v68)
+		float scaley; // 0x2CC streaming half-extent Y (sub_AE95E0 v67)
+		char pad_0x02D0[16];
+		float stream_local_min_x; // 0x2E0 + vp+736, used when isPersp==0
+		float stream_local_max_x; // 0x2E4 + vp+740
+		float stream_local_min_y; // 0x2E8 + vp+744
+		float stream_local_max_y; // 0x2EC + vp+748
+		bool isPersp; // 0x2F0 + vp+752
 		char pad_0x02F1[15];
 		float frustumClipPlane0[4];
 		float frustumClipPlane1[4];

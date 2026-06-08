@@ -448,6 +448,114 @@ namespace gta4
 		}
 	}
 
+
+	// ---
+	// area / sector anti-culling adding the lowest LOD outside the camera frustum
+	
+	static void build_player_centered_far_rect(const game::CRenderPhase_struct* phase, float* poly_xy, int* point_count, float expand_sectors)
+	{
+		if (!phase) {
+			return;
+		}
+
+		const auto im = imgui::get();
+		const auto& vp = phase->viewport_0xB0;
+
+		// cameraInv translation = frustum / view origin
+		const float frustum_x = vp.cameraInv.m[3][0];
+		const float frustum_y = vp.cameraInv.m[3][1];
+
+		float px = 0.0f, py = 0.0f, pz = 0.0f; //float pw = 0.0f;
+		if (vp.isPersp) 
+		{
+			px = -vp.scalex;
+			py = -vp.scaley;
+			pz = vp.scaley;
+			//pw = vp.scalex;
+		}
+		else 
+		{
+			px = vp.stream_local_min_x;
+			py = vp.stream_local_min_y;
+			pz = vp.stream_local_max_y;
+			//pw = vp.stream_local_max_x;
+		}
+
+		const float k_scale = 0.005f + im->m_debug_vector.x;
+		const float k_bias = 15.0f + im->m_debug_vector.y;
+
+		const float xx = (frustum_x + px) * k_scale + k_bias;
+		const float yy = (frustum_y + py) * k_scale + k_bias;
+		//const float xw = (frustum_x + pw) * k_scale + k_bias;
+		const float xy = (frustum_x + py) * k_scale + k_bias;
+		const float yz = (frustum_y + pz) * k_scale + k_bias;
+
+		const float cx = (xx + xy) * 0.5f;
+		const float cy = (yy + yz) * 0.5f;
+		const float rx = (xy - xx) * 0.5f + expand_sectors;
+		const float ry = (yz - yy) * 0.5f + expand_sectors;
+
+		poly_xy[0] = cx - rx; poly_xy[1] = cy - ry;
+		poly_xy[2] = cx + rx; poly_xy[3] = cy - ry;
+		poly_xy[4] = cx + rx; poly_xy[5] = cy + ry;
+		poly_xy[6] = cx - rx; poly_xy[7] = cy + ry;
+
+		*point_count = 4;
+	}
+
+	void add_far_grid_map_sections(const int render_context)
+	{
+		//const auto im = imgui::get();
+		const auto cs = comp_settings::get();
+		const auto sector_count = cs->nocull_map_areas_count._int();
+
+		// m_dbg_int_02 < 0 disables; otherwise treated as extra far-sector radius on top of the streaming rect
+		if (!cs->nocull_map_areas._bool() || sector_count < 1 || !game::pCurrentRenderPhase || !*game::pCurrentRenderPhase || !game::AddMapSectionsInFrustum) {
+			return;
+		}
+
+		const auto* phase = game::get_current_renderphase();
+
+		// not needed since we are inside the block where this is already checked
+		/*if ((*(reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(phase) + 0x8E8)) & 0x100u) == 0) {
+			return;
+		}*/
+
+		const auto& vp = phase->viewport_0xB0;
+		const float x_of_up = vp.cameraInv.m[1][0];
+		const float y_of_up = vp.cameraInv.m[1][1];
+
+		float poly[8] = {}; int point_count = 0;
+		build_player_centered_far_rect(phase, poly, &point_count, static_cast<float>(sector_count));
+
+		if (point_count <= 0) {
+			return;
+		}
+
+		game::AddMapSectionsInFrustum(poly, point_count, render_context,
+									  reinterpret_cast<void(__cdecl*)(int, int, int, int)>(game::fn_addr__mark_render_sector_far_callback),
+									  x_of_up >= 0.0f, y_of_up >= 0.0f, fabsf(x_of_up) > fabsf(y_of_up), 0);
+	}
+
+	DWORD g_far_grid_stub_helper = 0u;
+	__declspec(naked) void add_far_grid_map_sections_stub()
+	{
+		__asm
+		{
+			call	game::func_addr_AddMapSectionsInFrustum; // og call to 0xD62DC0
+			add     esp, 0x20; // og
+
+			mov		g_far_grid_stub_helper, edi;
+			pushad;
+			push    g_far_grid_stub_helper;
+			call    add_far_grid_map_sections;
+			add     esp, 4;
+			popad;
+
+			jmp     game::retn_addr__add_far_grid_map_sections; // 0xAEA14D
+		}
+	}
+
 	__declspec(naked) void veh_nullptr_crash_fix_stub()
 	{
 		__asm
@@ -540,6 +648,9 @@ namespace gta4
 
 		// reduce interior culling
 		shared::utils::hook::detour(game::retn_addr__frustum_check_interior_objs - 5u, &frustum_planes_check_interior_stub, nullptr); // 0xA0FCF9
+
+		// area / sector anti-culling - add lowest LOD outside of camera frustum
+		shared::utils::hook(game::retn_addr__add_far_grid_map_sections - 8u, add_far_grid_map_sections_stub, HOOK_JUMP).install()->quick();
 
 		// -----
 		// disable unused rendering

@@ -42,6 +42,7 @@ namespace gta4::game
 	g_viewports2* pViewports = nullptr;
 	currentViewport_ptr* pCurrentViewport = nullptr;
 	D3DXMATRIX* pCurrentWorldTransform = nullptr;
+	void** pCurrentRenderPhase = nullptr;
 
 	eWeatherType* weather_type_prev = nullptr;
 	eWeatherType* weather_type_new = nullptr;
@@ -92,6 +93,8 @@ namespace gta4::game
 	AddSingleVehicleLight_t AddSingleVehicleLight = nullptr;
 	AddSceneLight_t AddSceneLight = nullptr;
 	SetupTextureAndSampler_t SetupTextureAndSampler = nullptr;
+	AddMapSectionsInFrustum_t AddMapSectionsInFrustum = nullptr;
+	uint32_t func_addr_AddMapSectionsInFrustum = 0u;
 
 
 
@@ -169,6 +172,10 @@ namespace gta4::game
 	uint32_t hk_addr__static_world_culling_check_hk = 0u;
 	uint32_t nop_addr__static_world_frustum_patch01 = 0u;
 	uint32_t nop_addr__static_world_frustum_patch02 = 0u;
+
+	uint32_t retn_addr__add_far_grid_map_sections = 0u;
+	uint32_t fn_addr__mark_render_sector_far_callback = 0u;
+
 	uint32_t retn_addr__extended_anti_culling_check_stub = 0u;
 	uint32_t jmp_addr__extended_anti_culling_check_stub = 0u;
 	uint32_t hk_addr__frustum_check = 0u;
@@ -445,6 +452,13 @@ namespace gta4::game
 			found_pattern_count++;
 		} total_pattern_count++;
 
+		// pCurrentRenderPhase = (void**)0x12FB1B8;
+		if (const auto offset = shared::utils::mem::find_pattern("89 3D ? ? ? ? E8 ? ? ? ? 8B F0 83 C4 ? 85 F6 74 ? ? ? 8B CF 8B 52", 2, "pCurrentRenderPhase", use_pattern, 0x928B47); offset)
+		{
+			pCurrentRenderPhase = (void**)*(DWORD*)offset;
+			found_pattern_count++;
+		} total_pattern_count++;
+
 		// end GAME_VARIABLES
 #pragma endregion
 
@@ -681,6 +695,15 @@ namespace gta4::game
 		PATTERN_OFFSET_SIMPLE(hk_addr__frustum_check, "55 8B EC 83 E4 ? 51 8B 45 ? 56 8B F1 0F 57 F6", 0, 0x431E40);
 		PATTERN_OFFSET_SIMPLE(retn_addr__frustum_check_interior_objs, "? ? ? ? F3 0F 10 50 ? ? ? ? ? F3 0F 5C 51 ? F3 0F 10 49", 0, 0xA0FCF9);
 
+		PATTERN_OFFSET_SIMPLE(retn_addr__add_far_grid_map_sections, "8B 8C 24 ? ? ? ? 5F 5E 33 CC C6 05", 0, 0xAEA14D);
+		PATTERN_OFFSET_SIMPLE(fn_addr__mark_render_sector_far_callback, "8B 54 24 ? 85 D2 78 ? 56", 0, 0xAE93C0);
+
+		if (const auto offset = shared::utils::mem::find_pattern("83 EC ? A1 ? ? ? ? 33 C4 89 44 24 ? 80 7C 24 ? ? 8B 44 24", 0, "AddMapSectionsInFrustum", use_pattern, 0xD62DC0); offset) 
+		{
+			AddMapSectionsInFrustum = (AddMapSectionsInFrustum_t)offset; 
+			func_addr_AddMapSectionsInFrustum = offset;
+			found_pattern_count++;
+		} total_pattern_count++;
 
 		PATTERN_OFFSET_SIMPLE(hk_addr__prevent_game_input_func, "53 8A 5C 24 ? 8A CB", 0, 0x69F0C0);
 		PATTERN_OFFSET_SIMPLE(nop_addr__always_draw_game_in_menus, "83 FE ? 75 ? FF 35 ? ? ? ? E8 ? ? ? ? 83 C4 ? 85 C0 79", 0, 0x5C278A);
@@ -785,5 +808,14 @@ namespace gta4::game
 				return &pGlobalShaderParameters[i];
 		}
 		return nullptr;
+	}
+
+	CRenderPhase_struct* get_current_renderphase()
+	{
+		if (!game::pCurrentRenderPhase || !*game::pCurrentRenderPhase) {
+			return nullptr;
+		}
+
+		return reinterpret_cast<game::CRenderPhase_struct*>(*game::pCurrentRenderPhase);
 	}
 }

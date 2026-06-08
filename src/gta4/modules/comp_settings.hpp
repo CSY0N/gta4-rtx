@@ -179,6 +179,18 @@ namespace gta4
 				return &(!default_value ? m_var.boolean : m_var_default.boolean);
 			}
 
+			const int& _int(const bool default_value = false) const
+			{
+				assert(m_type == var_type_integer && "Type mismatch: expected int");
+				return !default_value ? m_var.integer : m_var_default.integer;
+			}
+
+			const int* _int_ptr(const bool default_value = false)
+			{
+				assert(m_type == var_type_integer && "Type mismatch: expected int");
+				return &(!default_value ? m_var.integer : m_var_default.integer);
+			}
+
 			const float& _float(const bool default_value = false) const
 			{
 				assert(m_type == var_type_value && "Type mismatch: expected float");
@@ -494,6 +506,20 @@ namespace gta4
 				true
 			};
 
+			variable nocull_map_areas = {
+				"nocull_map_areas",
+				("The game normally culls entire map sections if nothing of that section is visible.\n"
+				 "Enabling this will add the lowest LOD variant of a section outside the cameras view frustum."),
+				"1.3.1",
+				true
+			};
+
+			variable nocull_map_areas_count = {
+				"nocull_map_areas_count",
+				"Setting that controls how many sections 'nocull_map_areas' adds around the player.",
+				"1.3.1",
+				1
+			};
 
 			// ----------------------------------
 			// light translation related settings

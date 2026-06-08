@@ -184,6 +184,9 @@ namespace gta4
 				ASSIGN(nocull_dist_sphere_interior);
 				ASSIGN(nocull_extended);
 
+				ASSIGN(nocull_map_areas);
+				ASSIGN(nocull_map_areas_count);
+
 				// light translation related settings
 				ASSIGN(translate_game_lights);
 				ASSIGN(translate_game_lights_ignore_filler_lights);

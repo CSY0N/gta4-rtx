@@ -36,14 +36,14 @@ namespace gta4::game
 
 	extern grmShaderInfo_Parameter* pGlobalShaderParameters;
 	extern uint32_t* pGlobalShaderParameterCount;
-	extern grmShaderInfo_Parameter* getGlobalShaderInfoParam(const char* name);
 
 	extern char* pShaderConstFloatCountMap;
 	extern int* pRenderStateIndexMap;
 	extern g_viewports2* pViewports;
 	extern currentViewport_ptr* pCurrentViewport;
 	extern D3DXMATRIX* pCurrentWorldTransform;
-
+	extern void** pCurrentRenderPhase; // current render phase ptr
+	
 	extern eWeatherType* weather_type_prev;
 	extern eWeatherType* weather_type_new;
 	extern float* weather_change_value;
@@ -112,6 +112,12 @@ namespace gta4::game
 
 	typedef	void (__fastcall* SetupTextureAndSampler_t)(uint32_t tex_register, grcTextureReference* a2, int sampler_state_count, int a4);
 		extern SetupTextureAndSampler_t SetupTextureAndSampler;
+
+	// fn to add map sections given the correct callback
+	typedef void (__cdecl* AddMapSectionsInFrustum_t)(float* poly_xy, int point_count, int render_context, void (__cdecl* callback)(int, int, int, int), bool flip_x, bool flip_y, bool swap_xy, bool preserve_order);
+		extern AddMapSectionsInFrustum_t AddMapSectionsInFrustum;
+
+	extern uint32_t func_addr_AddMapSectionsInFrustum;
 
 	// --------------
 	// game asm offsets
@@ -188,6 +194,9 @@ namespace gta4::game
 	extern uint32_t nop_addr__static_world_frustum_patch01;
 	extern uint32_t nop_addr__static_world_frustum_patch02;
 
+	extern uint32_t retn_addr__add_far_grid_map_sections;
+	extern uint32_t fn_addr__mark_render_sector_far_callback; // sub_AE93C0
+
 	extern uint32_t retn_addr__extended_anti_culling_check_stub;
 	extern uint32_t jmp_addr__extended_anti_culling_check_stub;
 
@@ -245,4 +254,7 @@ namespace gta4::game
 	// ---
 
 	extern void init_game_addresses();
+
+	extern grmShaderInfo_Parameter* getGlobalShaderInfoParam(const char* name);
+	extern CRenderPhase_struct* get_current_renderphase();
 }

@@ -1564,6 +1564,11 @@ namespace gta4
 		compsettings_float_widget("Light Distance", gs->nocull_dist_lights, 0.0f, 500.0f, 0.5f);
 		compsettings_float_widget("Interior Object Distance", gs->nocull_dist_sphere_interior, 0.0f, 500.0f, 0.5f);
 
+		ImGui::Spacing(0, inbetween_spacing);
+
+		compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
+		compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+
 		ImGui::Spacing(0, 4);
 	}
 
@@ -2066,6 +2071,15 @@ namespace gta4
 		//const auto& im = imgui::get();
 		const auto& gs = comp_settings::get();
 		const float inbetween_spacing = SEPARATOR_SPACING;
+
+
+		ImGui::Spacing(0, inbetween_spacing);
+		ImGui::SeparatorText(" Version 1.3.X ");
+		ImGui::Spacing(0, 4);
+
+		compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
+		compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+
 
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Weather ");
