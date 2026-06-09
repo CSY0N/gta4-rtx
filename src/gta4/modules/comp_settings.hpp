@@ -923,8 +923,8 @@ namespace gta4
 				("Assign WorldUI and DecalStatic to AlphaBlended Emissives.\n"
 				 "Fixes aliasing induced by RR Particle Mode. Enables RR Particle Mode when on.\n"
 				 "Disables RR Particle Mode when off (not recommended)"),
-				"1.3.0",
-				true
+				"1.3.2",
+				false
 			};
 
 			variable emissive_alpha_blend_hack_scale =

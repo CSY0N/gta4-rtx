@@ -2,7 +2,7 @@
 
 constexpr auto COMP_MOD_VERSION_MAJOR = 1;
 constexpr auto COMP_MOD_VERSION_MINOR = 3;
-constexpr auto COMP_MOD_VERSION_PATCH = 1;
+constexpr auto COMP_MOD_VERSION_PATCH = 2;
 
 //#define LOG_SHADERPRESETS
 
