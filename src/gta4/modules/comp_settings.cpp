@@ -182,7 +182,12 @@ namespace gta4
 				ASSIGN(nocull_height_far_static);
 				ASSIGN(nocull_dist_lights);
 				ASSIGN(nocull_dist_sphere_interior);
+
 				ASSIGN(nocull_extended);
+				ASSIGN(nocull_extended_auto);
+				ASSIGN(nocull_extended_dist);
+				ASSIGN(nocull_extended_radius);
+				ASSIGN(nocull_extended_height);
 
 				ASSIGN(nocull_map_areas);
 				ASSIGN(nocull_map_areas_count);

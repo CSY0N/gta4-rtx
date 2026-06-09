@@ -506,6 +506,41 @@ namespace gta4
 				true
 			};
 
+			variable nocull_extended_auto = {
+				"nocull_extended_auto",
+				("Automated - Extended Anti Culling. Considers objects in specified range with fitting radii / height and prevents culling.\n"
+				 "Introduced mainly to accommodate 'nocull_map_areas'"),
+				"1.3.1",
+				true
+			};
+
+			variable nocull_extended_dist =
+			{
+				"nocull_extended_dist",
+				("The distance around the player for an object to be considered for the extended anticulling logic.\n"
+				"Setting this to 0 will consider ALL objects."),
+				"1.3.1",
+				500.0f
+			};
+
+			variable nocull_extended_radius =
+			{
+				"nocull_extended_radius",
+				("The minimum radius an object has to have for it to be considered for the extended anticulling logic.\n"
+				"Setting this to 0 disables the condition."),
+				"1.3.1",
+				30.0f
+			};
+
+			variable nocull_extended_height =
+			{
+				"nocull_extended_height",
+				("The minimum height an object has to have for it to be considered for the extended anticulling logic.\n"
+				"Setting this to 0 disables the condition."),
+				"1.3.1",
+				40.0f
+			};
+
 			variable nocull_map_areas = {
 				"nocull_map_areas",
 				("The game normally culls entire map sections if nothing of that section is visible.\n"

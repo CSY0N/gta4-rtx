@@ -269,9 +269,9 @@ namespace gta4
 	int extended_anticull_hk(game::CEntity* ent)
 	{
 		const auto im = imgui::get();
-		const auto gs = comp_settings::get();
+		const auto cs = comp_settings::get();
 
-		if (ent && gs->nocull_extended.get_as<bool>())
+		if (ent && cs->nocull_extended.get_as<bool>())
 		{
 			if (im->m_dbg_extended_anticull_always_true) {
 				return TRUE;
@@ -297,6 +297,32 @@ namespace gta4
 							if (cat.indices.contains(ent->m_wModelIndex)) {
 								return TRUE;
 							}
+						}
+					}
+				}
+
+				if (cs->nocull_extended_auto._bool())
+				{
+					const float object_radius = shared::utils::hook::call_virtual<22, float>(ent);
+					const auto object_mins = shared::utils::hook::call_virtual<24, Vector*>(ent);
+					const auto object_maxs = shared::utils::hook::call_virtual<25, Vector*>(ent);
+
+					float object_height = 0.0f;
+					if (object_mins && object_maxs) {
+						object_height = object_maxs->z - object_mins->z;
+					}
+
+					const float& nc_dist = cs->nocull_extended_dist._float();
+
+					// allow 0 dist to consider all meshes
+					if (shared::utils::float_equal(nc_dist, 0.0f) || (nc_dist > 0.0f && dist_sqr < nc_dist * nc_dist))
+					{
+						// 0 "disables" the check, letting it pass. Both need to be fullfilled to not cull the object
+						const bool radius_ok = shared::utils::float_equal(object_radius, 0.0f) || object_radius > cs->nocull_extended_radius._float();
+						const bool height_ok = shared::utils::float_equal(object_height, 0.0f) || object_height > cs->nocull_extended_height._float();
+
+						if (radius_ok && height_ok) {
+							return TRUE;
 						}
 					}
 				}

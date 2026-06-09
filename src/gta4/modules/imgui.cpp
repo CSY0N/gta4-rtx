@@ -1531,43 +1531,56 @@ namespace gta4
 		static const auto& gs = comp_settings::get();
 		const float inbetween_spacing = SEPARATOR_SPACING;
 
-		ImGui::Spacing(0, 4);
-		ImGui::SeparatorText(" Anti Culling of Static Objects ");
-		ImGui::Spacing(0, 4);
+		ImGui::Widget_CategoryWithVerticalLabel("AntiCulling Cascade", [&]()
+			{
+				ImGui::PushID("ac_cascade");
 
-		compsettings_bool_widget("Extended AntiCulling", gs->nocull_extended);
+				compsettings_float_widget("Near: No Culling Until Distance", gs->nocull_dist_near_static, 0.0f, FLT_MAX, 0.5f);
+				ImGui::Spacing(0, inbetween_spacing);
 
-		compsettings_float_widget("Near: No Culling Until Distance", gs->nocull_dist_near_static, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Near to Medium Cascade: Medium Distance", gs->nocull_dist_medium_static, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Near to Medium Cascade: Min. Object Radius", gs->nocull_radius_medium_static, 0.0f, FLT_MAX, 0.5f);
+				ImGui::Spacing(0, inbetween_spacing);
 
-		ImGui::Spacing(0, inbetween_spacing);
+				compsettings_float_widget("Medium to Far Cascade: Far Distance", gs->nocull_dist_far_static, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Medium to Far Cascade: Min. Object Radius", gs->nocull_radius_far_static, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Medium to Far Cascade: Min. Object Height", gs->nocull_height_far_static, 0.0f, FLT_MAX, 0.5f);
 
-		// ----
-
-		compsettings_float_widget("Near to Medium Cascade: Medium Distance", gs->nocull_dist_medium_static, 0.0f, FLT_MAX, 0.5f);
-		compsettings_float_widget("Near to Medium Cascade: Min. Object Radius", gs->nocull_radius_medium_static, 0.0f, FLT_MAX, 0.5f);
-
-		ImGui::Spacing(0, inbetween_spacing);
-
-		// ----
-
-		compsettings_float_widget("Medium to Far Cascade: Far Distance", gs->nocull_dist_far_static, 0.0f, FLT_MAX, 0.5f);
-		compsettings_float_widget("Medium to Far Cascade: Min. Object Radius", gs->nocull_radius_far_static, 0.0f, FLT_MAX, 0.5f);
-		compsettings_float_widget("Medium to Far Cascade: Min. Object Height", gs->nocull_height_far_static, 0.0f, FLT_MAX, 0.5f);
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::Separator();
+		ImGui::Widget_CategoryWithVerticalLabel("AntiCulling Extended", [&]()
+			{
+				ImGui::PushID("exac");
+				compsettings_bool_widget("Use Extended AntiCulling", gs->nocull_extended);
+
+				ImGui::BeginDisabled(!gs->nocull_extended._bool());
+				compsettings_bool_widget("Use Auto Extended AntiCulling", gs->nocull_extended_auto);
+				ImGui::EndDisabled();
+
+				ImGui::BeginDisabled(!gs->nocull_extended_auto._bool());
+				compsettings_float_widget("Consider until Distance", gs->nocull_extended_dist, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Min. Object Radius", gs->nocull_extended_radius, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Min. Object Height", gs->nocull_extended_height, 0.0f, FLT_MAX, 0.5f);
+				ImGui::EndDisabled();
+
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Other No-Cull Settings");
-		ImGui::Spacing(0, 4);
+		ImGui::Widget_CategoryWithVerticalLabel("Other Settings", [&]()
+			{
+				ImGui::PushID("otherac");
+				compsettings_float_widget("Light Distance", gs->nocull_dist_lights, 0.0f, 500.0f, 0.5f);
+				compsettings_float_widget("Interior Object Distance", gs->nocull_dist_sphere_interior, 0.0f, 500.0f, 0.5f);
 
-		compsettings_float_widget("Light Distance", gs->nocull_dist_lights, 0.0f, 500.0f, 0.5f);
-		compsettings_float_widget("Interior Object Distance", gs->nocull_dist_sphere_interior, 0.0f, 500.0f, 0.5f);
+				ImGui::Spacing(0, inbetween_spacing);
 
-		ImGui::Spacing(0, inbetween_spacing);
-
-		compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
-		compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+				compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
+				compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, 4);
 	}
@@ -2072,14 +2085,30 @@ namespace gta4
 		const auto& gs = comp_settings::get();
 		const float inbetween_spacing = SEPARATOR_SPACING;
 
-
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Version 1.3.X ");
 		ImGui::Spacing(0, 4);
 
-		compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
-		compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+		ImGui::Widget_CategoryWithVerticalLabel("Anti Culling", [&]()
+			{
+				ImGui::PushID("exac");
+				compsettings_bool_widget("Use Extended AntiCulling", gs->nocull_extended);
 
+				ImGui::BeginDisabled(!gs->nocull_extended._bool());
+				compsettings_bool_widget("Use Auto Extended AntiCulling", gs->nocull_extended_auto);
+				ImGui::EndDisabled();
+				
+				ImGui::BeginDisabled(!gs->nocull_extended_auto._bool());
+				compsettings_float_widget("Consider until Distance", gs->nocull_extended_dist, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Min. Object Radius", gs->nocull_extended_radius, 0.0f, FLT_MAX, 0.5f);
+				compsettings_float_widget("Min. Object Height", gs->nocull_extended_height, 0.0f, FLT_MAX, 0.5f);
+				ImGui::EndDisabled();
+
+				ImGui::Spacing(0, inbetween_spacing);
+				compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
+				compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Weather ");
@@ -2155,7 +2184,6 @@ namespace gta4
 		});
 
 		ImGui::Spacing(0, SEPARATOR_SPACING);
-
 		ImGui::Widget_CategoryWithVerticalLabel("Siren", [&]()
 		{
 			ImGui::PushID("vsiren");
@@ -2172,7 +2200,6 @@ namespace gta4
 		});
 
 		ImGui::Spacing(0, SEPARATOR_SPACING);
-		
 		ImGui::Widget_CategoryWithVerticalLabel("Bar", [&]()
 		{
 			ImGui::PushID("barsiren");
