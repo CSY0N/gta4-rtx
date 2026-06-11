@@ -171,7 +171,6 @@ namespace gta4
 				ASSIGN(manual_game_resolution);
 				ASSIGN(load_colormaps_only);
 				ASSIGN(remix_override_rtxdi_samplecount);
-				ASSIGN(remix_override_enable_particle_tlas_collision);
 				
 				// culling related settings
 				ASSIGN(nocull_dist_near_static);
