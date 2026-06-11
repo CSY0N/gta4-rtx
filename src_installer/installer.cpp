@@ -668,7 +668,7 @@ std::string quote_arg(const std::string& arg)
 	return quoted;
 }
 
-bool run_process(const std::string& command, const std::filesystem::path& working_dir, DWORD* exit_code = nullptr, bool capture_output = false)
+bool run_process(const std::string& command, const std::filesystem::path& working_dir, DWORD* exit_code = nullptr, bool capture_output = false, bool quiet = false)
 {
 	STARTUPINFOA si = {};
 	PROCESS_INFORMATION pi = {};
@@ -728,6 +728,10 @@ bool run_process(const std::string& command, const std::filesystem::path& workin
 
 		while (ReadFile(read_pipe, buffer, sizeof(buffer), &bytes_read, nullptr) && bytes_read > 0)
 		{
+			if (quiet) {
+				continue;
+			}
+
 			for (DWORD i = 0; i < bytes_read; i++)
 			{
 				const char c = buffer[i];
@@ -983,20 +987,20 @@ bool ensure_mingit_available(std::filesystem::path& git_exe)
 	return true;
 }
 
-bool run_git(const std::filesystem::path& git_exe, const std::filesystem::path& git_dir, const std::filesystem::path& work_tree, const std::string& args, DWORD* exit_code = nullptr)
+bool run_git(const std::filesystem::path& git_exe, const std::filesystem::path& git_dir, const std::filesystem::path& work_tree, const std::string& args, DWORD* exit_code = nullptr, bool quiet = false)
 {
 	std::string command = quote_arg(git_exe.string()) +
 		" --git-dir=" + quote_arg(git_dir.string()) +
 		" --work-tree=" + quote_arg(work_tree.string()) +
 		" " + args;
 
-	return run_process(command, work_tree, exit_code, true);
+	return run_process(command, work_tree, exit_code, true, quiet);
 }
 
 bool git_has_head(const std::filesystem::path& git_exe, const std::filesystem::path& git_dir, const std::filesystem::path& work_tree)
 {
 	DWORD code = 1;
-	run_git(git_exe, git_dir, work_tree, "rev-parse --verify HEAD", &code);
+	run_git(git_exe, git_dir, work_tree, "rev-parse --verify HEAD", &code, true);
 	return code == 0;
 }
 
@@ -1004,12 +1008,12 @@ bool git_path_has_local_changes(const std::filesystem::path& git_exe, const std:
 {
 	DWORD code = 0;
 
-	run_git(git_exe, git_dir, work_tree, "diff --quiet -- " + quote_arg(sparse_path), &code);
+	run_git(git_exe, git_dir, work_tree, "diff --quiet -- " + quote_arg(sparse_path), &code, true);
 	if (code != 0) {
 		return true;
 	}
 
-	run_git(git_exe, git_dir, work_tree, "diff --cached --quiet -- " + quote_arg(sparse_path), &code);
+	run_git(git_exe, git_dir, work_tree, "diff --cached --quiet -- " + quote_arg(sparse_path), &code, true);
 	return code != 0;
 }
 
@@ -1031,7 +1035,7 @@ bool ensure_sparse_git_repo(const std::filesystem::path& git_exe, const std::str
 
 	if (!std::filesystem::exists(git_dir / "config"))
 	{
-		std::string command = quote_arg(git_exe.string()) + " --git-dir=" + quote_arg(git_dir.string()) + " init";
+		std::string command = quote_arg(git_exe.string()) + " --git-dir=" + quote_arg(git_dir.string()) + " init --initial-branch=installer";
 		if (!run_process(command, work_tree, nullptr, true)) 
 		{
 			log_error("Failed to initialize Git metadata for " + config.display_name + ".");
@@ -1039,6 +1043,7 @@ bool ensure_sparse_git_repo(const std::filesystem::path& git_exe, const std::str
 		}
 	}
 
+	run_git(git_exe, git_dir, work_tree, "config advice.defaultBranchName false", nullptr, true);
 	run_git(git_exe, git_dir, work_tree, "config core.worktree " + quote_arg(work_tree.string()));
 	run_git(git_exe, git_dir, work_tree, "config core.sparseCheckout true");
 	run_git(git_exe, git_dir, work_tree, "config core.sparseCheckoutCone false");
@@ -1051,7 +1056,7 @@ bool ensure_sparse_git_repo(const std::filesystem::path& git_exe, const std::str
 	}
 
 	DWORD code = 0;
-	run_git(git_exe, git_dir, work_tree, "remote get-url origin", &code);
+	run_git(git_exe, git_dir, work_tree, "remote get-url origin", &code, true);
 
 	if (code == 0) {
 		run_git(git_exe, git_dir, work_tree, "remote set-url origin " + quote_arg(config.repo_url));
