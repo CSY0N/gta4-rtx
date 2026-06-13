@@ -12,7 +12,7 @@ namespace gta4
 		return std::string(std::to_string(COMP_MOD_VERSION_MAJOR) + "." + std::to_string(COMP_MOD_VERSION_MINOR) + "." + std::to_string(COMP_MOD_VERSION_PATCH));
 	}
 
-	void comp_settings::write_toml()
+	void comp_settings::write_comp_settings_toml()
 	{
 		const std::string file_path = shared::globals::root_path + "\\rtx_comp\\comp_settings.toml";
 		std::filesystem::create_directories(std::filesystem::path(file_path).parent_path());
@@ -106,7 +106,7 @@ namespace gta4
 				// "legacy" format - rewrite on first launch
 				if (!is_addon_toml_file && config.contains("CreatedOnCompVersion"))
 				{
-					write_toml();
+					write_comp_settings_toml();
 					return true;
 
 					/*std::string created_on_comp_version_str;
@@ -121,7 +121,7 @@ namespace gta4
 					{
 						if (created_on_comp_version_str != current_version_str)
 						{
-							write_toml();
+							write_comp_settings_toml();
 							return true;
 						}
 					}*/
@@ -349,9 +349,11 @@ namespace gta4
 			shared::common::log("CompSettings", std::format("Failed to find config: {}", !is_addon_toml_file ? "rtx_comp\\comp_settings.toml" : "rtx_comp\\addon_settings\\" + addon_file_name), shared::common::LOG_TYPE::LOG_TYPE_WARN, true);
 		}
 #endif
-
-		// always re-write file
-		write_toml();
+		
+		if (!is_addon_toml_file) {
+			write_comp_settings_toml();
+		}
+		
 		return true;
 	}
 

@@ -19,7 +19,7 @@ namespace gta4
 			return false;
 		}
 
-		static void write_toml();
+		static void write_comp_settings_toml();
 		static bool parse_toml(std::string addon_file_name = "");
 
 		static void load_comp_settings_only();
@@ -294,7 +294,7 @@ namespace gta4
 			{
 				m_var.boolean = boolean;
 				if (!no_toml_update) {
-					write_toml();
+					write_comp_settings_toml();
 				}
 			}
 	
@@ -303,7 +303,7 @@ namespace gta4
 			{
 				m_var.integer = integer;
 				if (!no_toml_update) {
-					write_toml();
+					write_comp_settings_toml();
 				}
 			}
 	
@@ -312,7 +312,7 @@ namespace gta4
 			{
 				m_var.value[0] = value;
 				if (!no_toml_update) {
-					write_toml();
+					write_comp_settings_toml();
 				}
 			}
 	
@@ -342,7 +342,7 @@ namespace gta4
 				}
 	
 				if (!no_toml_update) {
-					write_toml();
+					write_comp_settings_toml();
 				}
 			}
 
