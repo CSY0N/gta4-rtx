@@ -16,12 +16,6 @@ namespace gta4
 		hash = shared::utils::hash32_combine(hash, def.mPosition.x);
 		hash = shared::utils::hash32_combine(hash, def.mPosition.y);
 		hash = shared::utils::hash32_combine(hash, def.mPosition.z);
-
-		/*if (shared::utils::float_equal(def.mPosition.x, 890.579651f))
-		{
-			int x = 1;
-		}*/
-
 		hash = shared::utils::hash32_combine(hash, def.mFlags);
 		hash = shared::utils::hash32_combine(hash, def.mRoomIndex);
 		//hash = shared::utils::hash32_combine(hash, def.mInteriorIndex); // this changes when starting a new game from an old save
@@ -83,21 +77,23 @@ namespace gta4
 
 
 	/**
-	 * Directly add a game light without the need to go through game logic.
-	 * Does not use light translation settings. Always updates - no cache
+	 * Adds an actual game light via 'game::AddSceneLight' which is later translated to a remixApi light
+	 * @param type				sphere/spot
+	 * @param pos				position of light	
+	 * @param color 			color of light (game scale)
+	 * @param intensity 		intensity of light (game scale)
+	 * @param radius 			radius of light (game scale)
+	 * @param inner_cone 		inner_cone of light (game scale)
+	 * @param outer_cone 		outer_cone of light (game scale)
+	 * @param dir 				direction of light - spot light only (game scale)
+	 * @param always_update 	update translated remix light every frame - code tries to re-use lights of previous frames when false
 	 */
-	void game_lights::add_custom_game_light_sphere(const Vector& pos, const float& radius, const float& intensity, const float& volumetric_scale, const Vector& color)
+	void add_game_light(const game::eLightType& type, Vector pos, Vector color, const float& intensity, const float& radius, const float& inner_cone = 0.0f, const float& outer_cone = 0.0f, Vector dir = { 0, 1, 0 }, bool always_update = true)
 	{
-		game::CLightSource def;
-		def.mPosition = pos;
-		def.mColor.x = color.x;
-		def.mColor.y = color.y;
-		def.mColor.z = color.z;
-		def.mRadius = radius;
-		def.mIntensity = intensity;
-		def.mVolumeScale = volumetric_scale;
-		def.mType = game::LT_POINT;
-		m_custom_game_lights.push_back(def);
+		game::AddSceneLight(0, type,
+			always_update ? 0x400 : 0x0, // constantly update lights with 0x400 flag (remix_lights.cpp)
+			&dir.x, &dir.x, &pos.x, &color.x,
+			intensity, 0, 0, radius, inner_cone, outer_cone, 0, 0, 0);
 	}
 
 
@@ -194,20 +190,6 @@ namespace gta4
 
 		if (comp_settings::get()->translate_game_lights.get_as<bool>() && light_count && light_list)
 		{
-			// custom lights created via game hooks or similar that should not 
-			// go through the entire game logic to then get translated back to remix lights
-			for (auto def : m_custom_game_lights)
-			{
-				const auto hash = calculate_light_hash(def);
-				rml->add_light(def, hash, false, false);
-			}
-
-			// clear after adding all
-			m_custom_game_lights.clear();
-
-			// --
-			// actual game lights
-
 			for (auto i = 0u; i < light_count; i++)
 			{
 				auto& def = light_list[i];
@@ -517,10 +499,7 @@ namespace gta4
 		//const auto im = imgui::get();
 		const auto gs = comp_settings::get();
 
-		//pos[0] += im->m_debug_vector2.x;
-		//pos[1] += im->m_debug_vector2.y;
 		pos[2] += gs->translate_vehicle_fake_siren_z_offset._float();
-
 		intensity += gs->translate_vehicle_fake_siren_intensity_offset._float();
 		radius += gs->translate_vehicle_fake_siren_radius_offset._float();
 
@@ -528,14 +507,14 @@ namespace gta4
 	}
 
 
-	// normally adds deferred/2d lights into the actual sirens - we create actual lights instead
+	// normally adds deferred/2d lights into the actual sirens - we create actual lights instead (AddProjectedLight)
 	void veh_siren_vlights_hk([[maybe_unused]] int unk2, byte r, byte g, byte b, float ems_scale, float* pos,
 		[[maybe_unused]] float maybe_radius, // some gamesetting - does not seem to be dynamic
 		[[maybe_unused]] float a9_160_0, [[maybe_unused]] float a10_0_2, [[maybe_unused]] float a11_0_0, [[maybe_unused]] float a12_2_0, // all hardcoded
 		[[maybe_unused]] char a13, [[maybe_unused]] char a14,
 		float* light_direction)
 	{
-		//const auto im = imgui::get();
+		const auto im = imgui::get();
 		const auto gs = comp_settings::get();
 
 		Vector color =
@@ -545,35 +524,20 @@ namespace gta4
 			(float)b / 255.0f
 		};
 
-		game::AddSceneLight(0,
-			gs->translate_vehicle_vsirens_make_spotlight._bool() ? game::eLightType::LT_SPOT : game::eLightType::LT_POINT,
-			0x400, // constantly update lights with 0x400 flag (remix_lights.cpp)
-			light_direction, light_direction,
-			pos,
-			&color.x,
-			ems_scale + gs->translate_vehicle_vsirens_intensity_offset._float(), 
-			0, 0, 
-			gs->translate_vehicle_vsirens_radius_offset._float(), 
-			0.0f, 0.0f, 0, 0, 0);
+		add_game_light(	gs->translate_vehicle_vsirens_make_spotlight._bool() ? game::eLightType::LT_SPOT : game::eLightType::LT_POINT, 
+						pos, color,
+						ems_scale + gs->translate_vehicle_vsirens_intensity_offset._float(),
+						gs->translate_vehicle_vsirens_radius_offset._float(),
+						0.0f, 45.0f, light_direction);
 
 		if (gs->translate_vehicle_vsirens_secondary_spherelight_enabled._bool())
 		{
 			Vector new_pos = pos;
+			new_pos.z += (gs->translate_vehicle_vsirens_secondary_spherelight_z_offset._float() + 0.01f); // always add a slight offset so code recognizes it as a new light in case z offset gets set to 0
 
-			//const auto im = imgui::get();
-			//new_pos.x += im->m_debug_vector2.x;
-			//new_pos.y += im->m_debug_vector2.y;
-			//new_pos.z += im->m_debug_vector2.z;
-
-			const float z_offset = gs->translate_vehicle_vsirens_secondary_spherelight_z_offset._float();
-			new_pos.z += (z_offset + 0.01f); // always add a slight offset so code recognizes it as a new light
-
-			game_lights::add_custom_game_light_sphere(
-				new_pos,
-				gs->translate_vehicle_vsirens_secondary_spherelight_radius_offset._float(),
-				ems_scale + gs->translate_vehicle_vsirens_secondary_spherelight_intensity_offset._float(),
-				1.0f,
-				color);
+			add_game_light(	game::eLightType::LT_POINT, new_pos, color,
+							ems_scale + gs->translate_vehicle_vsirens_secondary_spherelight_intensity_offset._float(), 
+							gs->translate_vehicle_vsirens_secondary_spherelight_radius_offset._float());
 		}
 	}
 
@@ -585,86 +549,28 @@ namespace gta4
 		[[maybe_unused]] char a13, [[maybe_unused]] char a14,
 		[[maybe_unused]] float* light_direction /*nullptr*/)
 	{
-		//const auto im = imgui::get();
 		const auto gs = comp_settings::get();
 
-		Vector color =
-		{
-			(float)r / 255.0f,
-			(float)g / 255.0f,
-			(float)b / 255.0f
-		};
-
-		/*
-		Vector light_dir = { 0.0f, 1.0f, 0.0f };
-
-		game::AddSceneLight(0,
-			game::eLightType::LT_POINT,
-			0x400, // constantly update lights with 0x400 flag (remix_lights.cpp)
-			&light_dir.x, &light_dir.x,
-			pos,
-			&color.x,
-			ems_scale + (-45.0f + im->m_debug_vector.x),
-			0, 0,
-			maybe_radius + (- 260.0f + im->m_debug_vector.y),
-			0.0f, 0.0f, 0, 0, 0);*/
-
-		game_lights::add_custom_game_light_sphere(
-			pos,
-			maybe_radius * gs->translate_vehicle_barsirens_radius_scalar._float(),
-			ems_scale * gs->translate_vehicle_barsirens_intensity_scalar._float(),
-			1.0f,
-			color);
+		const Vector color = { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f };
+		add_game_light(game::eLightType::LT_POINT, pos, color, ems_scale * gs->translate_vehicle_barsirens_intensity_scalar._float(), maybe_radius * gs->translate_vehicle_barsirens_radius_scalar._float());
 	}
 
 
-	// normally adds deferred/2d lights into the actual sirens - we create actual lights instead
-	void veh_firetruck_siren_hk([[maybe_unused]] int unk2, byte r, byte g, byte b, float ems_scale, float* pos,
+	// normally adds deferred/2d lights at rear window sirens - we create actual lights instead
+	void veh_fbi_buffalo_siren_hk([[maybe_unused]] int unk2, byte r, byte g, byte b, float ems_scale, float* pos,
 		[[maybe_unused]] float maybe_radius, // some gamesetting - does not seem to be dynamic
 		[[maybe_unused]] float a9_160_0, [[maybe_unused]] float a10_0_2, [[maybe_unused]] float a11_0_0, [[maybe_unused]] float a12_2_0, // all hardcoded
 		[[maybe_unused]] char a13, [[maybe_unused]] char a14,
-		[[maybe_unused]] float* light_direction)
+		[[maybe_unused]] float* light_direction /*nullptr*/)
 	{
-		//const auto im = imgui::get();
-		const auto gs = comp_settings::get();
+		// note: can not create remixApi lights directly because this runs in the main thread and seems to be framerate dependent
+		// drawing the light instances later in the same thread does not help either
+		// so we create proper game lights which are translated to remixApi lights later
 
-		Vector color =
-		{
-			(float)r / 255.0f,
-			(float)g / 255.0f,
-			(float)b / 255.0f
-		};
-
-		game::AddSceneLight(0,
-			gs->translate_vehicle_vsirens_make_spotlight._bool() ? game::eLightType::LT_SPOT : game::eLightType::LT_POINT,
-			0x400, // constantly update lights with 0x400 flag (remix_lights.cpp)
-			light_direction, light_direction,
-			pos,
-			&color.x,
-			ems_scale + gs->translate_vehicle_vsirens_intensity_offset._float(),
-			0, 0,
-			gs->translate_vehicle_vsirens_radius_offset._float(),
-			0.0f, 0.0f, 0, 0, 0);
-
-		if (gs->translate_vehicle_vsirens_secondary_spherelight_enabled._bool())
-		{
-			Vector new_pos = pos;
-
-			//const auto im = imgui::get();
-			//new_pos.x += im->m_debug_vector2.x;
-			//new_pos.y += im->m_debug_vector2.y;
-			//new_pos.z += im->m_debug_vector2.z;
-
-			const float z_offset = gs->translate_vehicle_vsirens_secondary_spherelight_z_offset._float();
-			new_pos.z += (z_offset + 0.01f); // always add a slight offset so code recognizes it as a new light
-
-			game_lights::add_custom_game_light_sphere(
-				new_pos,
-				gs->translate_vehicle_vsirens_secondary_spherelight_radius_offset._float(),
-				ems_scale + gs->translate_vehicle_vsirens_secondary_spherelight_intensity_offset._float(),
-				1.0f,
-				color);
-		}
+		const Vector color = { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f };
+		add_game_light(	game::eLightType::LT_POINT, pos, color, 
+						ems_scale * (0.6f /*+ im->m_debug_vector2.x*/), 
+						maybe_radius * (0.05f /*+ im->m_debug_vector2.y*/));
 	}
 
 	game_lights::game_lights()
@@ -688,12 +594,16 @@ namespace gta4
 		shared::utils::hook(game::hk_addr__vehicle_vshaped_sirens_fake_light, veh_siren_fake_light_hk, HOOK_CALL).install()->quick(); // 0xA40D0A - police / ambulance
 		shared::utils::hook(game::hk_addr__vehicle_firetruck_sirens_fake_light, veh_siren_fake_light_hk, HOOK_CALL).install()->quick(); // 0xA4126E - firetruck
 
+
 		// replace defered/2d light inside sirens with actual lights
 		shared::utils::hook(game::hk_addr__vehicle_vshaped_sirens_vlight, veh_siren_vlights_hk, HOOK_CALL).install()->quick(); // 0xA40AAA - police / ambulance
 		shared::utils::hook(game::hk_addr__vehicle_firetruck_sirens, veh_siren_vlights_hk, HOOK_CALL).install()->quick(); // 0xA4100E - firetruck
 
 		// replace defered/2d light of siren bars
 		shared::utils::hook(game::hk_addr__vehicle_barshaped_sirens, veh_bar_siren_vlights_hk, HOOK_CALL).install()->quick(); // 0xA4146F
+		shared::utils::hook(game::hk_addr__vehicle_fbibuffalo_sirens, veh_fbi_buffalo_siren_hk, HOOK_CALL).install()->quick(); // 0xA417DF - fbi rear projected lights
+
+
 
 		// -----
 		m_initialized = true;

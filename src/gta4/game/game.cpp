@@ -167,7 +167,7 @@ namespace gta4::game
 	uint32_t hk_addr__vehicle_firetruck_sirens = 0u;
 
 	uint32_t hk_addr__vehicle_barshaped_sirens = 0u;
-	
+	uint32_t hk_addr__vehicle_fbibuffalo_sirens = 0u;
 
 	uint32_t hk_addr__static_world_culling_check_hk = 0u;
 	uint32_t nop_addr__static_world_frustum_patch01 = 0u;
@@ -680,7 +680,7 @@ namespace gta4::game
 		PATTERN_OFFSET_SIMPLE(hk_addr__vehicle_firetruck_sirens, "E8 ? ? ? ? 83 C4 ? EB ? 51 8D 47", 0x0, 0xA4100E);
 
 		PATTERN_OFFSET_SIMPLE(hk_addr__vehicle_barshaped_sirens, "E8 ? ? ? ? 83 C4 ? EB ? 51 83 C0 ? ? ? ? ? ? ? ? 50 8B 44 24", 0x0, 0xA4146F);
-		
+		PATTERN_OFFSET_SIMPLE(hk_addr__vehicle_fbibuffalo_sirens, "E8 ? ? ? ? F3 0F 10 4C 24 ? 83 C4 ? 0F 2F 0D", 0x0, 0xA417DF);
 		
 
 		PATTERN_OFFSET_SIMPLE(hk_addr__static_world_culling_check_hk, "55 8B EC 83 E4 ? 83 EC ? 56 8B F1 ? ? 8B 40 ? FF D0 ? ? ? ? ? ? 8D 4C 24 ? 51 8B CE FF 50 ? F3 0F 10 44 24 ? 8B 4D", 0, 0xA31C20);

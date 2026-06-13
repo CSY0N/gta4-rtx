@@ -793,16 +793,16 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_intensity_offset",
 				("Intensity offset (in game units) applied to the v-siren lights inside the actual sirens"),
-				"1.3.0",
-				20.0f
+				"1.3.2",
+				0.0f
 			};
 
 			variable translate_vehicle_vsirens_radius_offset =
 			{
 				"translate_vehicle_vsirens_radius_offset",
 				("Radius offset (in game units) applied to the v-siren lights inside the actual sirens"),
-				"1.3.0",
-				25.0f
+				"1.3.2",
+				20.0f
 			};
 
 
@@ -810,24 +810,24 @@ namespace gta4
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_enabled",
 				("Create a secondary spherelight on v-siren lights"),
-				"1.3.0",
-				true
+				"1.3.2",
+				false
 			};
 
 			variable translate_vehicle_vsirens_secondary_spherelight_radius_offset =
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_radius_offset",
 				("Radius offset (in game units) applied to the secondary v-siren light"),
-				"1.3.0",
-				2.0f
+				"1.3.2",
+				1.0f
 			};
 
 			variable translate_vehicle_vsirens_secondary_spherelight_intensity_offset =
 			{
 				"translate_vehicle_vsirens_secondary_spherelight_intensity_offset",
 				("Intensity offset (in game units) applied to the secondary v-siren light"),
-				"1.3.0",
-				4.0f
+				"1.3.2",
+				6.0f
 			};
 
 			variable translate_vehicle_vsirens_secondary_spherelight_z_offset =
@@ -844,16 +844,16 @@ namespace gta4
 			{
 				"translate_vehicle_barsirens_intensity_scalar",
 				("Intensity scalar used on bar-siren lights"),
-				"1.3.0",
-				1.0f
+				"1.3.2",
+				0.1f
 			};
 
 			variable translate_vehicle_barsirens_radius_scalar =
 			{
 				"translate_vehicle_barsirens_radius_scalar",
 				("Radius scalar used on bar-siren lights"),
-				"1.3.0",
-				0.07f
+				"1.3.2",
+				0.08f
 			};
 
 			// ----------------------------------

@@ -14,24 +14,15 @@ namespace gta4
 			once = true;
 
 			// TODO: hack to fix issues with SSS-fixing commit (that makes head mesh invisible)
-			// use remix options to force blas rebuilds
-
-			const auto minimize = remix_vars::get_option("rtx.minimizeBlasMerging");
-			const auto merge = remix_vars::get_option("rtx.forceMergeAllMeshes");
-
-			if (minimize && merge)
+			// latest remix versions also make player char invisible ... 
+			if (const auto useVertexCapture = remix_vars::get_option("rtx.useVertexCapture"); useVertexCapture)
 			{
 				remix_vars::option_value on { .enabled = true };
 				remix_vars::option_value off { .enabled = false };
 
-				remix_vars::get()->add_interpolate_entry(minimize, on, 18);
-				remix_vars::get()->add_interpolate_entry(minimize, off, 24);
-
-				remix_vars::get()->add_interpolate_entry(merge, on, 28);
-				remix_vars::get()->add_interpolate_entry(merge, off, 36);
-
-				remix_vars::get()->add_interpolate_entry(merge, off, 40);
-				remix_vars::get()->add_interpolate_entry(minimize, off, 40);
+				remix_vars::get()->add_interpolate_entry(useVertexCapture, off, 2);
+				remix_vars::get()->add_interpolate_entry(useVertexCapture, on, 14);
+				remix_vars::get()->add_interpolate_entry(useVertexCapture, on, 18);
 			}
 		}
 

@@ -501,20 +501,7 @@ namespace gta4
 		{
 			v->m_init_once_on_ingame_frame = true;
 
-			// make sure the remix options reflects the comp setting as we can't set this option every second
-			// because it clears the cache of all particle systems
-			// rtx.particles.forceScreenSpaceCollision needs to be FALSE upon starting the game so that the toggle works properly
-			{
-				const auto cs = comp_settings::get();
-				
-				if (const auto particles_forceScreenSpaceCollision = get_option("rtx.particles.forceScreenSpaceCollision"); 
-					particles_forceScreenSpaceCollision &&
-					particles_forceScreenSpaceCollision->second.current.enabled == cs->remix_override_enable_particle_tlas_collision._bool())
-				{
-					option_value val{ .enabled = !cs->remix_override_enable_particle_tlas_collision._bool() };
-					set_option(particles_forceScreenSpaceCollision, val, false, true);
-				}
-			}
+			// so empty
 
 			return true;
 		}

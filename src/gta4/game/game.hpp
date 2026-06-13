@@ -188,6 +188,7 @@ namespace gta4::game
 	extern uint32_t hk_addr__vehicle_firetruck_sirens;
 
 	extern uint32_t hk_addr__vehicle_barshaped_sirens;
+	extern uint32_t hk_addr__vehicle_fbibuffalo_sirens;
 
 
 	extern uint32_t hk_addr__static_world_culling_check_hk;

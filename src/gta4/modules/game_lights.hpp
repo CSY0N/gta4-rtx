@@ -21,9 +21,6 @@ namespace gta4
 		void	draw_debug();
 		void	iterate_all_game_lights();
 
-		static void add_custom_game_light_sphere(const Vector& pos, const float& radius, const float& intensity, const float& volumetric_scale, const Vector& color);
-		static inline std::vector<game::CLightSource> m_custom_game_lights = {};
-
 	private:
 		bool m_initialized = false;
 	};

@@ -1038,7 +1038,7 @@ namespace gta4
 	void cont_compsettings_quick_cmd()
 	{
 		if (ImGui::Button(ICON_FA_SAVE "  Save Current Settings", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0))) {
-			comp_settings::write_toml();
+			comp_settings::write_comp_settings_toml();
 		} TT("Saves current settings to 'comp_settings.toml'. Ignores settings that were modified by addon setting files.");
 
 		ImGui::SameLine();
