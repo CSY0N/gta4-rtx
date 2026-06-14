@@ -190,6 +190,8 @@ namespace gta4
 
 				ASSIGN(nocull_map_areas);
 				ASSIGN(nocull_map_areas_count);
+				ASSIGN(nocull_map_areas_high_lod_logic);
+				ASSIGN(nocull_map_areas_high_lod_logic_distance);
 
 				// light translation related settings
 				ASSIGN(translate_game_lights);

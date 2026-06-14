@@ -514,7 +514,6 @@ namespace gta4
 		[[maybe_unused]] char a13, [[maybe_unused]] char a14,
 		float* light_direction)
 	{
-		const auto im = imgui::get();
 		const auto gs = comp_settings::get();
 
 		Vector color =
@@ -532,8 +531,8 @@ namespace gta4
 
 		if (gs->translate_vehicle_vsirens_secondary_spherelight_enabled._bool())
 		{
-			Vector new_pos = pos;
-			new_pos.z += (gs->translate_vehicle_vsirens_secondary_spherelight_z_offset._float() + 0.01f); // always add a slight offset so code recognizes it as a new light in case z offset gets set to 0
+			Vector new_pos = pos; // always add a slight offset so code recognizes it as a new light in case z offset gets set to 0
+				   new_pos.z += (gs->translate_vehicle_vsirens_secondary_spherelight_z_offset._float() + 0.01f); 
 
 			add_game_light(	game::eLightType::LT_POINT, new_pos, color,
 							ems_scale + gs->translate_vehicle_vsirens_secondary_spherelight_intensity_offset._float(), 

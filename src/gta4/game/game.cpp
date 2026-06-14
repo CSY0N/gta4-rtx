@@ -176,6 +176,9 @@ namespace gta4::game
 	uint32_t retn_addr__add_far_grid_map_sections = 0u;
 	uint32_t fn_addr__mark_render_sector_far_callback = 0u;
 
+	uint32_t retn_addr__add_near_grid_map_sections = 0u;
+	uint32_t fn_addr__mark_render_sector_near_callback = 0u;
+
 	uint32_t retn_addr__extended_anti_culling_check_stub = 0u;
 	uint32_t jmp_addr__extended_anti_culling_check_stub = 0u;
 	uint32_t hk_addr__frustum_check = 0u;
@@ -697,6 +700,10 @@ namespace gta4::game
 
 		PATTERN_OFFSET_SIMPLE(retn_addr__add_far_grid_map_sections, "8B 8C 24 ? ? ? ? 5F 5E 33 CC C6 05", 0, 0xAEA14D);
 		PATTERN_OFFSET_SIMPLE(fn_addr__mark_render_sector_far_callback, "8B 54 24 ? 85 D2 78 ? 56", 0, 0xAE93C0);
+
+		PATTERN_OFFSET_SIMPLE(retn_addr__add_near_grid_map_sections, "F3 0F 10 BC 24 ? ? ? ? F3 0F 10 9C 24 ? ? ? ? 8A 0D ? ? ? ? A1", 0, 0xAE9EDC);
+		PATTERN_OFFSET_SIMPLE(fn_addr__mark_render_sector_near_callback, "8B 4C 24 ? B8 ? ? ? ? 8B 89 ? ? ? ? D3 E0", 0, 0xAE95B0);
+
 
 		if (const auto offset = shared::utils::mem::find_pattern("83 EC ? A1 ? ? ? ? 33 C4 89 44 24 ? 80 7C 24 ? ? 8B 44 24", 0, "AddMapSectionsInFrustum", use_pattern, 0xD62DC0); offset) 
 		{

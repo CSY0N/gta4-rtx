@@ -1562,16 +1562,30 @@ namespace gta4
 			});
 
 		ImGui::Spacing(0, inbetween_spacing);
+		ImGui::Widget_CategoryWithVerticalLabel("NoCull MapArea", [&]()
+			{
+				ImGui::PushID("nocullarea");
+
+				compsettings_bool_widget("Enable NoCull Logic", gs->nocull_map_areas);
+				ImGui::BeginDisabled(!gs->nocull_map_areas._bool());
+					compsettings_int_widget("Area Count", gs->nocull_map_areas_count, 1, 5);
+				ImGui::EndDisabled();
+
+				ImGui::Spacing(0, inbetween_spacing);
+				compsettings_bool_widget("Enable High LOD Logic", gs->nocull_map_areas_high_lod_logic);
+				ImGui::BeginDisabled(!gs->nocull_map_areas_high_lod_logic._bool());
+					compsettings_float_widget("High LOD Distance", gs->nocull_map_areas_high_lod_logic_distance, -5000.0f, 5000.0f, 1.0f);
+				ImGui::EndDisabled();
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::Widget_CategoryWithVerticalLabel("Other Settings", [&]()
 			{
 				ImGui::PushID("otherac");
 				compsettings_float_widget("Light Distance", gs->nocull_dist_lights, 0.0f, 500.0f, 0.5f);
 				compsettings_float_widget("Interior Object Distance", gs->nocull_dist_sphere_interior, 0.0f, 500.0f, 0.5f);
 
-				ImGui::Spacing(0, inbetween_spacing);
-
-				compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
-				compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
 				ImGui::PopID();
 			});
 
@@ -2088,18 +2102,28 @@ namespace gta4
 				compsettings_bool_widget("Use Extended AntiCulling", gs->nocull_extended);
 
 				ImGui::BeginDisabled(!gs->nocull_extended._bool());
-				compsettings_bool_widget("Use Auto Extended AntiCulling", gs->nocull_extended_auto);
+					compsettings_bool_widget("Use Auto Extended AntiCulling", gs->nocull_extended_auto);
 				ImGui::EndDisabled();
 				
 				ImGui::BeginDisabled(!gs->nocull_extended_auto._bool());
-				compsettings_float_widget("Consider until Distance", gs->nocull_extended_dist, 0.0f, FLT_MAX, 0.5f);
-				compsettings_float_widget("Min. Object Radius", gs->nocull_extended_radius, 0.0f, FLT_MAX, 0.5f);
-				compsettings_float_widget("Min. Object Height", gs->nocull_extended_height, 0.0f, FLT_MAX, 0.5f);
+					compsettings_float_widget("Consider until Distance", gs->nocull_extended_dist, 0.0f, FLT_MAX, 0.5f);
+					compsettings_float_widget("Min. Object Radius", gs->nocull_extended_radius, 0.0f, FLT_MAX, 0.5f);
+					compsettings_float_widget("Min. Object Height", gs->nocull_extended_height, 0.0f, FLT_MAX, 0.5f);
 				ImGui::EndDisabled();
 
 				ImGui::Spacing(0, inbetween_spacing);
-				compsettings_bool_widget("No Cull Map Areas", gs->nocull_map_areas);
-				compsettings_int_widget("No Cull Map Areas Count", gs->nocull_map_areas_count, 1, 5);
+				compsettings_bool_widget("Enable NoCull MapArea Logic", gs->nocull_map_areas);
+
+				ImGui::BeginDisabled(!gs->nocull_map_areas._bool());
+					compsettings_int_widget("Area Count", gs->nocull_map_areas_count, 1, 5);
+				ImGui::EndDisabled();
+
+				ImGui::Spacing(0, inbetween_spacing);
+				compsettings_bool_widget("Enable MapArea High LOD Logic", gs->nocull_map_areas_high_lod_logic);
+				
+				ImGui::BeginDisabled(!gs->nocull_map_areas_high_lod_logic._bool());
+					compsettings_float_widget("High LOD Distance", gs->nocull_map_areas_high_lod_logic_distance, -5000.0f, 5000.0f, 1.0f);
+				ImGui::EndDisabled();
 				ImGui::PopID();
 			});
 

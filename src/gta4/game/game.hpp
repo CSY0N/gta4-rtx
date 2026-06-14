@@ -196,7 +196,10 @@ namespace gta4::game
 	extern uint32_t nop_addr__static_world_frustum_patch02;
 
 	extern uint32_t retn_addr__add_far_grid_map_sections;
-	extern uint32_t fn_addr__mark_render_sector_far_callback; // sub_AE93C0
+	extern uint32_t fn_addr__mark_render_sector_far_callback;
+
+	extern uint32_t retn_addr__add_near_grid_map_sections;
+	extern uint32_t fn_addr__mark_render_sector_near_callback;
 
 	extern uint32_t retn_addr__extended_anti_culling_check_stub;
 	extern uint32_t jmp_addr__extended_anti_culling_check_stub;

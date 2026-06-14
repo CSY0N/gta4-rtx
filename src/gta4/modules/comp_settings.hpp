@@ -548,6 +548,22 @@ namespace gta4
 				1
 			};
 
+			variable nocull_map_areas_high_lod_logic = {
+				"nocull_map_areas_high_lod_logic",
+				("The game normally adds the lowest LOD outside the cameras view frustum.\n"
+				 "Enabling this will keep the highest LOD variant of objects around the player.\n"
+				 "Distance can be adjusted via 'nocull_map_areas_high_lod_logic_distance'"),
+				"1.3.2",
+				true
+			};
+
+			variable nocull_map_areas_high_lod_logic_distance = {
+				"nocull_map_areas_high_lod_logic_distance",
+				("How far behind the camera to force the highest LOD variant of objects.\n"),
+				"1.3.2",
+				50.0f
+			};
+
 			// ----------------------------------
 			// light translation related settings
 
