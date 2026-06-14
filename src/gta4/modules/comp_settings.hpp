@@ -429,8 +429,8 @@ namespace gta4
 			{
 				"nocull_dist_near_static",
 				("Distance (radius around player) where culling of static objects is disabled"),
-				"1.3.0",
-				50.0f
+				"1.3.2",
+				30.0f
 			};
 
 			variable nocull_dist_medium_static =
@@ -561,7 +561,7 @@ namespace gta4
 				"nocull_map_areas_high_lod_logic_distance",
 				("How far behind the camera to force the highest LOD variant of objects.\n"),
 				"1.3.2",
-				50.0f
+				7.0f
 			};
 
 			// ----------------------------------
