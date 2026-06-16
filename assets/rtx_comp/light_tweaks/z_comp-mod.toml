@@ -153,5 +153,15 @@ LIGHT_OVERRIDES = [
         { hash = 0xB858957D, pos = [-86.18, -380.73, 125.03] },
     ]},
 
-
+    { category = "centralpark", overrides = [
+        { hash = 0x23125DE1, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0x67AD2B64, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0xB5AD9920, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0x52BF593B, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0xB7FC595D, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0x50B50C83, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0xE8A30148, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 4.00, light_type = false },
+        { hash = 0x1666BF61, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+        { hash = 0xC68E3538, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+    ]},
 ]
