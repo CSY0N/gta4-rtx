@@ -864,6 +864,7 @@ namespace gta4
 					bridge.SetGameValue("__weather.target", "rainstorm");
 				}
 
+				ImGui::SameLine();
 				if (ImGui::Button("thunderstorm")) {
 					bridge.SetGameValue("__weather.target", "thunderstorm");
 				}
@@ -873,7 +874,9 @@ namespace gta4
 					bridge.SetGameValue("__weather.target", "smoggy");
 				}
 
+				ImGui::Spacing(0, TREENODE_SPACING);
 				ImGui::Separator();
+				ImGui::Spacing(0, TREENODE_SPACING);
 
 				static float trans_val = 0.0f;
 				ImGui::SliderFloat("Absolute Val", &trans_val, -1.0f, 1.0f);
@@ -883,7 +886,9 @@ namespace gta4
 					bridge.SetGameValue("__weather.blend_absolute", std::to_string(trans_val).c_str());
 				}
 
+				ImGui::Spacing(0, TREENODE_SPACING);
 				ImGui::Separator();
+				ImGui::Spacing(0, TREENODE_SPACING);
 
 				static float trans_blend_val = 0.0f;
 				ImGui::SliderFloat("Transition Blend Val", &trans_blend_val, 0.0f, 10.0f);
@@ -898,7 +903,9 @@ namespace gta4
 				ImGui::EndDisabled();
 			}
 
+			ImGui::Spacing(0, TREENODE_SPACING);
 			ImGui::Separator();
+			ImGui::Spacing(0, TREENODE_SPACING);
 
 			static char str_buff[512] = {};
 			static uint32_t str_len = 0u;
