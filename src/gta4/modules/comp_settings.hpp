@@ -1393,8 +1393,8 @@ namespace gta4
 			variable timecycle_fogdensity_influence_scalar = {
 				"timecycle_fogdensity_influence_scalar",
 				("Controls how much the fogdensity timecycle variable influences 'rtx.volumetrics.transmittanceMeasurementDistanceMeters'"),
-				"1.3.0",
-				1.0f
+				"1.3.2",
+				2.0f
 			};
 
 
@@ -1488,8 +1488,8 @@ namespace gta4
 			variable timecycle_colorcorrection_influence = {
 				"timecycle_colorcorrection_influence",
 				("Controls how much the timecycle color correction variable influences 'rtx.tonemap.colorBalance'"),
-				"1.3.0",
-				1.0f
+				"1.3.2",
+				1.8f
 			};
 
 			variable timecycle_colortemp_enabled = {
