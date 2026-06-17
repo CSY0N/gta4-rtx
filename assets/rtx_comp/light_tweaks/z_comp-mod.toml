@@ -15,7 +15,9 @@
 IGNORE_LIGHTS = [
     0x32734E7F, 0x79B4AF95, 0xDA6E0F5A, 0x403E165F, 0x8207760C, 0x74D3E6F, 0xB9B7A3F3, 0x352AEAAC, 0xDF6EE45C, 
     0x2CCE00DE, 0xABD45A47, 0x8EC40D31, 0x32AE2E4D, 0x9EC26F3E, 0x445F053B, 0x9ECD1EF7, 0x84CD9FFE, 0xDE7EFC36, 0xFF9457D5, 
-    0x25EE6A9E, 0x4C61B845, 0x2239458F, 0x165B6B4A, 0x2C5246BB, 0xFCB0AF0B, 0xF5B8427B, 0xF9451EE6
+    0x25EE6A9E, 0x4C61B845, 0x2239458F, 0x165B6B4A, 0x2C5246BB, 0xFCB0AF0B, 0xF5B8427B, 0xF9451EE6, 0x634631C3, 0x71ECD9EB, 
+    0x3923EA1E, 0xFCD6983A, 0x26CBB99C, 0xCC257118, 0x7A4F73E0, 0x42C2D3A4, 0x65723A47, 0x1649D8DC, 0x17B7B4C5, 0x627C2FC8, 
+    0x1DE376B5, 0x1437A5DC, 0x5A6F6FB1, 0xC7A31FB5, 0x18A8D004, 0xAD471DBE, 0xE0B1C3CE
 ]
 
 
@@ -163,5 +165,14 @@ LIGHT_OVERRIDES = [
         { hash = 0xE8A30148, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 4.00, light_type = false },
         { hash = 0x1666BF61, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
         { hash = 0xC68E3538, color = [1.00, 0.86, 0.63], radius = 18.00, intensity = 2.00, light_type = false },
+    ]},
+
+    { category = "bowling", overrides = [
+        { hash = 0xD229ADE5, pos = [1199.72, -659.56, 18.98], radius = 8.98, intensity = 3.42 },
+        { hash = 0x19151500, pos = [1188.25, -675.20, 17.92], intensity = 1.85 },
+        { hash = 0x88D673A4, pos = [1203.11, -658.17, 18.85], intensity = 3.17 },
+        { hash = 0xB475B0F0, pos = [1199.57, -665.54, 18.34] },
+        { hash = 0x43499558, pos = [1192.58, -677.55, 17.31], color = [0.89, 0.30, 0.11], radius = 7.90, intensity = 0.85 },
+        { hash = 0xF9CDA421, pos = [1203.12, -672.33, 17.33], color = [0.92, 0.31, 0.12], radius = 1.91, intensity = 16.55 },
     ]},
 ]
