@@ -86,6 +86,85 @@ namespace gta4
 
 	// ------
 
+	// re-used in dev tab
+	void im_logic_weather_clock_adjustment()
+	{
+		ImGui::Spacing(0, 4);
+		ImGui::SeparatorText("    Adjust Game Clock     ");
+		ImGui::Spacing(0, 2);
+
+		const auto im = imgui::get();
+		const auto n = natives::get();
+
+		ImGui::Checkbox("Freeze Time", &im->m_freeze_time);
+
+		ImGui::BeginDisabled(!im->m_freeze_time);
+		{
+			if (ImGui::InputInt("Hour", &im->m_curr_game_hour, 1, 2))
+			{
+				im->m_curr_game_hour = im->m_curr_game_hour > 23 ? 0 : im->m_curr_game_hour < 0 ? 23 : im->m_curr_game_hour;
+				im->m_time_was_changed = true;
+			}
+			if (ImGui::InputInt("Minutes", &im->m_curr_game_minute, 1, 4))
+			{
+				im->m_curr_game_minute = im->m_curr_game_minute > 59 ? 0 : im->m_curr_game_minute < 0 ? 59 : im->m_curr_game_minute;
+				im->m_time_was_changed = true;
+			}
+			ImGui::EndDisabled();
+		}
+
+		ImGui::Spacing(0, 4);
+		ImGui::SeparatorText("    Adjust Weather     ");
+		ImGui::Spacing(0, 2);
+
+		auto set_weather = [n](uint32_t idx) {
+				n->ForceWeatherNow(idx);
+			};
+
+		if (ImGui::Button("EXTRASUNNY")) {
+			set_weather(game::WEATHER_EXTRASUNNY);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("SUNNY")) {
+			set_weather(game::WEATHER_SUNNY);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("SUNNY_WINDY")) {
+			set_weather(game::WEATHER_SUNNY_WINDY);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("CLOUDY")) {
+			set_weather(game::WEATHER_CLOUDY);
+		}
+
+
+		if (ImGui::Button("RAIN")) {
+			set_weather(game::WEATHER_RAIN);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("DRIZZLE")) {
+			set_weather(game::WEATHER_DRIZZLE);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("FOGGY")) {
+			set_weather(game::WEATHER_FOGGY);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("LIGHTNING")) {
+			set_weather(game::WEATHER_LIGHTNING);
+		}
+
+		ImGui::Spacing(0.0f, 4.0f);
+	}
+
+	// ------
+
 	void imgui::tab_about()
 	{
 		if (tex_addons::berry)
@@ -2476,6 +2555,11 @@ namespace gta4
 		}
 	}
 
+	void quicksettings_clock_weather_container()
+	{
+		im_logic_weather_clock_adjustment();
+	}
+
 	void imgui::tab_utilities()
 	{
 		//const auto& im = imgui::get();
@@ -2484,6 +2568,13 @@ namespace gta4
 		{
 			static float cont_quick_utilities_height = 0.0f;
 			cont_quick_utilities_height = ImGui::Widget_ContainerWithCollapsingTitle("Utilities", cont_quick_utilities_height, quicksettings_util_container,
+				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+		}
+
+		// clock / weather
+		{
+			static float cont_quick_clock_weather_height = 0.0f;
+			cont_quick_clock_weather_height = ImGui::Widget_ContainerWithCollapsingTitle("Clock / Weather", cont_quick_clock_weather_height, quicksettings_clock_weather_container,
 				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
 		}
 	}

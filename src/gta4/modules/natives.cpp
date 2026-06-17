@@ -8,10 +8,13 @@ namespace gta4
 	void on_cgame_process_hk()
 	{
 		const auto im = imgui::get();
+		const auto n = natives::get();
 
 		if (static auto once = false; !once)
 		{
 			once = true;
+
+			const auto vars = remix_vars::get();
 
 			// TODO: hack to fix issues with SSS-fixing commit (that makes head mesh invisible)
 			// latest remix versions also make player char invisible ... 
@@ -20,17 +23,34 @@ namespace gta4
 				remix_vars::option_value on { .enabled = true };
 				remix_vars::option_value off { .enabled = false };
 
-				remix_vars::get()->add_interpolate_entry(useVertexCapture, off, 2);
-				remix_vars::get()->add_interpolate_entry(useVertexCapture, on, 14);
-				remix_vars::get()->add_interpolate_entry(useVertexCapture, on, 18);
+				vars->add_interpolate_entry(useVertexCapture, off, 2);
+				vars->add_interpolate_entry(useVertexCapture, on, 14);
+				vars->add_interpolate_entry(useVertexCapture, on, 18);
 			}
 		}
 
 		// ----
 
+		{
+			if (!im->m_freeze_time)
+			{
+				uint32_t h_from_game = 0u, m_from_game = 0u;
+				n->GetTimeOfDay(&h_from_game, &m_from_game);
+
+				im->m_curr_game_hour = static_cast<int>(h_from_game);
+				im->m_curr_game_minute = static_cast<int>(m_from_game);
+			}
+
+			if (im->m_time_was_changed || im->m_freeze_time) 
+			{
+				n->SetTimeOfDay(im->m_curr_game_hour, im->m_curr_game_minute);
+				im->m_time_was_changed = false;
+			}
+		}
+
 		if (im->m_freecam_mode)
 		{
-			const auto n = natives::get();
+			
 
 			natives::Ped ped;
 			n->GetPlayerChar(n->ConvertIntToPlayerindex(n->GetPlayerId()), &ped);
