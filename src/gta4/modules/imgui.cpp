@@ -827,6 +827,7 @@ namespace gta4
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
 			ImGui::SeparatorText("Remix Atmos System");
+			ImGui::TextUnformatted("Logic to adjust current Atmos Preset and Blending strength");
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
 			ImGui::Checkbox("Atmos System - Manual Mode", &im->m_dbg_manual_atmos_system);
@@ -838,23 +839,28 @@ namespace gta4
 
 				if (ImGui::Button("clear")) {
 					bridge.SetGameValue("__weather.target", "clear");
-				}
+				} TT("EXTRASUNNY");
+
+				ImGui::SameLine();
+				if (ImGui::Button("smoggy")) {
+					bridge.SetGameValue("__weather.target", "smoggy");
+				} TT("SUNNY");
 
 				ImGui::SameLine();
 				if (ImGui::Button("partlyCloudy")) {
 					bridge.SetGameValue("__weather.target", "partlyCloudy");
-				}
+				} TT("SUNNY_WINDY");
 
 				ImGui::SameLine();
 				if (ImGui::Button("overcast")) {
 					bridge.SetGameValue("__weather.target", "overcast");
-				}
+				} TT("CLOUDY");
 
-				ImGui::SameLine();
 				if (ImGui::Button("drizzle")) {
 					bridge.SetGameValue("__weather.target", "drizzle");
 				}
 
+				ImGui::SameLine();
 				if (ImGui::Button("foggy")) {
 					bridge.SetGameValue("__weather.target", "foggy");
 				}
@@ -862,17 +868,15 @@ namespace gta4
 				ImGui::SameLine();
 				if (ImGui::Button("rainstorm")) {
 					bridge.SetGameValue("__weather.target", "rainstorm");
-				}
+				} TT("RAIN");
 
 				ImGui::SameLine();
 				if (ImGui::Button("thunderstorm")) {
 					bridge.SetGameValue("__weather.target", "thunderstorm");
-				}
+				} TT("LIGHTNING");
 
 				ImGui::SameLine();
-				if (ImGui::Button("smoggy")) {
-					bridge.SetGameValue("__weather.target", "smoggy");
-				}
+				
 
 				ImGui::Spacing(0, TREENODE_SPACING);
 				ImGui::Separator();
@@ -882,7 +886,7 @@ namespace gta4
 				ImGui::SliderFloat("Absolute Val", &trans_val, -1.0f, 1.0f);
 				TT("-1 to disable absolute");
 
-				if (ImGui::Button("Apply Absolute Value")) {
+				if (ImGui::Button("Apply Absolute Value", ImVec2(ImGui::CalcItemWidth(), 0))) {
 					bridge.SetGameValue("__weather.blend_absolute", std::to_string(trans_val).c_str());
 				}
 
@@ -894,16 +898,13 @@ namespace gta4
 				ImGui::SliderFloat("Transition Blend Val", &trans_blend_val, 0.0f, 10.0f);
 				TT("Blend time in s");
 
-				if (ImGui::Button("Apply Blend Value"))
+				if (ImGui::Button("Apply Blend Value", ImVec2(ImGui::CalcItemWidth(), 0)))
 				{
 					bridge.SetGameValue("__weather.blend_absolute", "-1.0");
 					bridge.SetGameValue("__weather.blend_seconds", std::to_string(trans_blend_val).c_str());
 				}
 
-				ImGui::EndDisabled();
-			}
-
-			ImGui::Spacing(0, TREENODE_SPACING);
+				ImGui::Spacing(0, TREENODE_SPACING);
 			ImGui::Separator();
 			ImGui::Spacing(0, TREENODE_SPACING);
 
@@ -927,9 +928,12 @@ namespace gta4
 
 			ImGui::TextUnformatted(std::format("__weather.current: {}", weather_current).c_str());
 			ImGui::TextUnformatted(std::format("__weather.target: {}", weather_target).c_str());
-			ImGui::TextUnformatted(std::format("__weather.previous: {}", weather_previous).c_str());
-			ImGui::TextUnformatted(std::format("__weather.blend_absolute: {}", weather_blend_absolute).c_str());
-			ImGui::TextUnformatted(std::format("__weather.blend_progress: {}", weather_blend_progress).c_str());
+				ImGui::TextUnformatted(std::format("__weather.previous: {}", weather_previous).c_str());
+				ImGui::TextUnformatted(std::format("__weather.blend_absolute: {}", weather_blend_absolute).c_str());
+				ImGui::TextUnformatted(std::format("__weather.blend_progress: {}", weather_blend_progress).c_str());
+
+				ImGui::EndDisabled();
+			}
 
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 			ImGui::Separator();
@@ -993,8 +997,9 @@ namespace gta4
 			ImGui::Text("Clock Hour: %d", *game::m_game_clock_hours);
 			ImGui::Text("Clock Minutes: %d", *game::m_game_clock_minutes);
 
-			ImGui::Spacing(0, 8.0f);
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 			ImGui::Separator();
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
 			ImGui::Checkbox("Override Global Wetness Scale", &im->m_dbg_global_wetness_override);
 			ImGui::BeginDisabled(!im->m_dbg_global_wetness_override);
@@ -2217,6 +2222,8 @@ namespace gta4
 
 		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
 		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
+
+		ImGui::Spacing(0, inbetween_spacing);
 
 		ImGui::Widget_CategoryWithVerticalLabel("Anti Culling", [&]()
 			{
