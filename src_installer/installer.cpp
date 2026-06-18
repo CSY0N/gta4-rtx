@@ -1443,8 +1443,7 @@ int main()
 	
 	std::cout << PAD << "> Using Path: '" << game_dir << "'\n\n\n";
 
-	bool has_remix_comp_mod = file_exists(game_dir + "\\d3d9.dll") &&
-		file_exists(game_dir + "\\a_gta4-rtx.asi");
+	bool has_remix_comp_mod = file_exists(game_dir + "\\d3d9.dll") && file_exists(game_dir + "\\a_gta4-rtx.asi");
 
 	bool update_remote_mods_only = false;
 	if (has_remix_comp_mod)
@@ -1536,15 +1535,13 @@ int main()
 
 
 		// check if any FusionFix version exists
-		const bool has_fusion_fix = file_exists(game_dir + "\\d3d9.dll") &&
-			file_exists(game_dir + "\\plugins\\GTAIV.EFLC.FusionFix.asi");
+		const bool has_fusion_fix = file_exists(game_dir + "\\d3d9.dll") && file_exists(game_dir + "\\plugins\\GTAIV.EFLC.FusionFix.asi");
 
 		// check if original FusionFix version exists
 		const bool has_original_fusion_fix = has_fusion_fix && file_exists(game_dir + "\\vulkan.dll");
 
 		// check if comp mod and remix are installed -> update
-		has_remix_comp_mod = file_exists(game_dir + "\\d3d9.dll") &&
-			file_exists(game_dir + "\\a_gta4-rtx.asi");
+		has_remix_comp_mod = file_exists(game_dir + "\\d3d9.dll") && file_exists(game_dir + "\\a_gta4-rtx.asi");
 
 		// check if RTXRemix FusionFix fork marker exists
 		const bool has_rtxremix_fusionfix_marker = file_exists(game_dir + "\\plugins\\GTAIV.EFLC.FusionFix.RTXRemix.txt");
@@ -1675,6 +1672,30 @@ int main()
 			std::cout << PAD << "Renamed 'rtx.conf' to 'rtx.conf.bak'\n";
 		}
 		Sleep(25);
+
+		// --------------
+
+		// earlier versions shipped files that are deprecated now and can cause issues on newer versions so check
+		// if they exist and if they do, rename them
+		const auto disable_deprecated_files =
+		{
+			"\\rtx_comp\\addon_settings\\x_local_tonemapper.conf",
+			"\\rtx_comp\\addon_settings\\x_local_tonemapper.toml",
+		};
+
+		for (const auto& f : disable_deprecated_files)
+		{
+			auto str = game_dir + f;
+			if (MoveFileExA(
+				(game_dir + f).c_str(),
+				(game_dir + f + ".deprecated").c_str(), MOVEFILE_REPLACE_EXISTING))
+			{
+				std::cout << PAD << "Renamed '" << f << "' to '" << f << ".deprecated'\n";
+			}
+			Sleep(25);
+		}
+
+		// --------------
 
 		// extract comp files
 
