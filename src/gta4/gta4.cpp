@@ -3,6 +3,7 @@
 #include "modules/dinput_hook.hpp"
 #include "modules/game_lights.hpp"
 #include "modules/comp_settings.hpp"
+#include "modules/discord.hpp"
 #include "modules/imgui.hpp"
 #include "modules/map_settings.hpp"
 #include "modules/natives.hpp"
