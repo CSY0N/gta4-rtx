@@ -4,6 +4,7 @@
 #include "shared/common/flags.hpp"
 #include "modules/d3d9ex.hpp"
 #include "modules/comp_settings.hpp"
+#include "modules/discord.hpp"
 #include "modules/renderer.hpp"
 
 //#define BLOCK_DISCORDHOOK // also hooks d3d
@@ -361,6 +362,7 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 
 		shared::common::loader::module_loader::register_module(std::make_unique<gta4::d3d9ex>());
 		shared::common::loader::module_loader::register_module(std::make_unique<gta4::comp_settings>());
+		shared::common::loader::module_loader::register_module(std::make_unique<gta4::discord>());
 
 		// we have to hook SetRect and CreateWindowExA after FusionFix (disables FusionFix' hooks)
 		shared::utils::hook(gta4::game::hk_addr__on_create_game_window_hk, on_create_game_window_stub, HOOK_JUMP).install()->quick();

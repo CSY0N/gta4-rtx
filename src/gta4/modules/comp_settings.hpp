@@ -1586,6 +1586,15 @@ namespace gta4
 				1.5f
 			};
 
+			// ----------------------------------
+			// misc settings
+
+			variable discord_rpc = {
+				"discord_rpc",
+				("Enables custom Discord Rich Presence"),
+				"1.3.2",
+				true
+			};
 		};
 	
 		static inline var_definitions vars = {};

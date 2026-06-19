@@ -340,6 +340,9 @@ namespace gta4
 				ASSIGN(timecycle_bloom_night_min_clamp_enabled);
 				ASSIGN(timecycle_bloom_night_min_clamp_value);
 
+				// misc settings
+				ASSIGN(discord_rpc);
+
 			#undef ASSIGN
 			}
 

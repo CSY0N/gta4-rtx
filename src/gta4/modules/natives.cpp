@@ -1,5 +1,7 @@
 ﻿#include "std_include.hpp"
 #include "natives.hpp"
+
+#include "discord.hpp"
 #include "imgui.hpp"
 #include "remix_vars.hpp"
 
@@ -29,6 +31,8 @@ namespace gta4
 			}
 		}
 
+		discord::update_discord();
+
 		// ----
 
 		{
@@ -50,8 +54,6 @@ namespace gta4
 
 		if (im->m_freecam_mode)
 		{
-			
-
 			natives::Ped ped;
 			n->GetPlayerChar(n->ConvertIntToPlayerindex(n->GetPlayerId()), &ped);
 
