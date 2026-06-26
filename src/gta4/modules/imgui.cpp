@@ -1960,7 +1960,7 @@ namespace gta4
 
 
 			compsettings_bool_widget("Enable Fogdensity Influence on Volumetric Scale", gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled.get_as<bool>());
 			{
 				compsettings_float_widget("Fogdensity Volumetric Influence Scalar", gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_scalar, 0.0f, 0.0f, 0.005f);
 				ImGui::EndDisabled();
