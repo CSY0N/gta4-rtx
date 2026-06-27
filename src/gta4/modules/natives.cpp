@@ -61,9 +61,9 @@ namespace gta4
 			if (im->m_freeze_time)
 			{
 				n->SetTimeOfDay(im->m_curr_game_hour, im->m_curr_game_minute);
-				*game::m_game_clock_hours = im->m_curr_game_hour;
-				*game::m_game_clock_minutes = im->m_curr_game_minute;
-				*game::m_game_clock_seconds = 0;
+				*game::m_game_clock_hours = static_cast<uint8_t>(im->m_curr_game_hour);
+				*game::m_game_clock_minutes = static_cast<uint8_t>(im->m_curr_game_minute);
+				*game::m_game_clock_seconds = 0u;
 				*game::m_game_timer_length = 9999999;
 			}
 			else if (im->m_time_was_changed)
