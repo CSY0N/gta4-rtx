@@ -1898,12 +1898,16 @@ namespace gta4
 		ImGui::SeparatorText(" Distant ");
 		ImGui::Spacing(0, 4);
 
-		compsettings_float_widget("SunLight Intensity Scalar", gs->translate_sunlight_intensity_scalar, 0.0f, 0.0f, 0.005f);
-		compsettings_float_widget("SunLight Bad Weather Influence", gs->translate_sunlight_intensity_bad_weather_influence, 0.0f, 1.0f, 0.005f);
-		compsettings_float_widget("SunLight Angular Diameter Degrees", gs->translate_sunlight_angular_diameter_degrees, 0.0f, 45.0f, 0.005f);
-		compsettings_float_widget("SunLight Volumetric Base", gs->translate_sunlight_volumetric_radiance_base, 0.0f, 10.0f, 0.005f);
-		compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f);
-
+		ImGui::BeginDisabled(gs->timecycle_use_remix_atmos_system._bool());
+		{
+			compsettings_float_widget("SunLight Intensity Scalar", gs->translate_sunlight_intensity_scalar, 0.0f, 0.0f, 0.005f);
+			compsettings_float_widget("SunLight Bad Weather Influence", gs->translate_sunlight_intensity_bad_weather_influence, 0.0f, 1.0f, 0.005f);
+			compsettings_float_widget("SunLight Angular Diameter Degrees", gs->translate_sunlight_angular_diameter_degrees, 0.0f, 45.0f, 0.005f);
+			compsettings_float_widget("SunLight Volumetric Base", gs->translate_sunlight_volumetric_radiance_base, 0.0f, 10.0f, 0.005f);
+			compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f);
+			ImGui::EndDisabled();
+		}
+		
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Vehicle Headlights / Rearlights ");
 		ImGui::Spacing(0, 4);
