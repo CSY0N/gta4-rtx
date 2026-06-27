@@ -28,10 +28,10 @@ namespace gta4
 			if (const auto useVertexCapture = remix_vars::get_option("rtx.useVertexCapture"); useVertexCapture)
 			{
 				vars->add_interpolate_entry(useVertexCapture, off, 0.1f);
-				vars->add_interpolate_entry(useVertexCapture, on, 0.3f);
-				vars->add_interpolate_entry(useVertexCapture, off, 0.6f);
-				vars->add_interpolate_entry(useVertexCapture, on, 1.0f);
-				vars->add_interpolate_entry(useVertexCapture, on, 1.2f);
+				vars->add_interpolate_entry(useVertexCapture, on, 0.5f);
+				//vars->add_interpolate_entry(useVertexCapture, off, 1.5f);
+				//vars->add_interpolate_entry(useVertexCapture, on, 2.5f);
+				//vars->add_interpolate_entry(useVertexCapture, on, 3.5f);
 			}
 
 			im->m_dbg_do_not_render_ff = true;
