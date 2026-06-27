@@ -96,7 +96,9 @@ namespace gta4
 		const auto im = imgui::get();
 		const auto n = natives::get();
 
-		ImGui::Checkbox("Freeze Time", &im->m_freeze_time);
+		if (ImGui::Checkbox("Modify / Freeze Time", &im->m_freeze_time)) {
+			*game::m_game_timer_length = im->m_freeze_time ? 9999999 : 2000;
+		}
 
 		ImGui::BeginDisabled(!im->m_freeze_time);
 		{
@@ -117,8 +119,10 @@ namespace gta4
 		ImGui::SeparatorText("    Adjust Weather     ");
 		ImGui::Spacing(0, 2);
 
-		auto set_weather = [n](uint32_t idx) {
+		auto set_weather = [n](uint32_t idx) 
+			{
 				n->ForceWeatherNow(idx);
+				n->ReleaseWeather();
 			};
 
 		if (ImGui::Button("EXTRASUNNY")) {
@@ -159,6 +163,9 @@ namespace gta4
 		if (ImGui::Button("LIGHTNING")) {
 			set_weather(game::WEATHER_LIGHTNING);
 		}
+
+		ImGui::Spacing(0, 4);
+		ImGui::Text("Current Weather Transition: %.2f", *game::weather_change_value);
 
 		ImGui::Spacing(0.0f, 4.0f);
 	}

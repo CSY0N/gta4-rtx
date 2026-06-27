@@ -57,6 +57,7 @@ namespace gta4::game
 	uint8_t* m_game_clock_hours = nullptr;
 	uint8_t* m_game_clock_minutes = nullptr;
 	uint8_t* m_game_clock_seconds = nullptr;
+	uint32_t* m_game_timer_length = nullptr;
 
 	//CLightSource* m_renderLights = nullptr;
 	//std::uint32_t* m_numRenderLights = nullptr;
@@ -346,6 +347,7 @@ namespace gta4::game
 			m_game_clock_seconds = (uint8_t*)*(DWORD*)(offset + 19u);
 		} total_pattern_count += 2u;
 
+		PATTERN_OFFSET_DWORD_PTR_CAST_TYPE(m_game_timer_length, uint32_t*, "8B 3D ? ? ? ? 2B C1 3B C7 7E", 2, 0x9CB785);
 		PATTERN_OFFSET_DWORD_PTR_CAST_TYPE(weather_change_value, float*, "F3 0F 10 0D ? ? ? ? 8B 15 ? ? ? ? 0F 2F C1", 4, 0xA2E7E8);
 
 		if (const auto offset = shared::utils::mem::find_pattern("F3 0F 10 05 ? ? ? ? 56 57 ? ? ? C1 E7", 4, "pTimeCycleCurrentWetness", use_pattern, 0x986CBC); offset) {

@@ -57,6 +57,7 @@ namespace gta4::game
 	extern uint8_t* m_game_clock_hours;
 	extern uint8_t* m_game_clock_minutes;
 	extern uint8_t* m_game_clock_seconds;
+	extern uint32_t* m_game_timer_length;
 
 	//extern CLightSource* m_renderLights;
 	//extern std::uint32_t* m_numRenderLights;
