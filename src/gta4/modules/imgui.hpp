@@ -46,6 +46,9 @@ namespace gta4
 		int m_curr_game_hour = 0;
 		int m_curr_game_minute = 0;
 
+
+		bool m_anti_cull_capture_toggle = false;
+
 		Vector m_debug_vector = { 0.0f, 0.0f, 0.0f };
 		Vector m_debug_vector2 = { 0.0f, 0.0f, 0.0f };
 

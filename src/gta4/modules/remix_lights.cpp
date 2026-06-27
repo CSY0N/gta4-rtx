@@ -22,7 +22,7 @@ namespace gta4
 	}
 
 	float remix_lights::get_light_radius(const game::CLightSource& def, const map_settings::light_override_s* lov) {
-		return 20.0f * (1.0f - exp(-(lov && lov->_use_radius ? lov->radius : def.mRadius) / 20.0f));
+		return 20.0f * (1.0f - expf(-(lov && lov->_use_radius ? lov->radius : def.mRadius) / 20.0f));
 	}
 
 	float remix_lights::get_light_intensity(const game::CLightSource& def, const map_settings::light_override_s* lov) {

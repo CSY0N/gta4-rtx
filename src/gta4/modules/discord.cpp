@@ -99,9 +99,9 @@ namespace gta4
 		Discord_UpdatePresence(&discord_presence);
 	}
 
-	static void errored(const int error_code, const char* message)
+	static void errored([[maybe_unused]] const int error_code, [[maybe_unused]] const char* message)
 	{
-		shared::common::log("Discord", std::format("({}) {}", error_code, message), shared::common::LOG_TYPE::LOG_TYPE_ERROR);
+		//shared::common::log("Discord", std::format("({}) {}", error_code, message), shared::common::LOG_TYPE::LOG_TYPE_ERROR);
 	}
 
 	void discord::init()

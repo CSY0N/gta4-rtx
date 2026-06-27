@@ -164,48 +164,57 @@ namespace gta4
 				out += "# Type: " + std::string(this->get_str_type()) + " || Default: " + std::string(this->get_str_value(true));
 				out += "\n\n Use [MIDDLE MOUSE] to RESET to default values.";
 				out += this->get_dirty_state() ? "\n ! DIRTY - Modified by ADDON_SETTINGS file. Value ignored when saving !" : "";
+				out += this->get_temp_override_state() ? "\n ! Temporary Override Active. Changes are not reflected until override is disabled !" : "";
 				return out;
 			}
 
 			const bool& _bool(const bool default_value = false) const
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
 				assert(m_type == var_type_boolean && "Type mismatch: expected boolean");
-				return !default_value ? m_var.boolean : m_var_default.boolean;
+				return !default_value ? var.boolean : m_var_default.boolean;
 			}
 
 			const bool* _bool_ptr(const bool default_value = false)
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
 				assert(m_type == var_type_boolean && "Type mismatch: expected boolean");
-				return &(!default_value ? m_var.boolean : m_var_default.boolean);
+				return &(!default_value ? var.boolean : m_var_default.boolean);
 			}
 
 			const int& _int(const bool default_value = false) const
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
 				assert(m_type == var_type_integer && "Type mismatch: expected int");
-				return !default_value ? m_var.integer : m_var_default.integer;
+				return !default_value ? var.integer : m_var_default.integer;
 			}
 
 			const int* _int_ptr(const bool default_value = false)
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
 				assert(m_type == var_type_integer && "Type mismatch: expected int");
-				return &(!default_value ? m_var.integer : m_var_default.integer);
+				return &(!default_value ? var.integer : m_var_default.integer);
 			}
 
 			const float& _float(const bool default_value = false) const
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
 				assert(m_type == var_type_value && "Type mismatch: expected float");
-				return !default_value ? m_var.value[0] : m_var_default.value[0];
+				return !default_value ? var.value[0] : m_var_default.value[0];
 			}
 
 			const float* _float_ptr(const bool default_value = false)
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
 				assert(m_type == var_type_value && "Type mismatch: expected float");
-				return !default_value ? m_var.value : m_var_default.value;
+				return !default_value ? var.value : m_var_default.value;
 			}
 	
 			template <typename T>
 			T get_as(bool default_val = false)
 			{
+				auto& var = get_temp_override_state() ? m_var_temp_override : m_var;
+
 				// if T is a pointer type, return a ptr
 				if constexpr (std::is_pointer_v<T>)
 				{
@@ -214,33 +223,33 @@ namespace gta4
 	
 					if constexpr (std::is_same_v<base_type, bool>) {
 						assert(m_type == var_type_boolean && "Type mismatch: expected boolean");
-						return &(!default_val ? m_var.boolean : m_var_default.boolean);
+						return &(!default_val ? var.boolean : m_var_default.boolean);
 					}
 					else if constexpr (std::is_same_v<base_type, int>) {
 						assert(m_type == var_type_integer && "Type mismatch: expected integer");
-						return &(!default_val ? m_var.integer : m_var_default.integer);
+						return &(!default_val ? var.integer : m_var_default.integer);
 					}
 					else if constexpr (std::is_same_v<base_type, float>) {
 						if (m_type == var_type_value) {
-							return &(!default_val ? m_var.value[0] : m_var_default.value[0]);
+							return &(!default_val ? var.value[0] : m_var_default.value[0]);
 						}
 						if (m_type >= var_type_vec2 && m_type <= var_type_vec4) {
-							return !default_val ? m_var.value : m_var_default.value;
+							return !default_val ? var.value : m_var_default.value;
 						}
 						assert(false && "Type mismatch: expected float or vector type");
 						return nullptr;
 					}
 					else if constexpr (std::is_same_v<base_type, Vector2D>) {
 						assert(m_type == var_type_vec2 && "Type mismatch: expected vec2 for Vector");
-						return reinterpret_cast<Vector2D*>(!default_val ? m_var.value : m_var_default.value);
+						return reinterpret_cast<Vector2D*>(!default_val ? var.value : m_var_default.value);
 					}
 					else if constexpr (std::is_same_v<base_type, Vector>) {
 						assert(m_type == var_type_vec3 && "Type mismatch: expected vec3 for Vector");
-						return reinterpret_cast<Vector*>(!default_val ? m_var.value : m_var_default.value);
+						return reinterpret_cast<Vector*>(!default_val ? var.value : m_var_default.value);
 					}
 					else if constexpr (std::is_same_v<base_type, Vector4D>) {
 						assert(m_type == var_type_vec4 && "Type mismatch: expected vec4 for Vector");
-						return reinterpret_cast<Vector4D*>(!default_val ? m_var.value : m_var_default.value);
+						return reinterpret_cast<Vector4D*>(!default_val ? var.value : m_var_default.value);
 					}
 					else {
 						static_assert(std::is_same_v<T, void>, "Unsupported pointer type in get_as");
@@ -252,27 +261,27 @@ namespace gta4
 				{
 					if constexpr (std::is_same_v<T, bool>) {
 						assert(m_type == var_type_boolean && "Type mismatch: expected boolean");
-						return static_cast<T>(!default_val ? m_var.boolean : m_var_default.boolean);
+						return static_cast<T>(!default_val ? var.boolean : m_var_default.boolean);
 					}
 					else if constexpr (std::is_same_v<T, int>) {
 						assert(m_type == var_type_integer && "Type mismatch: expected integer");
-						return static_cast<T>(!default_val ? m_var.integer : m_var_default.integer);
+						return static_cast<T>(!default_val ? var.integer : m_var_default.integer);
 					}
 					else if constexpr (std::is_same_v<T, float>) {
 						assert(m_type == var_type_value && "Type mismatch: expected float");
-						return static_cast<T>(!default_val ? m_var.value[0] : m_var_default.value[0]);
+						return static_cast<T>(!default_val ? var.value[0] : m_var_default.value[0]);
 					}
 					else if constexpr (std::is_same_v<T, Vector2D>) {
 						assert(m_type == var_type_vec2 && "Type mismatch: expected vec2 for Vector");
-						return Vector2D(!default_val ? m_var.value : m_var_default.value);
+						return Vector2D(!default_val ? var.value : m_var_default.value);
 					}
 					else if constexpr (std::is_same_v<T, Vector>) {
 						assert(m_type == var_type_vec3 && "Type mismatch: expected vec3 for Vector");
-						return Vector(!default_val ? m_var.value : m_var_default.value);
+						return Vector(!default_val ? var.value : m_var_default.value);
 					}
 					else if constexpr (std::is_same_v<T, Vector4D>) {
 						assert(m_type == var_type_vec4 && "Type mismatch: expected vec4 for Vector");
-						return Vector4D(!default_val ? m_var.value : m_var_default.value);
+						return Vector4D(!default_val ? var.value : m_var_default.value);
 					}
 					else {
 						static_assert(std::is_same_v<T, void>, "Unsupported return type in get_as");
@@ -290,58 +299,66 @@ namespace gta4
 			}
 
 			// sets var and writes toml (bool)
-			void set_var(const bool boolean, bool no_toml_update = false)
+			void set_var(const bool boolean, bool no_toml_update = false, bool is_temp_override = false)
 			{
-				m_var.boolean = boolean;
+				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				var.boolean = boolean;
+
 				if (!no_toml_update) {
 					write_comp_settings_toml();
 				}
 			}
 	
 			// sets var and writes toml (integer)
-			void set_var(const int integer, bool no_toml_update = false)
+			void set_var(const int integer, bool no_toml_update = false, bool is_temp_override = false)
 			{
-				m_var.integer = integer;
+				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				var.integer = integer;
+
 				if (!no_toml_update) {
 					write_comp_settings_toml();
 				}
 			}
 	
 			// sets var and writes toml (float)
-			void set_var(const float value, bool no_toml_update = false)
+			void set_var(const float value, bool no_toml_update = false, bool is_temp_override = false)
 			{
-				m_var.value[0] = value;
+				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				var.value[0] = value;
+
 				if (!no_toml_update) {
 					write_comp_settings_toml();
 				}
 			}
 	
 			// sets var and writes toml (vec4)
-			void set_vec(const float* v, bool no_toml_update = false)
+			void set_vec(const float* v, bool no_toml_update = false, bool is_temp_override = false)
 			{
+				auto& var = is_temp_override ? m_var_temp_override : m_var;
+
 				switch (m_type)
 				{
 				default:
 					break;
 	
 				case var_type_value:
-					m_var.value[0] = v[0];
+					var.value[0] = v[0];
 					break;
 	
 				case var_type_vec2:
-					m_var.value[0] = v[0]; m_var.value[1] = v[1];
+					var.value[0] = v[0]; var.value[1] = v[1];
 					break;
 	
 				case var_type_vec3:
-					m_var.value[0] = v[0]; m_var.value[1] = v[1]; m_var.value[2] = v[2];
+					var.value[0] = v[0]; var.value[1] = v[1]; var.value[2] = v[2];
 					break;
 	
 				case var_type_vec4:
-					m_var.value[0] = v[0]; m_var.value[1] = v[1]; m_var.value[2] = v[2]; m_var.value[3] = v[3];
+					var.value[0] = v[0]; var.value[1] = v[1]; var.value[2] = v[2]; var.value[3] = v[3];
 					break;
 				}
 	
-				if (!no_toml_update) {
+				if (!no_toml_update && !is_temp_override) {
 					write_comp_settings_toml();
 				}
 			}
@@ -354,11 +371,20 @@ namespace gta4
 				m_dirty = state;
 			}
 
+			bool get_temp_override_state() const {
+				return m_temp_override_enabled;
+			}
+
+			void set_temp_override_state(bool state) {
+				m_temp_override_enabled = state;
+			}
+
 			// reset setting to base user
 			void reset_base() 
 			{
 				m_var = m_var_base_user;
 				m_dirty = false;
+				m_temp_override_enabled = false;
 			}
 
 			// reset setting to default settings
@@ -366,6 +392,7 @@ namespace gta4
 			{
 				m_var = m_var_default;
 				m_dirty = false;
+				m_temp_override_enabled = false;
 			}
 
 			const char* m_name;
@@ -377,6 +404,10 @@ namespace gta4
 			var_value m_var_base_user;
 			var_value m_var_default;
 			var_type m_type;
+
+			// not in constructor
+			var_value m_var_temp_override = {};
+			bool m_temp_override_enabled = false;
 			bool m_dirty = false;
 		};
 

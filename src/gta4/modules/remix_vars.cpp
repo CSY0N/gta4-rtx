@@ -561,7 +561,7 @@ namespace gta4
 					{
 						for (auto& ip : interpolate_stack)
 						{
-							ip._time_elapsed += get()->get_frametime();
+							ip._time_elapsed += get()->get_frametime() * 0.001f; // ms to s
 
 							// check if delayed
 							if (ip._time_elapsed < 0.0f) {
