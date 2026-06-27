@@ -15,19 +15,31 @@ namespace gta4
 		if (static auto once = false; !once)
 		{
 			once = true;
-
 			const auto vars = remix_vars::get();
 
 			// TODO: hack to fix issues with SSS-fixing commit (that makes head mesh invisible)
-			// latest remix versions also make player char invisible ... 
+			// + latest remix versions also make player char invisible
+			// + sometimes even parts of the world ...
+
+			remix_vars::option_value on { .enabled = true };
+			remix_vars::option_value off { .enabled = false };
+
 			if (const auto useVertexCapture = remix_vars::get_option("rtx.useVertexCapture"); useVertexCapture)
 			{
-				remix_vars::option_value on { .enabled = true };
-				remix_vars::option_value off { .enabled = false };
+				vars->add_interpolate_entry(useVertexCapture, off, 0.1f);
+				vars->add_interpolate_entry(useVertexCapture, on, 0.3f);
+				vars->add_interpolate_entry(useVertexCapture, off, 0.6f);
+				vars->add_interpolate_entry(useVertexCapture, on, 1.0f);
+				vars->add_interpolate_entry(useVertexCapture, on, 1.2f);
+			}
 
-				vars->add_interpolate_entry(useVertexCapture, off, 2);
-				vars->add_interpolate_entry(useVertexCapture, on, 14);
-				vars->add_interpolate_entry(useVertexCapture, on, 18);
+			if (const auto vv = remix_vars::get_option("rtx.minimizeBlasMerging"); vv)
+			{
+				vars->add_interpolate_entry(vv, on, 0.05f);
+				vars->add_interpolate_entry(vv, off, 0.2f);
+				vars->add_interpolate_entry(vv, on, 0.4f);
+				vars->add_interpolate_entry(vv, off, 0.6f);
+				vars->add_interpolate_entry(vv, off, 1.0f);
 			}
 		}
 
@@ -35,6 +47,7 @@ namespace gta4
 
 		// ----
 
+		if (shared::globals::imgui_menu_open || im->m_freeze_time)
 		{
 			if (!im->m_freeze_time)
 			{
@@ -45,9 +58,17 @@ namespace gta4
 				im->m_curr_game_minute = static_cast<int>(m_from_game);
 			}
 
-			if (im->m_time_was_changed || im->m_freeze_time) 
+			if (im->m_freeze_time)
 			{
 				n->SetTimeOfDay(im->m_curr_game_hour, im->m_curr_game_minute);
+				*game::m_game_clock_hours = im->m_curr_game_hour;
+				*game::m_game_clock_minutes = im->m_curr_game_minute;
+				*game::m_game_clock_seconds = 0;
+				*game::m_game_timer_length = 9999999;
+			}
+			else if (im->m_time_was_changed)
+			{
+				//n->ReleaseWeather();
 				im->m_time_was_changed = false;
 			}
 		}
