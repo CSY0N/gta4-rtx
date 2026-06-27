@@ -1399,6 +1399,13 @@ namespace gta4
 
 	bool compsettings_bool_widget(const char* desc, comp_settings::variable& var)
 	{
+		const bool colorize = var.get_temp_override_state() || var.get_dirty_state();
+		if (colorize) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.15f, 1.0f));
+		}
+
+		ImGui::BeginDisabled(var.get_temp_override_state());
+
 		const auto gs_var_ptr = var.get_as<bool*>();
 		const bool result = ImGui::Checkbox(desc, gs_var_ptr);
 		
@@ -1408,11 +1415,24 @@ namespace gta4
 
 		TT(var.get_tooltip_string().c_str());
 		compsettings_var_reset_logic(var);
+
+		if (colorize) {
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::EndDisabled();
 		return result;
 	}
 
 	bool compsettings_int_widget(const char* desc, comp_settings::variable& var, const int& min = 0, const int& max = 0, const float& speed = 0.02f)
 	{
+		const bool colorize = var.get_temp_override_state() || var.get_dirty_state();
+		if (colorize) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.15f, 1.0f));
+		}
+
+		ImGui::BeginDisabled(var.get_temp_override_state());
+
 		const auto gs_var_ptr = var.get_as<int*>();
 		const bool result = ImGui::DragInt(desc, gs_var_ptr, speed, min, max, "%d", (min != 0 || max != 0) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
 
@@ -1422,11 +1442,25 @@ namespace gta4
 
 		TT(var.get_tooltip_string().c_str());
 		compsettings_var_reset_logic(var);
+
+		if (colorize) {
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::EndDisabled();
+
 		return result;
 	}
 
 	bool compsettings_float_widget(const char* desc, comp_settings::variable& var, const float& min = 0.0f, const float& max = 0.0f, const float& speed = 0.02f, const char* fmt = "%.2f")
 	{
+		const bool colorize = var.get_temp_override_state() || var.get_dirty_state();
+		if (colorize) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.15f, 1.0f));
+		}
+
+		ImGui::BeginDisabled(var.get_temp_override_state());
+		
 		const auto gs_var_ptr = var.get_as<float*>();
 		const bool result = ImGui::DragFloat(desc, gs_var_ptr, speed, min, max, fmt, (min != 0.0f || max != 0.0f) ? ImGuiSliderFlags_AlwaysClamp : ImGuiSliderFlags_None);
 
@@ -1434,13 +1468,27 @@ namespace gta4
 			var.set_dirty(false);
 		}
 
-		TT(var.get_tooltip_string().c_str());
+		TT(var.get_tooltip_string().c_str()); 
 		compsettings_var_reset_logic(var);
+
+		if (colorize) {
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::EndDisabled();
+
 		return result;
 	}
 
 	bool compsettings_vec_widget(const char* desc, comp_settings::variable& var, const int& size, const float& min = 0.0f, const float& max = 0.0f, const float& speed = 0.02f)
 	{
+		const bool colorize = var.get_temp_override_state() || var.get_dirty_state();
+		if (colorize) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.15f, 1.0f));
+		}
+
+		ImGui::BeginDisabled(var.get_temp_override_state());
+
 		const auto cs_var_ptr = var.get_as<float*>();
 		bool result = false;
 		switch (size)
@@ -1468,11 +1516,25 @@ namespace gta4
 
 		TT(var.get_tooltip_string().c_str());
 		compsettings_var_reset_logic(var);
+
+		if (colorize) {
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::EndDisabled();
+
 		return result;
 	}
 
 	bool compsettings_color_widget(const char* desc, comp_settings::variable& var, const int& size, const ImGuiColorEditFlags_& flags)
 	{
+		const bool colorize = var.get_temp_override_state() || var.get_dirty_state();
+		if (colorize) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.15f, 1.0f));
+		}
+
+		ImGui::BeginDisabled(var.get_temp_override_state());
+
 		const auto cs_var_ptr = var.get_as<float*>();
 		bool result = false;
 
@@ -1496,6 +1558,12 @@ namespace gta4
 
 		TT(var.get_tooltip_string().c_str());
 		compsettings_var_reset_logic(var);
+
+		if (colorize) {
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::EndDisabled();
 		return result;
 	}
 
@@ -2366,6 +2434,7 @@ namespace gta4
 	void quicksettings_util_container()
 	{
 		const auto& im = imgui::get();
+		const auto& cs = comp_settings::get();
 
 		ImGui::Spacing(0, 4);
 		ImGui::SeparatorText("    Screenshot Mode     ");
@@ -2402,7 +2471,7 @@ namespace gta4
 
 			// ---
 
-			ImGui::Spacing(0, 6);
+			ImGui::Spacing(0, 12);
 			ImGui::SeparatorText("    FreeCam     ");
 			ImGui::Spacing(0, 2);
 			ImGui::CenterText("WASD: Forward & Strafing      Q/E: Down & Up");
@@ -2431,6 +2500,30 @@ namespace gta4
 			SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("FreeCam Upward Speed", &im->m_freecam_up_speed, 0.01f, 10.0f, "%.2f");
 			//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("FreeCam Upward Offset", &im->m_freecam_up_offset, 0.0001f, 0, 0, "%.5f");
 			ImGui::EndDisabled();
+
+
+			ImGui::Spacing(0, 12);
+			ImGui::SeparatorText("    Misc     ");
+			ImGui::Spacing(0, 2);
+			
+			ImGui::Style_ColorButtonPush(im->m_anti_cull_capture_toggle ? ImVec4(0.72f, 0.5f, 0.26f, 1.0f) : ImGui::GetStyleColorVec4(ImGuiCol_Button), true);
+			if (ImGui::Button("Quick AntiCull Toggle for Smaller Captures", ImVec2(ImGui::GetContentRegionAvail().x, 48)))
+			{
+				im->m_anti_cull_capture_toggle = !im->m_anti_cull_capture_toggle;
+				const bool temp_overwrite = im->m_anti_cull_capture_toggle;
+
+				// enable temp override so that all get() calls return temp values 
+				// temp values default to 0 so we don't need to re-set them here (because we want these to be 0)
+				cs->nocull_dist_near_static.set_temp_override_state(temp_overwrite);
+				cs->nocull_dist_medium_static.set_temp_override_state(temp_overwrite);
+				cs->nocull_dist_far_static.set_temp_override_state(temp_overwrite);
+				cs->nocull_dist_lights.set_temp_override_state(temp_overwrite);
+				cs->nocull_dist_sphere_interior.set_temp_override_state(temp_overwrite);
+				cs->nocull_extended.set_temp_override_state(temp_overwrite);
+				cs->nocull_map_areas.set_temp_override_state(temp_overwrite);
+				cs->nocull_map_areas_high_lod_logic.set_temp_override_state(temp_overwrite);
+			} TT("Quickly toggle all anti culling logic if you want quicker and smaller captures.");
+			ImGui::Style_ColorButtonPop();
 
 			ImGui::Spacing(0.0f, 4.0f);
 		}
