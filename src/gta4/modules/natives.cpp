@@ -12,14 +12,15 @@ namespace gta4
 		const auto im = imgui::get();
 		const auto n = natives::get();
 
-		if (static auto once = false; !once)
-		{
-			once = true;
-			const auto vars = remix_vars::get();
+		// TODO: hack to fix issues with SSS-fixing commit (that makes head mesh invisible)
+		// + latest remix versions also make player char invisible
+		// + sometimes even parts of the world ...
 
-			// TODO: hack to fix issues with SSS-fixing commit (that makes head mesh invisible)
-			// + latest remix versions also make player char invisible
-			// + sometimes even parts of the world ...
+		static uint32_t frame_counter = 0u;
+		if (static auto first_frame = false; !first_frame)
+		{
+			first_frame = true;
+			const auto vars = remix_vars::get();
 
 			remix_vars::option_value on { .enabled = true };
 			remix_vars::option_value off { .enabled = false };
@@ -33,13 +34,15 @@ namespace gta4
 				vars->add_interpolate_entry(useVertexCapture, on, 1.2f);
 			}
 
-			if (const auto vv = remix_vars::get_option("rtx.minimizeBlasMerging"); vv)
+			im->m_dbg_do_not_render_ff = true;
+		}
+		else if (static auto second = false; !second)
+		{
+			++frame_counter;
+			if (frame_counter > 30)
 			{
-				vars->add_interpolate_entry(vv, on, 0.05f);
-				vars->add_interpolate_entry(vv, off, 0.2f);
-				vars->add_interpolate_entry(vv, on, 0.4f);
-				vars->add_interpolate_entry(vv, off, 0.6f);
-				vars->add_interpolate_entry(vv, off, 1.0f);
+				second = true;
+				im->m_dbg_do_not_render_ff = false;
 			}
 		}
 
