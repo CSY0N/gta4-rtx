@@ -41,7 +41,7 @@ namespace gta4
 	void renderer_ff::on_ff_emissives(IDirect3DDevice9* dev, drawcall_mod_context& ctx)
 	{
 		const auto im = imgui::get();
-		const auto gs = comp_settings::get();
+		const auto cs = comp_settings::get();
 
 		if (im->m_dbg_emissive_ff_do_not_render) 
 		{
@@ -131,7 +131,7 @@ namespace gta4
 					{
 						if (!im->m_dbg_emissive_disable_ff_emissivenight_nighttime)
 						{
-							renderer::set_remix_emissive_intensity(dev, gs->emissive_generic_scale._float());
+							renderer::set_remix_emissive_intensity(dev, cs->emissive_generic_scale._float());
 #if DEBUG
 							if (imgui::get()->m_dbg_debug_single_frame_emissive_intensity_vars)
 							{
@@ -144,7 +144,7 @@ namespace gta4
 									}
 								}
 
-								shared::common::log("OnFFEmissives", std::format("[NO-Constant] EmissiveNight :: NIGHT time :: {:.2f} = {}", gs->emissive_generic_scale._float(), model_name));
+								shared::common::log("OnFFEmissives", std::format("[NO-Constant] EmissiveNight :: NIGHT time :: {:.2f} = {}", cs->emissive_generic_scale._float(), model_name));
 							}
 #endif
 						}
@@ -176,7 +176,7 @@ namespace gta4
 				{
 					if (!im->m_dbg_emissive_disable_ff_not_emissivenight)
 					{
-						renderer::set_remix_emissive_intensity(dev, gs->emissive_generic_scale._float() /*im->m_dbg_emissive_nonalpha_override_scale*/);
+						renderer::set_remix_emissive_intensity(dev, cs->emissive_generic_scale._float() /*im->m_dbg_emissive_nonalpha_override_scale*/);
 #if DEBUG
 						if (imgui::get()->m_dbg_debug_single_frame_emissive_intensity_vars)
 						{
@@ -189,7 +189,7 @@ namespace gta4
 								}
 							}
 
-							shared::common::log("OnFFEmissives", std::format("[NO-Constant] NOT EmissiveNight :: {:.2f} = emissive_generic_scale :: {}", gs->emissive_generic_scale._float(), model_name));
+							shared::common::log("OnFFEmissives", std::format("[NO-Constant] NOT EmissiveNight :: {:.2f} = emissive_generic_scale :: {}", cs->emissive_generic_scale._float(), model_name));
 						}
 #endif
 					}
@@ -213,6 +213,10 @@ namespace gta4
 				}
 #endif
 			}
+		}
+
+		if (cs->emissive_allow_vertex_colors._bool()) {
+			ctx.modifiers.allow_vertex_colors = true;
 		}
 	}
 
@@ -321,7 +325,7 @@ namespace gta4
 				renderer::set_remix_emissive_intensity(dev, const66[0]);
 			}
 
-			renderer::set_remix_modifier(dev, RemixModifier::RemoveVertexColorKeepAlpha); 
+			renderer::set_remix_modifier(dev, RemixModifier::RemoveVertexColorKeepAlpha);
 			ctx.modifiers.allow_vertex_colors = true;
 		}
 	}

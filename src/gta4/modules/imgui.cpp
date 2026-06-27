@@ -1939,6 +1939,8 @@ namespace gta4
 			ImGui::EndDisabled();
 		}
 
+		compsettings_bool_widget("Allow Vertex Colors on Emissives", gs->emissive_allow_vertex_colors);
+
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Phone ");
 		ImGui::Spacing(0, 4);
@@ -2332,6 +2334,14 @@ namespace gta4
 				ImGui::BeginDisabled(!gs->nocull_map_areas_high_lod_logic._bool());
 					compsettings_float_widget("High LOD Distance", gs->nocull_map_areas_high_lod_logic_distance, -5000.0f, 5000.0f, 1.0f);
 				ImGui::EndDisabled();
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, inbetween_spacing);
+		ImGui::Widget_CategoryWithVerticalLabel("Ems.", [&]()
+			{
+				ImGui::PushID("emissives");
+				compsettings_bool_widget("Allow Vertex Colors on Emissives", gs->emissive_allow_vertex_colors);
 				ImGui::PopID();
 			});
 

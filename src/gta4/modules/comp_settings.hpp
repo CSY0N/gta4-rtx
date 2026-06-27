@@ -953,6 +953,15 @@ namespace gta4
 				4.0f
 			};
 
+			variable emissive_allow_vertex_colors =
+			{
+				"emissive_allow_vertex_colors",
+				("Allow vertex colors on meshes rendered by emissive shaders\n"
+				 "Fixes evenly lit building windows and colors on some emissives."),
+				"1.3.2",
+				true
+			};
+
 			variable phone_emissive_override = {
 				"phone_emissive_override",
 				("Automatically tags phone related meshes as world-ui and adjusts the emissive scale.\n"
