@@ -1,6 +1,7 @@
+-d3dst
 -availablevidmem 4096
 -nomemrestrict
 -disableimposters
--reserve 2048
--viewdistance 25
--detailquality 30
+-noprecache
+-forcer2vb
+-noswapdelay
