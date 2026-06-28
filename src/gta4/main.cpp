@@ -178,7 +178,15 @@ HWND WINAPI CreateWindowExA_hk(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWin
 
 		if (auto modes_ptr = gta4::game::avail_game_resolutions; modes_ptr->modes) // 0x1168BB0
 		{
-			const auto res = modes_ptr->modes[gta4::game::loaded_settings_cfg->resolution_index]; // 0x1160E80
+			auto res = modes_ptr->modes[gta4::game::loaded_settings_cfg->resolution_index]; // 0x1160E80
+			
+			// force minimum res of 1280x720 to hopefully fix init issues for some people
+			if (res.width < 1280 || res.height < 720)
+			{
+				res.width = 1280;
+				res.height = 720;
+			}
+
 			wnd = CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, 0, 0, static_cast<int>(res.width), static_cast<int>(res.height), hWndParent, hMenu, hInstance, lpParam);
 			*reinterpret_cast<int*>(gta4::game::systemMetrics_xRight) = static_cast<int>(res.width); // xRight - GetSystemMetrics(0) .. another but unused: 0x17ED8CC
 			*reinterpret_cast<int*>(gta4::game::systemMetrics_yBottom) = static_cast<int>(res.height); // xBottom - GetSystemMetrics(1) .. ^ 0x17ED8D4
@@ -194,7 +202,15 @@ HWND WINAPI CreateWindowExA_hk(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWin
 				*reinterpret_cast<int*>(gta4::game::systemMetrics_xRight) = static_cast<int>(res_setting->x); // xRight - GetSystemMetrics(0) .. another but unused: 0x17ED8CC
 				*reinterpret_cast<int*>(gta4::game::systemMetrics_yBottom) = static_cast<int>(res_setting->y); // xBottom - GetSystemMetrics(1) .. ^ 0x17ED8D4
 			}
-			else {
+			else 
+			{
+				// force minimum res of 1280x720 to hopefully fix init issues for some people
+				if (X < 1280 || Y < 720)
+				{
+					X = 1280;
+					Y = 720;
+				}
+
 				wnd = CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 			}
 		}
