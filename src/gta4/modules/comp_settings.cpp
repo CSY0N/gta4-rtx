@@ -341,6 +341,7 @@ namespace gta4
 
 				// misc settings
 				ASSIGN(discord_rpc);
+				ASSIGN(limit_option_sliders);
 
 			#undef ASSIGN
 			}
