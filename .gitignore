@@ -55,7 +55,6 @@ Temporary Items
 *.unsuccessfulbuild
 *.sdf
 *.opensdf
-*.pdb
 *.suo
 *.zip
 

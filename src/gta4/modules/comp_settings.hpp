@@ -1635,6 +1635,13 @@ namespace gta4
 				"1.3.2",
 				true
 			};
+
+			variable limit_option_sliders = {
+				"limit_option_sliders",
+				("Limits view/detail/vehicle density sliders to sane numbers to stop people from running into too much cpu bottleneck."),
+				"1.3.2",
+				true
+			};
 		};
 	
 		static inline var_definitions vars = {};

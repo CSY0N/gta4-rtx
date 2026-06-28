@@ -1697,8 +1697,8 @@ namespace gta4
 
 	void compsettings_rendering_container()
 	{
-		//static const auto& im = imgui::get();
-		static const auto& gs = comp_settings::get();
+		//const auto& im = imgui::get();
+		const auto& gs = comp_settings::get();
 
 		const float inbetween_spacing = SEPARATOR_SPACING;
 
@@ -1707,7 +1707,7 @@ namespace gta4
 		ImGui::Spacing(0, 4);
 
 		compsettings_bool_widget("Load ColorMaps Only", gs->load_colormaps_only);
-
+		compsettings_bool_widget("Limit Game Quality Sliders", gs->limit_option_sliders);
 
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Water ");

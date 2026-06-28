@@ -31,7 +31,8 @@ namespace gta4
 
 	void on_begin_scene_cb()
 	{
-		static auto im = imgui::get();
+		const auto im = imgui::get();
+		const auto& gs = comp_settings::get();
 
 		renderer::get()->m_triggered_remix_injection = false; 
 		g_applied_hud_hack = false;
@@ -59,6 +60,20 @@ namespace gta4
 			force_graphic_settings();
 		}
 
+		if (gs->limit_option_sliders._bool())
+		{
+			if (game::loaded_settings_cfg->view_distance > 29u) {
+				game::loaded_settings_cfg->view_distance = 29u;
+			}
+
+			if (game::loaded_settings_cfg->detail_distance > 34u) {
+				game::loaded_settings_cfg->detail_distance = 34u;
+			}
+
+			if (game::loaded_settings_cfg->vehicle_density > 29u) {
+				game::loaded_settings_cfg->vehicle_density = 29u;
+			}
+		}
 
 		// do not pause if enabled
 		if (im->m_do_not_pause_on_lost_focus) {
