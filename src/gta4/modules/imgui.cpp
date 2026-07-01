@@ -1737,7 +1737,7 @@ namespace gta4
 		ImGui::Widget_CategoryWithVerticalLabel("Other Settings", [&]()
 			{
 				ImGui::PushID("otherac");
-				compsettings_float_widget("Light Distance", gs->nocull_dist_lights, 0.0f, 500.0f, 0.5f);
+				compsettings_float_widget("Light/Prop Distance", gs->nocull_dist_lights, 0.0f, 500.0f, 0.5f);
 				compsettings_float_widget("Interior Object Distance", gs->nocull_dist_sphere_interior, 0.0f, 500.0f, 0.5f);
 
 				ImGui::PopID();
@@ -1765,8 +1765,8 @@ namespace gta4
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Radius Scalar", gs->translate_game_light_radius_scalar, 0.0f, 0.0f, 0.005f));
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Intensity Scalar", gs->translate_game_light_intensity_scalar, 0.0f, 0.0f, 0.005f));
 
-		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Softness Offset", gs->translate_game_light_softness_offset, -1.0f, 1.0f, 0.005f));
-		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Softness Scalar", gs->translate_game_light_softness_scalar, 0.0f, 1.0f, 0.005f));
+		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Softness Offset", gs->translate_game_light_softness_offset, -1.0f, 1.0f, 0.005f, "%.3f"));
+		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Softness Scalar", gs->translate_game_light_softness_scalar, 0.0f, 1.0f, 0.005f, "%.3f"));
 
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("SphereLight Volumetric Scale", gs->translate_game_light_spherelight_volumetric_radiance_scale, 0.0f, 10.0f, 0.005f));
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("SpotLight Volumetric Scale", gs->translate_game_light_spotlight_volumetric_radiance_scale, 0.0f, 10.0f, 0.005f));
@@ -1781,7 +1781,7 @@ namespace gta4
 		compsettings_float_widget("SunLight Bad Weather Influence", gs->translate_sunlight_intensity_bad_weather_influence, 0.0f, 1.0f, 0.005f);
 		compsettings_float_widget("SunLight Angular Diameter Degrees", gs->translate_sunlight_angular_diameter_degrees, 0.0f, 45.0f, 0.005f);
 		compsettings_float_widget("SunLight Volumetric Base", gs->translate_sunlight_volumetric_radiance_base, 0.0f, 10.0f, 0.005f);
-		compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f);
+		compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f, "%.3f");
 
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Vehicle Headlights / Rearlights ");
@@ -1874,7 +1874,7 @@ namespace gta4
 		ImGui::SeparatorText(" Vehicle ");
 		ImGui::Spacing(0, 4);
 
-		compsettings_float_widget("Vehicle Light Emissive Scalar", gs->vehicle_lights_emissive_scalar, 0.0f, 0.0f, 0.005f);
+		compsettings_float_widget("Vehicle Light Emissive Scalar", gs->vehicle_lights_emissive_scalar, 0.0f, 0.0f, 0.005f, "%.3f");
 
 		compsettings_bool_widget("Render Surfs a Second Time with Proxy Texture", gs->vehicle_lights_dual_render_proxy_texture);
 
@@ -1882,14 +1882,14 @@ namespace gta4
 		ImGui::SeparatorText(" World ");
 		ImGui::Spacing(0, 8);
 
-		compsettings_float_widget("EmissiveNight Surfaces Scalar", gs->emissive_night_surfaces_emissive_scalar, 0.0f, 1000.0f, 0.001f);
-		compsettings_float_widget("Emissive Surfaces Scalar", gs->emissive_surfaces_emissive_scalar, 0.0f, 1000.0f, 0.001f);
-		compsettings_float_widget("EmissiveStrong Surfaces Scalar", gs->emissive_strong_surfaces_emissive_scalar, 0.0f, 1000.0f, 0.001f);
-		compsettings_float_widget("Generic Emissive Scale", gs->emissive_generic_scale, 0.0f, 1000.0f, 0.001f);
+		compsettings_float_widget("EmissiveNight Surfaces Scalar", gs->emissive_night_surfaces_emissive_scalar, 0.0f, 1000.0f, 0.001f, "%.3f");
+		compsettings_float_widget("Emissive Surfaces Scalar", gs->emissive_surfaces_emissive_scalar, 0.0f, 1000.0f, 0.001f, "%.3f");
+		compsettings_float_widget("EmissiveStrong Surfaces Scalar", gs->emissive_strong_surfaces_emissive_scalar, 0.0f, 1000.0f, 0.001f, "%.3f");
+		compsettings_float_widget("Generic Emissive Scale", gs->emissive_generic_scale, 0.0f, 1000.0f, 0.001f, "%.3f");
 		compsettings_bool_widget("AlphaBlended Emissives Hack", gs->emissive_alpha_blend_hack);
 		ImGui::BeginDisabled(!gs->emissive_alpha_blend_hack._bool());
 		{
-			compsettings_float_widget("AlphaBlended Emissives Hack Scale", gs->emissive_alpha_blend_hack_scale, 0.0f, 100.0f, 0.001f);
+			compsettings_float_widget("AlphaBlended Emissives Hack Scale", gs->emissive_alpha_blend_hack_scale, 0.0f, 100.0f, 0.001f, "%.3f");
 			ImGui::EndDisabled();
 		}
 
@@ -2016,7 +2016,7 @@ namespace gta4
 			compsettings_bool_widget("Enable SkyLight Logic", gs->timecycle_skylight_enabled);
 			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>());
 			{
-				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 0.0f, 0.005f);
+				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 0.0f, 0.005f, "%.4f");
 				compsettings_float_widget("SkyLight Bad Weather Offset", gs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);
 
 				ImGui::TextDisabled("Timecycle mSkyLightMultiplier: [ %.2f ]",
