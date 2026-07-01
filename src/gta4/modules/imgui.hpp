@@ -46,6 +46,10 @@ namespace gta4
 		int m_curr_game_hour = 0;
 		int m_curr_game_minute = 0;
 
+		float m_dbg_vis_sun_lerp_t = 0.0f;
+		float m_dbg_vis_sun_elevation = 0.0f;
+		float m_dbg_vis_sun_rotation = 0.0f;
+		uint32_t m_dbg_vis_sun_frame_count = 0u;
 
 		bool m_anti_cull_capture_toggle = false;
 
@@ -159,6 +163,25 @@ namespace gta4
 		float m_dbg_visualize_api_light_hashes_distance = 8.0f;
 
 		// --
+
+		struct debug_plot
+		{
+			static constexpr int history_size = 256;
+
+			float values[history_size] = {};
+			int offset = 0;
+
+			void add(float value)
+			{
+				values[offset] = value;
+				offset = (offset + 1) % history_size;
+			}
+		};
+
+		debug_plot m_plot_sun_lerp;
+		debug_plot m_plot_sun_elevation;
+		debug_plot m_plot_sun_rotation;
+		debug_plot m_plot_sun_framecount;
 
 		struct visualized_decal_rs_s
 		{

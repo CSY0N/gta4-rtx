@@ -1083,6 +1083,36 @@ namespace gta4
 			ImGui::Text("Clock Hour: %d", *game::m_game_clock_hours);
 			ImGui::Text("Clock Minutes: %d", *game::m_game_clock_minutes);
 
+			auto frac = [](const float& x) {
+					return x - std::floor(x);
+				};
+
+			im->m_plot_sun_lerp.add(frac(im->m_dbg_vis_sun_lerp_t));
+			im->m_plot_sun_elevation.add(frac(im->m_dbg_vis_sun_elevation));
+			im->m_plot_sun_rotation.add(frac(im->m_dbg_vis_sun_rotation));
+			im->m_plot_sun_framecount.add(static_cast<float>(im->m_dbg_vis_sun_frame_count % 1000)); // count wrapped every 1000 frames
+
+			ImGui::PlotLines(	"Atmos Sun Lerp T", im->m_plot_sun_lerp.values,
+								imgui::debug_plot::history_size, im->m_plot_sun_lerp.offset, nullptr,
+								0.0f, 1.0f, ImVec2(0, 60));
+
+			ImGui::PlotLines(	"Atmos Sun Elevation", im->m_plot_sun_elevation.values,
+								imgui::debug_plot::history_size, im->m_plot_sun_elevation.offset, nullptr, 
+								0.0f, 1.0f, ImVec2(0, 60));
+
+			ImGui::PlotLines(	"Atmos Sun Rotation", im->m_plot_sun_rotation.values,
+								imgui::debug_plot::history_size, im->m_plot_sun_rotation.offset, nullptr,
+								0.0f, 1.0f, ImVec2(0, 60));
+
+			ImGui::PlotLines(	"Atmos Sun Framecount", im->m_plot_sun_framecount.values, 
+								imgui::debug_plot::history_size, im->m_plot_sun_framecount.offset, nullptr, 
+								0.0f, 1000.0f, ImVec2(0, 60));
+
+			ImGui::Text("Atmos Sun Lerp T: %.5f", im->m_dbg_vis_sun_lerp_t);
+			ImGui::Text("Atmos Sun Elevation: %.5f", im->m_dbg_vis_sun_elevation);
+			ImGui::Text("Atmos Sun Rotation: %.5f", im->m_dbg_vis_sun_rotation);
+			ImGui::Text("Atmos Sun Framecount: %d", im->m_dbg_vis_sun_frame_count);
+
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 			ImGui::Separator();
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
@@ -2055,7 +2085,15 @@ namespace gta4
 
 		compsettings_bool_widget("Set TimeCycle Variables on EndScene", gs->timecycle_set_on_endscene);
 
-		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
+		if (compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system))
+		{
+			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
+			{
+				remix_vars::option_value val{ .value = gs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
+				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
+			}
+		}
+
 		const bool using_atmos = gs->timecycle_use_remix_atmos_system._bool();
 
 		ImGui::Spacing(0, inbetween_spacing);
@@ -2380,7 +2418,15 @@ namespace gta4
 		ImGui::SeparatorText(" Version 1.3.X ");
 		ImGui::Spacing(0, 4);
 
-		compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system);
+		if (compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system))
+		{
+			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
+			{
+				remix_vars::option_value val { .value = gs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
+				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
+			}
+		}
+
 		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
 
 		ImGui::Spacing(0, inbetween_spacing);

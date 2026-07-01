@@ -1506,7 +1506,7 @@ namespace gta4
 				"timecycle_skylight_scalar",
 				("Controls how much the skylight timecycle variable influences 'rtx.skyBrightness'"),
 				"1.3.0",
-				0.02f
+				0.01f
 			};
 
 			variable timecycle_skylight_max_offset_bad_weather = {

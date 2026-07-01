@@ -206,7 +206,7 @@ namespace gta4
 				const int& seconds = *game::m_game_clock_seconds;
 
 				auto lerp = [](const float& a, const float& b, const float& t) -> float {
-					return a + (b - a) * t;
+						return a + (b - a) * t;
 					};
 
 				auto get_sun_elevation = [lerp](const float& t, const float daytime_return_val)
@@ -248,19 +248,27 @@ namespace gta4
 
 				sun_elevation = get_sun_elevation(t, sun_elevation);
 
+				if (shared::globals::imgui_menu_open)
+				{
+					im->m_dbg_vis_sun_lerp_t = t;
+					im->m_dbg_vis_sun_elevation = sun_elevation;
+					im->m_dbg_vis_sun_rotation = sun_rotation;
+					im->m_dbg_vis_sun_frame_count++;
+				}
+
 				const auto& v1 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_elevation));
-				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunElevation, v1, 0.01f);
+				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunElevation, v1, 0.005f);
 
 				const auto& v2 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_rotation));
-				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunRotation, v2, 0.01f);
+				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunRotation, v2, 0.005f);
 
 				if (hour >= 20 || hour <= 6)
 				{
 					// directional light past 21 = moon
 					const auto& v3 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(moon_elevation));
-					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_elevation, v3, 0.01f);
+					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_elevation, v3, 0.005f);
 
-					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_rotation, v2, 0.01f);
+					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_rotation, v2, 0.005f);
 				}
 			}
 		}
