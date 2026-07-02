@@ -63,16 +63,21 @@ namespace gta4
 		RS_169_EMISSIVE_SCALE = 169,
 		RS_177_DECAL_DIRT_CONTRAST = 177,
 		RS_210_WETNESS_PARAMS_PACKED = 210,
-		RS_211_FREE = 211, // [UseGlobalUVs] globUV0.x || [Translucent_WorldposAsUVs] worldPos UV scalar
-		RS_212_FREE = 212, // [UseGlobalUVs] globUV0.y || [Translucent_FadeNormalUntilDist] fadeout normal
-		RS_213_FREE = 213, // [UseGlobalUVs] globUV1.x
-		RS_214_FREE = 214, // [UseGlobalUVs] globUV1.y
-		RS_215_FREE = 215,
-		RS_216_FREE = 216,
+		RS_211_MULTIUSE01 = 211, // [UseGlobalUVs] globUV0.x || [Translucent_WorldposAsUVs] worldPos UV scalar
+		RS_212_MULTIUSE02 = 212, // [UseGlobalUVs] globUV0.y || [Translucent_FadeNormalUntilDist] fadeout normal
+		RS_213_MULTIUSE03 = 213, // [UseGlobalUVs] globUV1.x
+		RS_214_MULTIUSE04 = 214, // [UseGlobalUVs] globUV1.y
+		RS_215_MULTIUSE05 = 215,
+		RS_216_MULTIUSE06 = 216,
 		RS_217_FREE = 217,
 		RS_218_FREE = 218,
 		RS_219_FREE = 219,
-		RS_220_FREE = 220,
+		RS_220_HASH_MODIFIER_SEED = 220,
+	};
+
+	enum remix_hash_seed
+	{
+		ZERO_EMISSION_SEED = 1337,
 	};
 
 	constexpr RemixModifier operator|(RemixModifier lhs, RemixModifier rhs) {
@@ -545,6 +550,7 @@ namespace gta4
 		{
 			std::string_view shader_name;
 			std::string_view preset_name;
+			std::string_view colormap_name_emissive;
 			int preset_index = 0;
 			IDirect3DDevice9* device_ptr = nullptr;
 			bool is_dirty = false; // true when context was not reset in drawprimitive
@@ -576,6 +582,7 @@ namespace gta4
 			{
 				shader_name = "";
 				preset_name = "";
+				colormap_name_emissive = "";
 				preset_index = 0;
 				device_ptr = nullptr;
 				is_dirty = false;
@@ -683,6 +690,7 @@ namespace gta4
 		static void set_remix_temp_float02(IDirect3DDevice9* dev,  float value);
 		static void set_remix_texture_categories(IDirect3DDevice9* dev, const InstanceCategories& cat, bool remove_category = false);
 		static void set_remix_texture_hash(IDirect3DDevice9* dev, const std::uint32_t& hash);
+		static void set_remix_texture_hash_modifier(IDirect3DDevice9* dev, const std::uint32_t& seed);
 
 		bool m_triggered_remix_injection = false;
 		bool m_modified_draw_prim = false;

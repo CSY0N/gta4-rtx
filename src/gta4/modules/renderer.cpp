@@ -151,8 +151,8 @@ namespace gta4
 	{
 		set_remix_modifier(dev, RemixModifier::Translucent_WorldposAsUVs);
 
-		dc_ctx.save_rs(dev, RS_211_FREE);
-		dev->SetRenderState((D3DRENDERSTATETYPE)RS_211_FREE, *reinterpret_cast<DWORD*>(&scale));
+		dc_ctx.save_rs(dev, RS_211_MULTIUSE01);
+		dev->SetRenderState((D3DRENDERSTATETYPE)RS_211_MULTIUSE01, *reinterpret_cast<DWORD*>(&scale));
 	}
 
 	/// Fades the normal strength from current to 0 after distance
@@ -161,8 +161,8 @@ namespace gta4
 	{
 		set_remix_modifier(dev, RemixModifier::Translucent_FadeNormalUntilDist);
 
-		dc_ctx.save_rs(dev, RS_212_FREE);
-		dev->SetRenderState((D3DRENDERSTATETYPE)RS_212_FREE, *reinterpret_cast<DWORD*>(&distance));
+		dc_ctx.save_rs(dev, RS_212_MULTIUSE02);
+		dev->SetRenderState((D3DRENDERSTATETYPE)RS_212_MULTIUSE02, *reinterpret_cast<DWORD*>(&distance));
 	}
 
 
@@ -214,6 +214,13 @@ namespace gta4
 		dev->SetRenderState((D3DRENDERSTATETYPE)RS_150_TEXTURE_HASH, hash);
 	}
 
+	// Uses unused Renderstate 220 re-hash the original hash with a given seed
+	// ~ req. runtime changes
+	void renderer::set_remix_texture_hash_modifier(IDirect3DDevice9* dev, const std::uint32_t& seed)
+	{
+		dc_ctx.save_rs(dev, RS_220_HASH_MODIFIER_SEED);
+		dev->SetRenderState((D3DRENDERSTATETYPE)RS_220_HASH_MODIFIER_SEED, seed);
+	}
 
 	// ---
 
@@ -1263,6 +1270,13 @@ namespace gta4
 					bool is_livery = false;
 					bool is_dirt = false;
 					bool is_dirt_s2 = false;
+
+					/*if (pidx == GTA_EMISSIVENIGHT || pidx == GTA_EMISSIVENIGHT_ALPHA)
+					{
+						if (arg2 && arg2->texture_name_no_ext) {
+							ctx.info.colormap_name_emissive = std::string_view(arg2->texture_name_no_ext);
+						}
+					}*/
 
 					if (pidx == GTA_VEHICLE_PAINT1 || pidx == GTA_VEHICLE_PAINT2) {
 						is_dirt = arg3 == 6 && texture_slot == 1;

@@ -14,20 +14,20 @@ namespace gta4
 		{
 			renderer::set_remix_modifier(dev, RemixModifier::UseGlobalUVs);
 
-			ctx.save_rs(dev, RS_211_FREE);
-			ctx.save_rs(dev, RS_212_FREE);
-			ctx.save_rs(dev, RS_213_FREE);
-			ctx.save_rs(dev, RS_214_FREE);
-			ctx.save_rs(dev, RS_215_FREE);
-			ctx.save_rs(dev, RS_216_FREE);
+			ctx.save_rs(dev, RS_211_MULTIUSE01);
+			ctx.save_rs(dev, RS_212_MULTIUSE02);
+			ctx.save_rs(dev, RS_213_MULTIUSE03);
+			ctx.save_rs(dev, RS_214_MULTIUSE04);
+			ctx.save_rs(dev, RS_215_MULTIUSE05);
+			ctx.save_rs(dev, RS_216_MULTIUSE06);
 
-			dev->SetRenderState((D3DRENDERSTATETYPE)RS_211_FREE, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv0.x));
-			dev->SetRenderState((D3DRENDERSTATETYPE)RS_212_FREE, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv0.y));
-			dev->SetRenderState((D3DRENDERSTATETYPE)RS_213_FREE, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv0.z));
+			dev->SetRenderState((D3DRENDERSTATETYPE)RS_211_MULTIUSE01, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv0.x));
+			dev->SetRenderState((D3DRENDERSTATETYPE)RS_212_MULTIUSE02, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv0.y));
+			dev->SetRenderState((D3DRENDERSTATETYPE)RS_213_MULTIUSE03, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv0.z));
 
-			dev->SetRenderState((D3DRENDERSTATETYPE)RS_214_FREE, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv1.x));
-			dev->SetRenderState((D3DRENDERSTATETYPE)RS_215_FREE, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv1.y));
-			dev->SetRenderState((D3DRENDERSTATETYPE)RS_216_FREE, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv1.z));
+			dev->SetRenderState((D3DRENDERSTATETYPE)RS_214_MULTIUSE04, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv1.x));
+			dev->SetRenderState((D3DRENDERSTATETYPE)RS_215_MULTIUSE05, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv1.y));
+			dev->SetRenderState((D3DRENDERSTATETYPE)RS_216_MULTIUSE06, *reinterpret_cast<DWORD*>(&ctx.info.global_anim_uv1.z));
 
 			if (   !im->m_dbg_disable_omm_override_on_alpha_uv_anims && is_alpha_blended
 				&& ctx.info.global_anim_uv0 != Vector(1.0f, 0.0f, 0.0f) 
@@ -122,8 +122,8 @@ namespace gta4
 			// (nope ^ ) ... this breaks traffic lights and removes vertex colors at certain angles?
 			// Only used by EMISSIVENIGHT shader
 
-			const bool was_emissive_scalar_set = ctx.has_saved_renderstate(RS_169_EMISSIVE_SCALE); //ctx.save_rs(dev, RS_169_EMISSIVE_SCALE); // fixes emissive flicker
-			if (!was_emissive_scalar_set /*!ctx.info.shaderconst_uses_emissive_multiplier*/)
+			//const bool was_emissive_scalar_set = ctx.has_saved_renderstate(RS_169_EMISSIVE_SCALE); //ctx.save_rs(dev, RS_169_EMISSIVE_SCALE); // fixes emissive flicker
+			//if (!was_emissive_scalar_set /*!ctx.info.shaderconst_uses_emissive_multiplier*/)
 			{
 				if (ctx.info.preset_index == GTA_EMISSIVENIGHT || ctx.info.preset_index == GTA_EMISSIVENIGHT_ALPHA)
 				{
@@ -153,7 +153,13 @@ namespace gta4
 					{
 						if (!im->m_dbg_emissive_disable_ff_emissivenight_daytime)
 						{
-							renderer::set_remix_emissive_intensity(dev, 0.0f);
+							// The same light texture can be used with/without emission, when emissive strength is adjusted per drawcall via unused renderstates.
+							// This can result in flicker if the same texture hash is used for both states. So we need to modify the original hash which based soley on the colormap.
+							// Its kinda hard to come up with a per texture hash on our side (that is also stable across game sessions) so we simply re-hash the existing hash on remix' side with a seed.
+							// - so in theory, we could create a remix replacement for the light at 0 emission and one replacement when its not null
+							renderer::set_remix_texture_hash_modifier(dev, ZERO_EMISSION_SEED);
+							renderer::set_remix_modifier(dev, RemixModifier::EmissiveScalar, false);
+
 #if DEBUG
 							if (imgui::get()->m_dbg_debug_single_frame_emissive_intensity_vars)
 							{
@@ -195,7 +201,7 @@ namespace gta4
 					}
 				}
 			}
-			else
+			//else
 			{
 #if DEBUG
 				if (imgui::get()->m_dbg_debug_single_frame_emissive_intensity_vars)
