@@ -192,8 +192,20 @@ namespace gta4
 		ImGui::Spacing(0.0f, 24.0f);
 		ImGui::CenterText("current version");
 
-		const char* version_str = shared::utils::va("%d.%d.%d :: %s", 
-			COMP_MOD_VERSION_MAJOR, COMP_MOD_VERSION_MINOR, COMP_MOD_VERSION_PATCH, __DATE__);
+		const char* version_str = nullptr;
+
+		if constexpr (COMP_MOD_PRE_RELEASE_NUM != 0) 
+		{
+			version_str = shared::utils::va("%d.%d.%d - Pre-Release %d :: %s",
+				COMP_MOD_VERSION_MAJOR, COMP_MOD_VERSION_MINOR, COMP_MOD_VERSION_PATCH, COMP_MOD_PRE_RELEASE_NUM, __DATE__);
+		} 
+		else
+		{
+			version_str = shared::utils::va("%d.%d.%d :: %s",
+				COMP_MOD_VERSION_MAJOR, COMP_MOD_VERSION_MINOR, COMP_MOD_VERSION_PATCH, __DATE__);
+		}
+		
+
 		ImGui::PushFont(shared::imgui::font::BOLD_LARGE);
 		ImGui::CenterText(version_str);
 
@@ -227,6 +239,8 @@ namespace gta4
 		CENTER_URL("Toml11", "https://github.com/ToruNiina/toml11");
 		CENTER_URL("Ultimate-ASI-Loader", "https://github.com/ThirteenAG/Ultimate-ASI-Loader");
 		CENTER_URL("Miniz", "https://github.com/richgel999/miniz");
+		CENTER_URL("Rapidjson", "https://github.com/Tencent/rapidjson");
+		CENTER_URL("DiscordRPC", "https://github.com/discord/discord-rpc");
 
 		CENTER_URL("FusionFix", "https://github.com/ThirteenAG/GTAIV.EFLC.FusionFix");
 		CENTER_URL("FusionShaders", "https://github.com/Parallellines0451/GTAIV.EFLC.FusionShaders");
@@ -239,6 +253,10 @@ namespace gta4
 		CENTER_URL("Entity", "https://www.youtube.com/@paprykszadolowski8796");
 		CENTER_URL("Gabdeg", "https://www.youtube.com/@gabdeg793");
 		CENTER_URL("Hemry", "https://www.youtube.com/@Hemry81");
+		CENTER_URL("Thundery_Dan", "https://github.com/DANLOPAND");
+		CENTER_URL("KapibosRU", "https://www.youtube.com/channel/UCqZ2NI_fQKRN-Onypt9aIGQ");
+		CENTER_URL("Sparkles (Remix Plus)", "https://github.com/Kim2091");
+		CENTER_URL("Alex from Digital Foundry", "https://www.youtube.com/watch?v=vGxPdcMQfwg");
 
 		ImGui::Spacing(0.0f, 24.0f);
 		ImGui::CenterText("And of course, all my fellow Ko-Fi and Patreon supporters");

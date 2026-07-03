@@ -2,7 +2,10 @@
 
 constexpr auto COMP_MOD_VERSION_MAJOR = 1;
 constexpr auto COMP_MOD_VERSION_MINOR = 3;
-constexpr auto COMP_MOD_VERSION_PATCH = 2;
+constexpr auto COMP_MOD_VERSION_PATCH = 3;
+
+// adjust for pre-release builds
+constexpr auto COMP_MOD_PRE_RELEASE_NUM = 0;
 
 //#define LOG_SHADERPRESETS
 
