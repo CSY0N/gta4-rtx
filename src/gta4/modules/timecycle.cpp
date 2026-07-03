@@ -347,7 +347,7 @@ namespace gta4
 			{
 				const auto bridge = shared::common::remix_api::get().m_bridge;
 
-				const auto weatherTypeToPreset = [](game::eWeatherType wt) -> const char*
+				const auto weather_type_to_preset = [](game::eWeatherType wt) -> const char*
 				{
 					switch (wt)
 					{
@@ -363,8 +363,8 @@ namespace gta4
 					}
 				};
 
-				const char* const game_prev = weatherTypeToPreset(*game::weather_type_prev);
-				const char* const game_new  = weatherTypeToPreset(*game::weather_type_new);
+				const char* const game_prev = weather_type_to_preset(*game::weather_type_prev);
+				const char* const game_new  = weather_type_to_preset(*game::weather_type_new);
 
 				static char game_val_buff[256] = {};
 				uint32_t game_val_str_size = 0u;
@@ -375,9 +375,8 @@ namespace gta4
 				bridge.GetGameValue("__weather.target", game_val_buff, sizeof(game_val_buff), &game_val_str_size);
 				const auto remix_target = std::string_view(game_val_buff);
 
-				const bool mismatch =
-					remix_prev.empty() || remix_prev == "(initial)" ||
-					remix_prev != game_prev || remix_target != game_new;
+				const bool mismatch =	remix_prev.empty() || remix_prev == "(initial)" ||
+										remix_prev != game_prev || remix_target != game_new;
 
 				bridge.SetGameValue("__weather.target", game_new);
 				bridge.SetGameValue("__weather.blend_absolute",
@@ -387,16 +386,6 @@ namespace gta4
 					bridge.SetGameValue("__weather.previous_target", game_prev);
 				} else {
 					bridge.SetGameValue("__weather.previous_target", "");
-				}
-
-				if (*game::weather_type_new == game::WEATHER_CLOUDY)
-				{
-					static auto rtx_weather_preset_overcast_overcast_cloudShadowStrength = vars->get_option("rtx.weather.preset.overcast.overcast_cloudShadowStrength");
-					if (rtx_weather_preset_overcast_overcast_cloudShadowStrength)
-					{
-						val.value = natives::get()->IsInteriorScene() ? 0.0f : 0.75f;
-						vars->add_interpolate_entry(rtx_weather_preset_overcast_overcast_cloudShadowStrength, val, 0.1f);
-					}
 				}
 			}
 		}
