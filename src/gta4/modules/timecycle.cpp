@@ -347,49 +347,56 @@ namespace gta4
 			{
 				const auto bridge = shared::common::remix_api::get().m_bridge;
 
-				switch (*game::weather_type_new)
+				const auto weatherTypeToPreset = [](game::eWeatherType wt) -> const char*
 				{
-				default:
-				case game::WEATHER_EXTRASUNNY:
-					bridge.SetGameValue("__weather.target", "clear"); break;
-				case game::WEATHER_SUNNY:
-					bridge.SetGameValue("__weather.target", "smoggy"); break;
-				case game::WEATHER_SUNNY_WINDY:
-					bridge.SetGameValue("__weather.target", "partlyCloudy"); break;
-				case game::WEATHER_CLOUDY:
-					bridge.SetGameValue("__weather.target", "overcast"); 
+					switch (wt)
+					{
+					default:
+					case game::WEATHER_EXTRASUNNY:  return "clear";
+					case game::WEATHER_SUNNY:       return "smoggy";
+					case game::WEATHER_SUNNY_WINDY: return "partlyCloudy";
+					case game::WEATHER_CLOUDY:      return "overcast";
+					case game::WEATHER_RAIN:        return "rainstorm";
+					case game::WEATHER_DRIZZLE:     return "drizzle";
+					case game::WEATHER_FOGGY:       return "foggy";
+					case game::WEATHER_LIGHTNING:   return "thunderstorm";
+					}
+				};
 
-					// disable cloud shadow when in interiors
+				const char* const game_prev = weatherTypeToPreset(*game::weather_type_prev);
+				const char* const game_new  = weatherTypeToPreset(*game::weather_type_new);
+
+				static char game_val_buff[256] = {};
+				uint32_t game_val_str_size = 0u;
+
+				bridge.GetGameValue("__weather.previous", game_val_buff, sizeof(game_val_buff), &game_val_str_size);
+				const auto remix_prev = std::string_view(game_val_buff);
+
+				bridge.GetGameValue("__weather.target", game_val_buff, sizeof(game_val_buff), &game_val_str_size);
+				const auto remix_target = std::string_view(game_val_buff);
+
+				const bool mismatch =
+					remix_prev.empty() || remix_prev == "(initial)" ||
+					remix_prev != game_prev || remix_target != game_new;
+
+				bridge.SetGameValue("__weather.target", game_new);
+				bridge.SetGameValue("__weather.blend_absolute",
+					std::to_string(*game::weather_change_value).c_str());
+
+				if (mismatch) {
+					bridge.SetGameValue("__weather.previous_target", game_prev);
+				} else {
+					bridge.SetGameValue("__weather.previous_target", "");
+				}
+
+				if (*game::weather_type_new == game::WEATHER_CLOUDY)
+				{
 					static auto rtx_weather_preset_overcast_overcast_cloudShadowStrength = vars->get_option("rtx.weather.preset.overcast.overcast_cloudShadowStrength");
 					if (rtx_weather_preset_overcast_overcast_cloudShadowStrength)
 					{
 						val.value = natives::get()->IsInteriorScene() ? 0.0f : 0.75f;
 						vars->add_interpolate_entry(rtx_weather_preset_overcast_overcast_cloudShadowStrength, val, 0.1f);
 					}
-					
-					break;
-				case game::WEATHER_RAIN:
-					bridge.SetGameValue("__weather.target", "rainstorm"); break;
-				case game::WEATHER_DRIZZLE:
-					bridge.SetGameValue("__weather.target", "drizzle"); break;
-				case game::WEATHER_FOGGY:
-					bridge.SetGameValue("__weather.target", "foggy"); break;
-				case game::WEATHER_LIGHTNING:
-					bridge.SetGameValue("__weather.target", "thunderstorm"); break;
-				}
-
-				if (static bool first_set = false; !first_set) // first ever frame
-				{
-					bridge.SetGameValue("__weather.blend_absolute", "0.0");
-					first_set = true;
-				}
-				else if (static bool target_dest_hack = false; !target_dest_hack) // second frame
-				{
-					bridge.SetGameValue("__weather.blend_absolute", "0.0");
-					target_dest_hack = true;
-				}
-				else { // every other frame
-					bridge.SetGameValue("__weather.blend_absolute", std::to_string(*game::weather_change_value).c_str());
 				}
 			}
 		}
