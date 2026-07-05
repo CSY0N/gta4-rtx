@@ -127,7 +127,8 @@ namespace gta4
 			{
 				if (ctx.info.preset_index == GTA_EMISSIVENIGHT || ctx.info.preset_index == GTA_EMISSIVENIGHT_ALPHA)
 				{
-					if (*game::m_game_clock_hours <= 6 || *game::m_game_clock_hours >= 19)
+					if (   *game::m_game_clock_hours  < 6 || (*game::m_game_clock_hours == 6 && *game::m_game_clock_minutes <= 45)   // until  6:45
+						|| *game::m_game_clock_hours > 19 || (*game::m_game_clock_hours == 19 && *game::m_game_clock_minutes >= 15)) // after 19:15
 					{
 						if (!im->m_dbg_emissive_disable_ff_emissivenight_nighttime)
 						{
