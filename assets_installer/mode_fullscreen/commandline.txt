@@ -1,7 +1,7 @@
--d3dst 
--noprecache
--availablevidmem 1024
+-d3dst
+-availablevidmem 4096
 -nomemrestrict
--norestrictions
--forcer2vb
 -disableimposters
+-noprecache
+-forcer2vb
+-noswapdelay
