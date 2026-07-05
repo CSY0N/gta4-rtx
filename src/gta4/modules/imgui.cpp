@@ -683,8 +683,6 @@ namespace gta4
 
 			ImGui::Checkbox("Disable Phone Hack", &im->m_dbg_disable_phone_fixup); TT("Disables phone hack that clears the RT before drawing the first elem on the phone screen. Fixes smearing.");
 
-			
-
 			ImGui::Checkbox("Disable IgnoreBackedLighting Enforcement", &im->m_dbg_disable_ignore_baked_lighting_enforcement);
 			TT("CompMod forces the IgnoreBakedLighting category for almost every mesh. This disables that")
 
@@ -695,7 +693,6 @@ namespace gta4
 			ImGui::Checkbox("Disable Water Worldpos Logic", &im->m_dbg_disable_water_worldpos_logic);
 
 			//ImGui::Checkbox("Disable Alphablend On VEHGLASS", &im->m_dbg_vehglass_disable_alphablend);
-
 			ImGui::TreePop();
 		}
 
@@ -715,7 +712,7 @@ namespace gta4
 			ImGui::Checkbox("Do not render Indexed Prims with VS", &im->m_dbg_do_not_render_indexed_prims_with_vertexshader);
 			ImGui::Checkbox("Do not render Water", &im->m_dbg_do_not_render_water);
 			ImGui::Checkbox("Do not render Tri Surfaces", &im->m_dbg_do_not_render_tri_surface);
-
+			ImGui::Checkbox("Do not render Map markers", &im->m_dbg_do_not_render_map_markers);
 			ImGui::TreePop();
 		}
 
@@ -727,7 +724,6 @@ namespace gta4
 			ImGui::DragFloat("Vis. 3D Light Distance", &im->m_dbg_visualize_api_lights_3d_distance, 0.01f, 1.0f, 50.0f, "%.0f");
 			ImGui::Checkbox("Visualize Unstable Light Hashes", &im->m_dbg_visualize_api_light_unstable_hashes);
 			ImGui::Checkbox("Skip Ignore Light Hash Logic", &im->m_dbg_disable_ignore_light_hash_logic); TT("For performance impact testing");
-
 
 			ImGui::Spacing(0, 8);
 			ImGui::SeparatorText("Ignore Lights with certain flags ...");
@@ -2082,6 +2078,25 @@ namespace gta4
 		ImGui::Spacing(0, 4);
 	}
 
+	void remix_atmospheric_toggle()
+	{
+		static const auto& cs = comp_settings::get();
+		if (compsettings_bool_widget("Use Remix Atmosphere System", cs->timecycle_use_remix_atmos_system))
+		{
+			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
+			{
+				remix_vars::option_value val{ .value = cs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
+				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
+			}
+
+			if (const auto tempResampling = remix_vars::get_option("rtx.volumetrics.enableTemporalResampling"); tempResampling)
+			{
+				remix_vars::option_value val { .enabled = cs->timecycle_use_remix_atmos_system._bool() };
+				remix_vars::get()->add_interpolate_entry(tempResampling, val, 0.0f);
+			}
+		}
+	}
+
 	void compsettings_timecycle_container()
 	{
 		static const auto& im = imgui::get();
@@ -2103,14 +2118,7 @@ namespace gta4
 
 		compsettings_bool_widget("Set TimeCycle Variables on EndScene", gs->timecycle_set_on_endscene);
 
-		if (compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system))
-		{
-			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
-			{
-				remix_vars::option_value val{ .value = gs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
-				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
-			}
-		}
+		remix_atmospheric_toggle();
 
 		const bool using_atmos = gs->timecycle_use_remix_atmos_system._bool();
 
@@ -2200,7 +2208,7 @@ namespace gta4
 			compsettings_bool_widget("Enable SkyLight Logic", gs->timecycle_skylight_enabled);
 			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>() || using_atmos);
 			{
-				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 0.0f, 0.005f, "%.4f");
+				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 10.0f, 0.0001f, "%.4f");
 				compsettings_float_widget("SkyLight Bad Weather Offset", gs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);
 
 				ImGui::TextDisabled("Timecycle mSkyLightMultiplier: [ %.2f ]",
@@ -2436,15 +2444,8 @@ namespace gta4
 		ImGui::SeparatorText(" Version 1.3.X ");
 		ImGui::Spacing(0, 4);
 
-		if (compsettings_bool_widget("Use Remix Atmosphere System", gs->timecycle_use_remix_atmos_system))
-		{
-			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
-			{
-				remix_vars::option_value val { .value = gs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
-				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
-			}
-		}
-
+		remix_atmospheric_toggle();
+		
 		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
 
 		ImGui::Spacing(0, inbetween_spacing);
