@@ -454,7 +454,9 @@ namespace gta4
 		if (h)
 		{
 			// directly apply when no delay
-			if (delay == 0.0f) {
+			if (delay == 0.0f) 
+			{
+				lock.unlock();
 				set_option(handle, goal);
 			}
 			// interpolate over time or set after delay

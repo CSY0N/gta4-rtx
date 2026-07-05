@@ -2092,7 +2092,7 @@ namespace gta4
 			if (const auto tempResampling = remix_vars::get_option("rtx.volumetrics.enableTemporalResampling"); tempResampling)
 			{
 				remix_vars::option_value val { .enabled = cs->timecycle_use_remix_atmos_system._bool() };
-				remix_vars::get()->add_interpolate_entry(tempResampling, val, 0.0f);
+				remix_vars::get()->add_interpolate_entry(tempResampling, val, 0.1f);
 			}
 		}
 	}
