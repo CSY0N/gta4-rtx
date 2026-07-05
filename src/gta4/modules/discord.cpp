@@ -39,7 +39,7 @@ namespace gta4
 		Discord_RunCallbacks();
 
 		// run on very first frame - then only on each 5th frame
-		if (frame_counter < 0 || frame_counter > 5)
+		if (!game::CMenuManager__m_MenuActive && (frame_counter < 0 || frame_counter > 5))
 		{
 			state_str = "";
 			const auto n = natives::get();
@@ -85,7 +85,7 @@ namespace gta4
 			Discord_UpdatePresence(&discord_presence);
 		}
 
-		if (++frame_counter > 30) {
+		if (++frame_counter > 5) {
 			frame_counter = 0;
 		}
 	}

@@ -3246,7 +3246,9 @@ namespace gta4
 
 	void post_render_sky()
 	{
-		remix_markers::get()->draw_nocull_markers();
+		if (!imgui::get()->m_dbg_do_not_render_map_markers) {
+			remix_markers::get()->draw_nocull_markers();
+		}
 	}
 
 	__declspec (naked) void on_sky_render_stub()

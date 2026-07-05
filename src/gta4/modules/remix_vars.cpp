@@ -454,7 +454,9 @@ namespace gta4
 		if (h)
 		{
 			// directly apply when no delay
-			if (delay == 0.0f) {
+			if (delay == 0.0f) 
+			{
+				lock.unlock();
 				set_option(handle, goal);
 			}
 			// interpolate over time or set after delay
@@ -549,34 +551,36 @@ namespace gta4
 					}
 
 					// particle mode is disabled by default (rtx.conf), enable if alpha emissive hack is on
-					static auto rr_particle_mode = get_option("rtx.rayreconstruction.particleBufferMode");
-					rr_particle_mode->second.type = OPTION_TYPE::OPTION_TYPE_INT; // float by default
-					option_value val { .integer = (gs->emissive_alpha_blend_hack._bool() ? 1 : 0) };
-					set_option(rr_particle_mode, val, false, gs->emissive_alpha_blend_hack._bool()); // only override constantly when hack is enabled
-
-					if (!is_paused())
+					if (static auto rr_particle_mode = get_option("rtx.rayreconstruction.particleBufferMode"); rr_particle_mode)
 					{
-						if (!interpolate_stack.empty())
+						rr_particle_mode->second.type = OPTION_TYPE::OPTION_TYPE_INT; // float by default
+						option_value val{ .integer = (gs->emissive_alpha_blend_hack._bool() ? 1 : 0) };
+						set_option(rr_particle_mode, val, false, gs->emissive_alpha_blend_hack._bool()); // only override constantly when hack is enabled
+					}
+				}
+
+				if (!is_paused())
+				{
+					if (!interpolate_stack.empty())
+					{
+						for (auto& ip : interpolate_stack)
 						{
-							for (auto& ip : interpolate_stack)
-							{
-								ip._time_elapsed += get()->get_frametime() * 0.001f; // ms to s
+							ip._time_elapsed += get()->get_frametime() * 0.001f; // ms to s
 
-								// check if delayed
-								if (ip._time_elapsed < 0.0f) {
-									continue;
-								}
-
-								set_option(ip.option, ip.goal, false, true);
-								ip._complete = true;
-
-								auto completed_condition = [](const interpolate_entry_s& ip) {
-										return ip._complete;
-									};
-
-								const auto it = std::remove_if(interpolate_stack.begin(), interpolate_stack.end(), completed_condition);
-								interpolate_stack.erase(it, interpolate_stack.end());
+							// check if delayed
+							if (ip._time_elapsed < 0.0f) {
+								continue;
 							}
+
+							set_option(ip.option, ip.goal, false, true);
+							ip._complete = true;
+
+							auto completed_condition = [](const interpolate_entry_s& ip) {
+								return ip._complete;
+							};
+
+							const auto it = std::remove_if(interpolate_stack.begin(), interpolate_stack.end(), completed_condition);
+							interpolate_stack.erase(it, interpolate_stack.end());
 						}
 					}
 				}

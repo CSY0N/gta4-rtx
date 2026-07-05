@@ -683,8 +683,6 @@ namespace gta4
 
 			ImGui::Checkbox("Disable Phone Hack", &im->m_dbg_disable_phone_fixup); TT("Disables phone hack that clears the RT before drawing the first elem on the phone screen. Fixes smearing.");
 
-			
-
 			ImGui::Checkbox("Disable IgnoreBackedLighting Enforcement", &im->m_dbg_disable_ignore_baked_lighting_enforcement);
 			TT("CompMod forces the IgnoreBakedLighting category for almost every mesh. This disables that")
 
@@ -695,7 +693,6 @@ namespace gta4
 			ImGui::Checkbox("Disable Water Worldpos Logic", &im->m_dbg_disable_water_worldpos_logic);
 
 			//ImGui::Checkbox("Disable Alphablend On VEHGLASS", &im->m_dbg_vehglass_disable_alphablend);
-
 			ImGui::TreePop();
 		}
 
@@ -715,7 +712,7 @@ namespace gta4
 			ImGui::Checkbox("Do not render Indexed Prims with VS", &im->m_dbg_do_not_render_indexed_prims_with_vertexshader);
 			ImGui::Checkbox("Do not render Water", &im->m_dbg_do_not_render_water);
 			ImGui::Checkbox("Do not render Tri Surfaces", &im->m_dbg_do_not_render_tri_surface);
-
+			ImGui::Checkbox("Do not render Map markers", &im->m_dbg_do_not_render_map_markers);
 			ImGui::TreePop();
 		}
 
@@ -727,7 +724,6 @@ namespace gta4
 			ImGui::DragFloat("Vis. 3D Light Distance", &im->m_dbg_visualize_api_lights_3d_distance, 0.01f, 1.0f, 50.0f, "%.0f");
 			ImGui::Checkbox("Visualize Unstable Light Hashes", &im->m_dbg_visualize_api_light_unstable_hashes);
 			ImGui::Checkbox("Skip Ignore Light Hash Logic", &im->m_dbg_disable_ignore_light_hash_logic); TT("For performance impact testing");
-
 
 			ImGui::Spacing(0, 8);
 			ImGui::SeparatorText("Ignore Lights with certain flags ...");
@@ -817,6 +813,9 @@ namespace gta4
 			ImGui::Spacing(0, 8);
 			ImGui::SeparatorText("Directional Light Info");
 			ImGui::Spacing(0, 4);
+
+			ImGui::Checkbox("Force Directional Light Translation", &im->m_dbg_force_distant_light_translation);
+			TT("Force Translation even when Remix Atmosphere System is active.");
 
 			for (auto i = 0u; i < 2; i++)
 			{
@@ -923,6 +922,121 @@ namespace gta4
 		ImGui::Spacing(0, TREENODE_SPACING);
 		if (ImGui::TreeNode("Timecycle related ..."))
 		{
+			const auto bridge = shared::common::remix_api::get().m_bridge;
+
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
+
+			ImGui::SeparatorText("Remix Atmos System");
+			ImGui::TextUnformatted("Logic to adjust current Atmos Preset and Blending strength");
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
+
+			ImGui::Checkbox("Atmos System - Manual Mode", &im->m_dbg_manual_atmos_system);
+
+			ImGui::BeginDisabled(!im->m_dbg_manual_atmos_system);
+			{
+				/* clear, partlyCloudy, overcast, hazy, foggy, drizzle, rainstorm, thunderstorm, snow, blizzard,
+				 * sandstorm, smoggy. Empty string to return to dormant. */
+
+				if (ImGui::Button("clear")) {
+					bridge.SetGameValue("__weather.target", "clear");
+				} TT("EXTRASUNNY");
+
+				ImGui::SameLine();
+				if (ImGui::Button("smoggy")) {
+					bridge.SetGameValue("__weather.target", "smoggy");
+				} TT("SUNNY");
+
+				ImGui::SameLine();
+				if (ImGui::Button("partlyCloudy")) {
+					bridge.SetGameValue("__weather.target", "partlyCloudy");
+				} TT("SUNNY_WINDY");
+
+				ImGui::SameLine();
+				if (ImGui::Button("overcast")) {
+					bridge.SetGameValue("__weather.target", "overcast");
+				} TT("CLOUDY");
+
+				if (ImGui::Button("drizzle")) {
+					bridge.SetGameValue("__weather.target", "drizzle");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("foggy")) {
+					bridge.SetGameValue("__weather.target", "foggy");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("rainstorm")) {
+					bridge.SetGameValue("__weather.target", "rainstorm");
+				} TT("RAIN");
+
+				ImGui::SameLine();
+				if (ImGui::Button("thunderstorm")) {
+					bridge.SetGameValue("__weather.target", "thunderstorm");
+				} TT("LIGHTNING");
+
+				ImGui::SameLine();
+				
+
+				ImGui::Spacing(0, TREENODE_SPACING);
+				ImGui::Separator();
+				ImGui::Spacing(0, TREENODE_SPACING);
+
+				static float trans_val = 0.0f;
+				ImGui::SliderFloat("Absolute Val", &trans_val, -1.0f, 1.0f);
+				TT("-1 to disable absolute");
+
+				if (ImGui::Button("Apply Absolute Value", ImVec2(ImGui::CalcItemWidth(), 0))) {
+					bridge.SetGameValue("__weather.blend_absolute", std::to_string(trans_val).c_str());
+				}
+
+				ImGui::Spacing(0, TREENODE_SPACING);
+				ImGui::Separator();
+				ImGui::Spacing(0, TREENODE_SPACING);
+
+				static float trans_blend_val = 0.0f;
+				ImGui::SliderFloat("Transition Blend Val", &trans_blend_val, 0.0f, 10.0f);
+				TT("Blend time in s");
+
+				if (ImGui::Button("Apply Blend Value", ImVec2(ImGui::CalcItemWidth(), 0)))
+				{
+					bridge.SetGameValue("__weather.blend_absolute", "-1.0");
+					bridge.SetGameValue("__weather.blend_seconds", std::to_string(trans_blend_val).c_str());
+				}
+
+				ImGui::Spacing(0, TREENODE_SPACING);
+			ImGui::Separator();
+			ImGui::Spacing(0, TREENODE_SPACING);
+
+			static char str_buff[512] = {};
+			static uint32_t str_len = 0u;
+
+			bridge.GetGameValue("__weather.current", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_current = str_buff;
+
+			bridge.GetGameValue("__weather.target", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_target = str_buff;
+
+			bridge.GetGameValue("__weather.previous", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_previous = str_buff;
+
+			bridge.GetGameValue("__weather.blend_absolute", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_blend_absolute = str_buff;
+
+			bridge.GetGameValue("__weather.blend_progress", str_buff, ARRAYSIZE(str_buff), &str_len);
+			const std::string weather_blend_progress = str_buff;
+
+			ImGui::TextUnformatted(std::format("__weather.current: {}", weather_current).c_str());
+			ImGui::TextUnformatted(std::format("__weather.target: {}", weather_target).c_str());
+				ImGui::TextUnformatted(std::format("__weather.previous: {}", weather_previous).c_str());
+				ImGui::TextUnformatted(std::format("__weather.blend_absolute: {}", weather_blend_absolute).c_str());
+				ImGui::TextUnformatted(std::format("__weather.blend_progress: {}", weather_blend_progress).c_str());
+
+				ImGui::EndDisabled();
+			}
+
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
+			ImGui::Separator();
 			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
 			ImGui::SliderInt("Used Timecycle for Remix Translation ..", &im->m_dbg_used_timecycle, -1, 2, "%d", ImGuiSliderFlags_AlwaysClamp);
@@ -983,8 +1097,39 @@ namespace gta4
 			ImGui::Text("Clock Hour: %d", *game::m_game_clock_hours);
 			ImGui::Text("Clock Minutes: %d", *game::m_game_clock_minutes);
 
-			ImGui::Spacing(0, 8.0f);
+			auto frac = [](const float& x) {
+					return x - std::floor(x);
+				};
+
+			im->m_plot_sun_lerp.add(frac(im->m_dbg_vis_sun_lerp_t));
+			im->m_plot_sun_elevation.add(frac(im->m_dbg_vis_sun_elevation));
+			im->m_plot_sun_rotation.add(frac(im->m_dbg_vis_sun_rotation));
+			im->m_plot_sun_framecount.add(static_cast<float>(im->m_dbg_vis_sun_frame_count % 1000)); // count wrapped every 1000 frames
+
+			ImGui::PlotLines(	"Atmos Sun Lerp T", im->m_plot_sun_lerp.values,
+								imgui::debug_plot::history_size, im->m_plot_sun_lerp.offset, nullptr,
+								0.0f, 1.0f, ImVec2(0, 60));
+
+			ImGui::PlotLines(	"Atmos Sun Elevation", im->m_plot_sun_elevation.values,
+								imgui::debug_plot::history_size, im->m_plot_sun_elevation.offset, nullptr, 
+								0.0f, 1.0f, ImVec2(0, 60));
+
+			ImGui::PlotLines(	"Atmos Sun Rotation", im->m_plot_sun_rotation.values,
+								imgui::debug_plot::history_size, im->m_plot_sun_rotation.offset, nullptr,
+								0.0f, 1.0f, ImVec2(0, 60));
+
+			ImGui::PlotLines(	"Atmos Sun Framecount", im->m_plot_sun_framecount.values, 
+								imgui::debug_plot::history_size, im->m_plot_sun_framecount.offset, nullptr, 
+								0.0f, 1000.0f, ImVec2(0, 60));
+
+			ImGui::Text("Atmos Sun Lerp T: %.5f", im->m_dbg_vis_sun_lerp_t);
+			ImGui::Text("Atmos Sun Elevation: %.5f", im->m_dbg_vis_sun_elevation);
+			ImGui::Text("Atmos Sun Rotation: %.5f", im->m_dbg_vis_sun_rotation);
+			ImGui::Text("Atmos Sun Framecount: %d", im->m_dbg_vis_sun_frame_count);
+
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 			ImGui::Separator();
+			ImGui::Spacing(0, TREENODE_SPACING_INSIDE);
 
 			ImGui::Checkbox("Override Global Wetness Scale", &im->m_dbg_global_wetness_override);
 			ImGui::BeginDisabled(!im->m_dbg_global_wetness_override);
@@ -1780,6 +1925,8 @@ namespace gta4
 		compsettings_bool_widget("Translate Game Lights", gs->translate_game_lights);
 		compsettings_bool_widget("Ignore Filler Lights", gs->translate_game_lights_ignore_filler_lights);
 
+		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
+
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Radius Scalar", gs->translate_game_light_radius_scalar, 0.0f, 0.0f, 0.005f));
 		CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Light Intensity Scalar", gs->translate_game_light_intensity_scalar, 0.0f, 0.0f, 0.005f));
 
@@ -1795,12 +1942,16 @@ namespace gta4
 		ImGui::SeparatorText(" Distant ");
 		ImGui::Spacing(0, 4);
 
-		compsettings_float_widget("SunLight Intensity Scalar", gs->translate_sunlight_intensity_scalar, 0.0f, 0.0f, 0.005f);
-		compsettings_float_widget("SunLight Bad Weather Influence", gs->translate_sunlight_intensity_bad_weather_influence, 0.0f, 1.0f, 0.005f);
-		compsettings_float_widget("SunLight Angular Diameter Degrees", gs->translate_sunlight_angular_diameter_degrees, 0.0f, 45.0f, 0.005f);
-		compsettings_float_widget("SunLight Volumetric Base", gs->translate_sunlight_volumetric_radiance_base, 0.0f, 10.0f, 0.005f);
-		compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f, "%.3f");
-
+		ImGui::BeginDisabled(gs->timecycle_use_remix_atmos_system._bool());
+		{
+			compsettings_float_widget("SunLight Intensity Scalar", gs->translate_sunlight_intensity_scalar, 0.0f, 0.0f, 0.005f);
+			compsettings_float_widget("SunLight Bad Weather Influence", gs->translate_sunlight_intensity_bad_weather_influence, 0.0f, 1.0f, 0.005f);
+			compsettings_float_widget("SunLight Angular Diameter Degrees", gs->translate_sunlight_angular_diameter_degrees, 0.0f, 45.0f, 0.005f);
+			compsettings_float_widget("SunLight Volumetric Base", gs->translate_sunlight_volumetric_radiance_base, 0.0f, 10.0f, 0.005f);
+			compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f, "%.3f");
+			ImGui::EndDisabled();
+		}
+		
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Vehicle Headlights / Rearlights ");
 		ImGui::Spacing(0, 4);
@@ -1927,6 +2078,25 @@ namespace gta4
 		ImGui::Spacing(0, 4);
 	}
 
+	void remix_atmospheric_toggle()
+	{
+		static const auto& cs = comp_settings::get();
+		if (compsettings_bool_widget("Use Remix Atmosphere System", cs->timecycle_use_remix_atmos_system))
+		{
+			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
+			{
+				remix_vars::option_value val{ .value = cs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
+				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
+			}
+
+			if (const auto tempResampling = remix_vars::get_option("rtx.volumetrics.enableTemporalResampling"); tempResampling)
+			{
+				remix_vars::option_value val { .enabled = cs->timecycle_use_remix_atmos_system._bool() };
+				remix_vars::get()->add_interpolate_entry(tempResampling, val, 0.1f);
+			}
+		}
+	}
+
 	void compsettings_timecycle_container()
 	{
 		static const auto& im = imgui::get();
@@ -1948,13 +2118,17 @@ namespace gta4
 
 		compsettings_bool_widget("Set TimeCycle Variables on EndScene", gs->timecycle_set_on_endscene);
 
+		remix_atmospheric_toggle();
+
+		const bool using_atmos = gs->timecycle_use_remix_atmos_system._bool();
+
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Fog ");
 		ImGui::Spacing(0, 4);
 
 		{
 			compsettings_bool_widget("Enable FogColor Logic", gs->timecycle_fogcolor_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_fogcolor_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->timecycle_fogcolor_enabled.get_as<bool>() || using_atmos);
 			{
 				compsettings_float_widget("FogColor Base Strength", gs->timecycle_fogcolor_base_strength, 0.0f, 0.0f, 0.005f);
 				compsettings_float_widget("FogColor Influence Scalar", gs->timecycle_fogcolor_influence_scalar, 0.0f, 0.0f, 0.005f);
@@ -1980,7 +2154,7 @@ namespace gta4
 
 		{
 			compsettings_bool_widget("Enable FogDensity Logic", gs->timecycle_fogdensity_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_fogdensity_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->timecycle_fogdensity_enabled.get_as<bool>() || using_atmos);
 			{
 				compsettings_float_widget("FogDensity Influence Scalar", gs->timecycle_fogdensity_influence_scalar, 0.0f, 0.0f, 0.005f);
 
@@ -2032,9 +2206,9 @@ namespace gta4
 
 		{
 			compsettings_bool_widget("Enable SkyLight Logic", gs->timecycle_skylight_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>());
+			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>() || using_atmos);
 			{
-				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 0.0f, 0.005f, "%.4f");
+				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 10.0f, 0.0001f, "%.4f");
 				compsettings_float_widget("SkyLight Bad Weather Offset", gs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);
 
 				ImGui::TextDisabled("Timecycle mSkyLightMultiplier: [ %.2f ]",
@@ -2269,6 +2443,12 @@ namespace gta4
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Version 1.3.X ");
 		ImGui::Spacing(0, 4);
+
+		remix_atmospheric_toggle();
+		
+		compsettings_bool_widget("No Volumetrics on Filler Lights", gs->translate_game_lights_no_volumetrics_on_filler_lights);
+
+		ImGui::Spacing(0, inbetween_spacing);
 
 		ImGui::Widget_CategoryWithVerticalLabel("Anti Culling", [&]()
 			{

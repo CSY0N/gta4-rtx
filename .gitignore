@@ -73,6 +73,8 @@ user*.bat
 !.vscode/readme.txt
 
 !assets/.trex/d3d9_runtime.zip
+!assets_atmosphere/.trex/d3d9_runtime.zip
+!assets_atmosphere/.trex/d3d9_runtime_pdb.zip
 
 # IDA
 # =========================

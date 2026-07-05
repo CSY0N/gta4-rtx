@@ -3,7 +3,9 @@
 
 #include "comp_settings.hpp"
 #include "imgui.hpp"
+#include "natives.hpp"
 #include "remix_vars.hpp"
+#include "shared/common/remix_api.hpp"
 
 namespace gta4
 {
@@ -105,8 +107,10 @@ namespace gta4
 				}
 			}
 
+			const auto using_atmos = gs->timecycle_use_remix_atmos_system.get_as<bool>() || im->m_dbg_manual_atmos_system;
+
 			static auto rtxSkybrightness = vars->get_option("rtx.skyBrightness");
-			if (gs->timecycle_skylight_enabled.get_as<bool>() && rtxSkybrightness)
+			if (!using_atmos && gs->timecycle_skylight_enabled.get_as<bool>() && rtxSkybrightness)
 			{
 				val.value = timecycle->mSkyLightMultiplier * gs->timecycle_skylight_scalar.get_as<float>();
 
@@ -253,7 +257,7 @@ namespace gta4
 			im->m_timecyc_curr_mSkyBottomColorFogDensity.w = val.vector[3];
 
 			static auto rtxVolumetricsSingleScatteringAlbedo = vars->get_option("rtx.volumetrics.singleScatteringAlbedo");
-			if (gs->timecycle_fogcolor_enabled.get_as<bool>() && rtxVolumetricsSingleScatteringAlbedo)
+			if (!using_atmos && gs->timecycle_fogcolor_enabled.get_as<bool>() && rtxVolumetricsSingleScatteringAlbedo)
 			{
 				const auto& base_strength = gs->timecycle_fogcolor_base_strength.get_as<float>();
 				const auto& influence = gs->timecycle_fogcolor_influence_scalar.get_as<float>();
@@ -323,7 +327,7 @@ namespace gta4
 			}
 
 			static auto rtxVolumetricsTransmittanceMeasurementDistanceMeters = vars->get_option("rtx.volumetrics.transmittanceMeasurementDistanceMeters");
-			if (gs->timecycle_fogdensity_enabled.get_as<bool>() && rtxVolumetricsTransmittanceMeasurementDistanceMeters)
+			if (!using_atmos && gs->timecycle_fogdensity_enabled.get_as<bool>() && rtxVolumetricsTransmittanceMeasurementDistanceMeters)
 			{
 				val.value = map_range(fog_color_density.w, 0.0f, 0.9f, 200.0f, 0.6f)
 					* gs->timecycle_fogdensity_influence_scalar.get_as<float>()
@@ -337,6 +341,52 @@ namespace gta4
 
 				vars->set_option(rtxVolumetricsTransmittanceMeasurementDistanceMeters, val);
 				im->m_timecyc_curr_volumetricsTransmittanceMeasurementDistanceMeters = val.value;
+			}
+
+			if (using_atmos && !im->m_dbg_manual_atmos_system)
+			{
+				const auto bridge = shared::common::remix_api::get().m_bridge;
+
+				const auto weather_type_to_preset = [](game::eWeatherType wt) -> const char*
+				{
+					switch (wt)
+					{
+					default:
+					case game::WEATHER_EXTRASUNNY:  return "clear";
+					case game::WEATHER_SUNNY:       return "smoggy";
+					case game::WEATHER_SUNNY_WINDY: return "partlyCloudy";
+					case game::WEATHER_CLOUDY:      return "overcast";
+					case game::WEATHER_RAIN:        return "rainstorm";
+					case game::WEATHER_DRIZZLE:     return "drizzle";
+					case game::WEATHER_FOGGY:       return "foggy";
+					case game::WEATHER_LIGHTNING:   return "thunderstorm";
+					}
+				};
+
+				const char* const game_prev = weather_type_to_preset(*game::weather_type_prev);
+				const char* const game_new  = weather_type_to_preset(*game::weather_type_new);
+
+				static char game_val_buff[256] = {};
+				uint32_t game_val_str_size = 0u;
+
+				bridge.GetGameValue("__weather.previous", game_val_buff, sizeof(game_val_buff), &game_val_str_size);
+				const auto remix_prev = std::string_view(game_val_buff);
+
+				bridge.GetGameValue("__weather.target", game_val_buff, sizeof(game_val_buff), &game_val_str_size);
+				const auto remix_target = std::string_view(game_val_buff);
+
+				const bool mismatch =	remix_prev.empty() || remix_prev == "(initial)" ||
+										remix_prev != game_prev || remix_target != game_new;
+
+				bridge.SetGameValue("__weather.target", game_new);
+				bridge.SetGameValue("__weather.blend_absolute",
+					std::to_string(*game::weather_change_value).c_str());
+
+				if (mismatch) {
+					bridge.SetGameValue("__weather.previous_target", game_prev);
+				} else {
+					bridge.SetGameValue("__weather.previous_target", "");
+				}
 			}
 		}
 	}

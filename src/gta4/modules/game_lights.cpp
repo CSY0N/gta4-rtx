@@ -4,6 +4,7 @@
 #include "comp_settings.hpp"
 #include "imgui.hpp"
 #include "remix_lights.hpp"
+#include "remix_vars.hpp"
 #include "timecycle.hpp"
 #include "shared/common/remix_api.hpp"
 
@@ -110,8 +111,8 @@ namespace gta4
 		auto& active_lights = rml->get_active_lights();
 		const auto& updateframe = rml->get_updateframe();
 
-		// sun
-		if (game::g_directionalLights)
+		// sun without remix atmosphere system
+		if ((!gs->timecycle_use_remix_atmos_system._bool() || im->m_dbg_force_distant_light_translation) && game::g_directionalLights)
 		{
 			auto& def = game::g_directionalLights[0];
 			auto& l = rml->get_distant_light();
@@ -181,6 +182,96 @@ namespace gta4
 				api.m_bridge.DrawLightInstance(l.m_handle);
 			}
 		}
+		else if (game::g_directionalLights)
+		{
+			auto& def = game::g_directionalLights[0];
+			auto dir = def.mDirection; dir.Normalize();
+				 dir = -dir;
+
+			const static auto rtx_atmosphere_sunElevation = remix_vars::get_option("rtx.atmosphere.sunElevation");
+			const static auto rtx_atmosphere_sunRotation = remix_vars::get_option("rtx.atmosphere.sunRotation");
+			const static auto rtx_atmosphere_moon0_elevation = remix_vars::get_option("rtx.atmosphere.moon0.elevation0");
+			const static auto rtx_atmosphere_moon0_rotation = remix_vars::get_option("rtx.atmosphere.moon0.rotation0");
+
+			if (rtx_atmosphere_sunElevation && rtx_atmosphere_sunRotation && rtx_atmosphere_moon0_elevation && rtx_atmosphere_moon0_rotation)
+			{
+				float sun_elevation = RAD2DEG(std::asin(dir.z));
+				float sun_rotation = RAD2DEG(std::atan2(dir.x, dir.y));
+				if (sun_rotation < 0.0f) {
+					sun_rotation += 360.0f;
+				}
+
+				const int& hour = *game::m_game_clock_hours;
+				const int& minute = *game::m_game_clock_minutes;
+				const int& seconds = *game::m_game_clock_seconds;
+
+				auto lerp = [](const float& a, const float& b, const float& t) -> float {
+						return a + (b - a) * t;
+					};
+
+				auto get_sun_elevation = [lerp](const float& t, const float daytime_return_val)
+					{
+						// sunset: 20h → 21h (30 → 0)
+						if (t >= 20.0f && t < 21.0f) {
+							return lerp(30.0f, 0.0f, (t - 20.0f) / 1.0f);
+						}
+
+						// 21h → 23h (0 → -90)
+						if (t >= 21.0f && t < 23.0f) {
+							return lerp(0.0f, -90.0f, (t - 21.0f) / 2.0f);
+						}
+
+						// plateau: 23h → 3h (-90 flat)
+						if (t >= 23.0f || t < 3.0f) {
+							return -90.0f;
+						}
+
+						// 3h → 6h (-90 → 0)
+						if (t >= 3.0f && t < 6.0f) {
+							return lerp(-90.0f, 0.0f, (t - 3.0f) / 3.0f);
+						}
+
+						// sunrise: 6h → 7h (0 → 30)
+						if (t >= 6.0f && t < 7.0f) {
+							return lerp(0.0f, 30.0f, (t - 6.0f) / 1.0f);
+						}
+
+						// in out between 7 → 20
+						return daytime_return_val;
+					};
+
+				float moon_elevation = sun_elevation;
+
+				float t = static_cast<float>(hour)
+						+ static_cast<float>(minute) / 60.0f
+						+ static_cast<float>(seconds) / 3600.0f;
+
+				sun_elevation = get_sun_elevation(t, sun_elevation);
+
+				if (shared::globals::imgui_menu_open)
+				{
+					im->m_dbg_vis_sun_lerp_t = t;
+					im->m_dbg_vis_sun_elevation = sun_elevation;
+					im->m_dbg_vis_sun_rotation = sun_rotation;
+					im->m_dbg_vis_sun_frame_count++;
+				}
+
+				const auto& v1 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_elevation));
+				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunElevation, v1, 0.005f);
+
+				const auto& v2 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_rotation));
+				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunRotation, v2, 0.005f);
+
+				if (hour >= 20 || hour <= 6)
+				{
+					// directional light past 21 = moon
+					const auto& v3 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(moon_elevation));
+					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_elevation, v3, 0.005f);
+
+					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_rotation, v2, 0.005f);
+				}
+			}
+		}
 
 		const auto light_list = game::get_renderLights();
 		const auto light_count = game::get_renderLightsCount();
@@ -208,8 +299,7 @@ namespace gta4
 						// we need this light in the active list to visualize it
 						if (im->m_dbg_visualize_api_light_hashes) {
 							add_zero_intensity_light = true;
-						}
-						else {
+						} else {
 							continue;
 						}
 					}

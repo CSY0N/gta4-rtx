@@ -615,6 +615,15 @@ namespace gta4
 				false
 			};
 
+			variable translate_game_lights_no_volumetrics_on_filler_lights =
+			{
+				"translate_game_lights_no_volumetrics_on_filler_lights",
+				("Enable to disable volumetric influence of filler lights\n"
+				 "to prevent random floating fog bubbles."),
+				"1.3.1",
+				false
+			};
+
 			variable translate_game_light_radius_scalar =
 			{
 				"translate_game_light_radius_scalar",
@@ -1206,6 +1215,13 @@ namespace gta4
 				true
 			};
 
+			variable timecycle_use_remix_atmos_system = {
+				"timecycle_use_remix_atmos_system",
+				("Enable to use remix atmosphere system by github.com/RemixProjGroup/dxvk-remix (Sparkles"),
+				"1.3.1",
+				true
+			};
+
 			variable timecycle_wetness_enabled = {
 				"timecycle_wetness_enabled",
 				("Enables material roughness tweaks based on timecycle wetness settings."),
@@ -1490,7 +1506,7 @@ namespace gta4
 				"timecycle_skylight_scalar",
 				("Controls how much the skylight timecycle variable influences 'rtx.skyBrightness'"),
 				"1.3.0",
-				0.02f
+				0.01f
 			};
 
 			variable timecycle_skylight_max_offset_bad_weather = {

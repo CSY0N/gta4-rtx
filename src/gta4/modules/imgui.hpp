@@ -46,6 +46,10 @@ namespace gta4
 		int m_curr_game_hour = 0;
 		int m_curr_game_minute = 0;
 
+		float m_dbg_vis_sun_lerp_t = 0.0f;
+		float m_dbg_vis_sun_elevation = 0.0f;
+		float m_dbg_vis_sun_rotation = 0.0f;
+		uint32_t m_dbg_vis_sun_frame_count = 0u;
 
 		bool m_anti_cull_capture_toggle = false;
 
@@ -89,6 +93,7 @@ namespace gta4
 		bool m_dbg_do_not_render_indexed_prims_with_vertexshader = false;
 		bool m_dbg_do_not_render_water = false;
 		bool m_dbg_do_not_render_tri_surface = false;
+		bool m_dbg_do_not_render_map_markers = false;
 		bool m_dbg_toggle_ff = false;
 		bool m_dbg_do_not_restore_drawcall_context = false;
 		bool m_dbg_do_not_restore_drawcall_context_on_early_out = false;
@@ -130,6 +135,8 @@ namespace gta4
 
 		int m_dbg_tag_exp_hair_as_index = -1;
 
+		bool m_dbg_force_distant_light_translation = false;
+		bool m_dbg_manual_atmos_system = false;
 		int m_dbg_used_timecycle = -1;
 		bool m_dbg_debug_single_frame_timecycle_remix_vars = false;
 
@@ -157,6 +164,25 @@ namespace gta4
 		float m_dbg_visualize_api_light_hashes_distance = 8.0f;
 
 		// --
+
+		struct debug_plot
+		{
+			static constexpr int history_size = 256;
+
+			float values[history_size] = {};
+			int offset = 0;
+
+			void add(float value)
+			{
+				values[offset] = value;
+				offset = (offset + 1) % history_size;
+			}
+		};
+
+		debug_plot m_plot_sun_lerp;
+		debug_plot m_plot_sun_elevation;
+		debug_plot m_plot_sun_rotation;
+		debug_plot m_plot_sun_framecount;
 
 		struct visualized_decal_rs_s
 		{

@@ -39,8 +39,18 @@ namespace gta4
 			 : lov && !lov->_use_inner_cone_angle && lov->light_type && def.mType != game::LT_SPOT ? lov->inner_cone_angle : def.mInnerConeAngle;
 	}
 
-	float remix_lights::get_light_volumetric_scale(const game::CLightSource& def, const map_settings::light_override_s* lov) {
-		return lov && lov->_use_volumetric_scale ? lov->volumetric_scale : def.mVolumeScale; // yes
+	float remix_lights::get_light_volumetric_scale(const game::CLightSource& def, const map_settings::light_override_s* lov) 
+	{
+		if (lov && lov->_use_volumetric_scale) {
+			return lov->volumetric_scale;
+		}
+
+		// disable volumetric influence on filler lights
+		if (comp_settings::get()->translate_game_lights_no_volumetrics_on_filler_lights._bool()) {
+			return 0.0f;
+		}
+
+		return def.mVolumeScale;
 	}
 
 	// false = sphere ---- true = spotlight
