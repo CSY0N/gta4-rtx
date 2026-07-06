@@ -70,9 +70,9 @@ namespace gta4
 			};
 
 		{
-			static auto im = imgui::get();
-			static auto vars = remix_vars::get();
-			static auto gs = comp_settings::get();
+			const auto& im = imgui::get();
+			const auto& vars = remix_vars::get();
+			const auto& gs = comp_settings::get();
 			remix_vars::option_value val{};
 
 			//auto first_timecycle = reinterpret_cast<game::TimeCycleParams*>(0x15E8910);
@@ -108,6 +108,25 @@ namespace gta4
 			}
 
 			const auto using_atmos = gs->timecycle_use_remix_atmos_system.get_as<bool>() || im->m_dbg_manual_atmos_system;
+
+			// temp. disable certain settings when atmos is on
+			gs->timecycle_fogcolor_enabled.set_temp_override_state(using_atmos);
+			gs->timecycle_fogdensity_enabled.set_temp_override_state(using_atmos);
+			gs->timecycle_skylight_enabled.set_temp_override_state(using_atmos);
+			gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled.set_temp_override_state(using_atmos);
+
+			gs->translate_sunlight_intensity_scalar.set_temp_override_state(using_atmos);
+			gs->translate_sunlight_intensity_bad_weather_influence.set_temp_override_state(using_atmos);
+			gs->translate_sunlight_angular_diameter_degrees.set_temp_override_state(using_atmos);
+			gs->translate_sunlight_volumetric_radiance_base.set_temp_override_state(using_atmos);
+			gs->translate_moonlight_intensity_scalar.set_temp_override_state(using_atmos);
+
+			// no need to process these when we are not in the game yet
+			if (!game::is_in_game) {
+				return;
+			}
+
+			// ----------------
 
 			static auto rtxSkybrightness = vars->get_option("rtx.skyBrightness");
 			if (!using_atmos && gs->timecycle_skylight_enabled.get_as<bool>() && rtxSkybrightness)
@@ -345,8 +364,6 @@ namespace gta4
 
 			if (using_atmos && !im->m_dbg_manual_atmos_system)
 			{
-				const auto bridge = shared::common::remix_api::get().m_bridge;
-
 				const auto weather_type_to_preset = [](game::eWeatherType wt) -> const char*
 				{
 					switch (wt)
@@ -369,6 +386,8 @@ namespace gta4
 				static char game_val_buff[256] = {};
 				uint32_t game_val_str_size = 0u;
 
+				const auto bridge = shared::common::remix_api::get().m_bridge;
+
 				bridge.GetGameValue("__weather.previous", game_val_buff, sizeof(game_val_buff), &game_val_str_size);
 				const auto remix_prev = std::string_view(game_val_buff);
 
@@ -379,8 +398,7 @@ namespace gta4
 										remix_prev != game_prev || remix_target != game_new;
 
 				bridge.SetGameValue("__weather.target", game_new);
-				bridge.SetGameValue("__weather.blend_absolute",
-					std::to_string(*game::weather_change_value).c_str());
+				bridge.SetGameValue("__weather.blend_absolute", std::to_string(*game::weather_change_value).c_str());
 
 				if (mismatch) {
 					bridge.SetGameValue("__weather.previous_target", game_prev);

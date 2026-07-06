@@ -527,13 +527,13 @@ namespace gta4
 		{
 			init_once_on_init();
 
+			// called in gta4::on_begin_scene_cb() otherwise
+			if (comp_settings::get()->timecycle_set_on_endscene.get_as<bool>()) {
+				timecycle::translate_and_apply_timecycle_settings();
+			}
+
 			if (game::is_in_game)
 			{
-				// called in gta4::on_begin_scene_cb() otherwise
-				if (comp_settings::get()->timecycle_set_on_endscene.get_as<bool>()) {
-					timecycle::translate_and_apply_timecycle_settings();
-				}
-
 				if (framecounter++ > 60)
 				{
 					framecounter = 0u;

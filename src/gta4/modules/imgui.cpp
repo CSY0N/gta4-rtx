@@ -19,8 +19,12 @@
 // Allow us to directly call the ImGui WndProc function.
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
-#define SPACING_INDENT_BEGIN ImGui::Spacing(); ImGui::Indent()
-#define SPACING_INDENT_END ImGui::Spacing(); ImGui::Unindent()
+constexpr float TREENODE_SPACING = 6.0f;
+constexpr float TREENODE_SPACING_INSIDE = 6.0f;
+constexpr float SEPARATOR_SPACING = 12.0f;
+
+#define SPACING_INDENT_BEGIN(SPACEY) ImGui::Spacing(0, SPACEY); ImGui::Indent()
+#define SPACING_INDENT_END(SPACEY) ImGui::Spacing(0, SPACEY); ImGui::Unindent()
 #define TT(TXT) ImGui::SetItemTooltipBlur((TXT));
 
 #define SET_CHILD_WIDGET_WIDTH			ImGui::SetNextItemWidth(ImGui::CalcWidgetWidthForChild(80.0f));
@@ -33,9 +37,13 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 #define CLEAR_CACHE_CHECK(B, FN) \
 	(B) = (FN) ? true : (B);
 
-constexpr float TREENODE_SPACING = 6.0f;
-constexpr float TREENODE_SPACING_INSIDE = 6.0f;
-constexpr float SEPARATOR_SPACING = 12.0f;
+#define ADD_CONTAINER_TAB(NAME, FUNC, TOOLTIP) \
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertFloat4ToU32(ImVec4(0, 0, 0, 0)));			\
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x + 12.0f, 8));	\
+	if (ImGui::BeginTabItem(NAME)) {																		\
+		ImGui::PopStyleVar(1); TT(TOOLTIP); SPACING_INDENT_BEGIN(8); FUNC(); SPACING_INDENT_END(8); ImGui::EndTabItem();	\
+	}																										\
+	else { ImGui::PopStyleVar(1); TT(TOOLTIP); } ImGui::PopStyleColor(); 
 
 namespace gta4
 {
@@ -115,7 +123,7 @@ namespace gta4
 			ImGui::EndDisabled();
 		}
 
-		ImGui::Spacing(0, 4);
+		ImGui::Spacing(0, 12);
 		ImGui::SeparatorText("    Adjust Weather     ");
 		ImGui::Spacing(0, 2);
 
@@ -125,42 +133,44 @@ namespace gta4
 				n->ReleaseWeather();
 			};
 
-		if (ImGui::Button("EXTRASUNNY")) {
+		const auto button_4way_width = (ImGui::GetContentRegionAvail().x * 0.25f) - (ImGui::GetStyle().ItemSpacing.x);
+
+		if (ImGui::Button("EXTRASUNNY", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_EXTRASUNNY);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("SUNNY")) {
+		if (ImGui::Button("SUNNY", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_SUNNY);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("SUNNY_WINDY")) {
+		if (ImGui::Button("SUNNY_WINDY", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_SUNNY_WINDY);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("CLOUDY")) {
+		if (ImGui::Button("CLOUDY", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_CLOUDY);
 		}
 
 
-		if (ImGui::Button("RAIN")) {
+		if (ImGui::Button("RAIN", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_RAIN);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("DRIZZLE")) {
+		if (ImGui::Button("DRIZZLE", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_DRIZZLE);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("FOGGY")) {
+		if (ImGui::Button("FOGGY", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_FOGGY);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("LIGHTNING")) {
+		if (ImGui::Button("LIGHTNING", ImVec2(button_4way_width, 0))) {
 			set_weather(game::WEATHER_LIGHTNING);
 		}
 
@@ -2083,337 +2093,399 @@ namespace gta4
 		static const auto& cs = comp_settings::get();
 		if (compsettings_bool_widget("Use Remix Atmosphere System", cs->timecycle_use_remix_atmos_system))
 		{
+			const bool state = cs->timecycle_use_remix_atmos_system._bool();
 			if (const auto skyMode = remix_vars::get_option("rtx.skyMode"); skyMode)
 			{
-				remix_vars::option_value val{ .value = cs->timecycle_use_remix_atmos_system._bool() ? 1.0f : 0.0f };
+				remix_vars::option_value val { .value = state ? 1.0f : 0.0f };
 				remix_vars::get()->add_interpolate_entry(skyMode, val, 0.1f);
 			}
 
 			if (const auto tempResampling = remix_vars::get_option("rtx.volumetrics.enableTemporalResampling"); tempResampling)
 			{
-				remix_vars::option_value val { .enabled = cs->timecycle_use_remix_atmos_system._bool() };
+				remix_vars::option_value val { .enabled = state };
 				remix_vars::get()->add_interpolate_entry(tempResampling, val, 0.1f);
 			}
 		}
 	}
 
+	void tc_tab_fog()
+	{
+		const auto& im = imgui::get();
+		const auto& cs = comp_settings::get();
+		const bool using_atmos = cs->timecycle_use_remix_atmos_system._bool();
+		
+		ImGui::Widget_CategoryWithVerticalLabel("Fog Color", [&]() 
+			{
+				ImGui::PushID("fogcol");
+
+				ImGui::BeginDisabled(using_atmos);
+				compsettings_bool_widget("Enable FogColor Logic", cs->timecycle_fogcolor_enabled);
+				ImGui::EndDisabled();
+
+				ImGui::BeginDisabled(!cs->timecycle_fogcolor_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("FogColor Base Strength", cs->timecycle_fogcolor_base_strength, 0.0f, 0.0f, 0.005f);
+					compsettings_float_widget("FogColor Influence Scalar", cs->timecycle_fogcolor_influence_scalar, 0.0f, 0.0f, 0.005f);
+
+					ImGui::TextDisabled("Timecycle mSkyBottomColorFogDensity: [ %.2f, %.2f, %.2f, (Density) %.2f ]",
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.x,
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.y,
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.z,
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.w);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxVolumetricsSingleScatteringAlbedo: [ %.2f, %.2f, %.2f ]",
+						im->m_timecyc_curr_singleScatteringAlbedo.x,
+						im->m_timecyc_curr_singleScatteringAlbedo.y,
+						im->m_timecyc_curr_singleScatteringAlbedo.z);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+		ImGui::Widget_CategoryWithVerticalLabel("Fog Density", [&]()
+			{
+				ImGui::PushID("fogdensity");
+
+				ImGui::BeginDisabled(using_atmos);
+				compsettings_bool_widget("Enable FogDensity Logic", cs->timecycle_fogdensity_enabled);
+				ImGui::EndDisabled();
+
+				ImGui::BeginDisabled(!cs->timecycle_fogdensity_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("FogDensity Influence Scalar", cs->timecycle_fogdensity_influence_scalar, 0.0f, 0.0f, 0.005f);
+
+					ImGui::TextDisabled("Timecycle mSkyBottomColorFogDensity: [ %.2f, %.2f, %.2f, (Density) %.2f ]",
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.x,
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.y,
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.z,
+						im->m_timecyc_curr_mSkyBottomColorFogDensity.w);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxVolumetricsTransmittanceMeasurementDistanceMeters: [ %.2f ]",
+						im->m_timecyc_curr_volumetricsTransmittanceMeasurementDistanceMeters);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+		ImGui::Widget_CategoryWithVerticalLabel("Horizon", [&]()
+			{
+				ImGui::PushID("foghorz");
+
+				compsettings_bool_widget("Enable SkyHorizonHeight Logic", cs->timecycle_skyhorizonheight_enabled);
+				ImGui::BeginDisabled(!cs->timecycle_skyhorizonheight_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("SkyHorizonHeight Scalar", cs->timecycle_skyhorizonheight_scalar, 0.0f, 0.0f, 0.005f);
+					compsettings_float_widget("SkyHorizonHeight Low - Transmittance Offset", cs->timecycle_skyhorizonheight_low_transmittance_offset, 0.0f, 0.0f, 0.01f);
+					compsettings_float_widget("SkyHorizonHeight High - Transmittance Offset", cs->timecycle_skyhorizonheight_high_transmittance_offset, 0.0f, 0.0f, 0.01f);
+
+					ImGui::Spacing(0, 4);
+					compsettings_float_widget("Camera Height Threshold", cs->timecycle_skyhorizonheight_cam_height_threshold, 0.0f, 0.0f, 1.0f);
+					compsettings_float_widget("Camera Height Influence (Low)", cs->timecycle_skyhorizonheight_cam_height_influence_low, 0.0f, 0.0f, 0.01f);
+					compsettings_float_widget("Camera Height Influence (High)", cs->timecycle_skyhorizonheight_cam_height_influence_high, 0.0f, 0.0f, 0.01f);
+
+					ImGui::TextDisabled("Timecycle mSkyHorizonHeight: [ %.2f ]",
+						im->m_timecyc_curr_mSkyHorizonHeight);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxVolumetricsAtmosphereHeightMeters: [ %.2f ]",
+						im->m_timecyc_curr_mSkyHorizonHeight_final);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+	}
+
+	void tc_tab_sun()
+	{
+		const auto& im = imgui::get();
+		const auto& cs = comp_settings::get();
+		const bool using_atmos = cs->timecycle_use_remix_atmos_system._bool();
+
+		ImGui::Widget_CategoryWithVerticalLabel("Sky Light", [&]()
+			{
+				ImGui::PushID("skyl");
+
+				ImGui::BeginDisabled(using_atmos);
+				compsettings_bool_widget("Enable SkyLight Logic", cs->timecycle_skylight_enabled);
+				ImGui::EndDisabled();
+
+				ImGui::BeginDisabled(!cs->timecycle_skylight_enabled.get_as<bool>() || using_atmos);
+				{
+					compsettings_float_widget("SkyLight Scalar", cs->timecycle_skylight_scalar, 0.0f, 10.0f, 0.0001f, "%.4f");
+					compsettings_float_widget("SkyLight Bad Weather Offset", cs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);
+
+					ImGui::TextDisabled("Timecycle mSkyLightMultiplier: [ %.2f ]", im->m_timecyc_curr_mSkyLightMultiplier);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxSkyBrightness: [ %.2f ]", im->m_timecyc_curr_mSkyLightMultiplier_final);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+		ImGui::Widget_CategoryWithVerticalLabel("Fog Vol", [&]()
+			{
+				ImGui::PushID("skyl");
+
+				ImGui::BeginDisabled(using_atmos);
+				compsettings_bool_widget("Enable Fogdensity Influence on Volumetric Scale", cs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled);
+				ImGui::EndDisabled();
+
+				ImGui::BeginDisabled(!cs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("Fogdensity Volumetric Influence Scalar", cs->translate_sunlight_timecycle_fogdensity_volumetric_influence_scalar, 0.0f, 0.0f, 0.005f);
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+	}
+
+	void tc_tab_postprocess()
+	{
+		const auto& im = imgui::get();
+		const auto& cs = comp_settings::get();
+		
+		ImGui::Widget_CategoryWithVerticalLabel("Color Correction", [&]()
+			{
+				ImGui::PushID("colorcorr");
+
+				compsettings_bool_widget("Enable ColorCorrection Logic", cs->timecycle_colorcorrection_enabled);
+				ImGui::BeginDisabled(!cs->timecycle_colorcorrection_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("ColorCorrection Influence", cs->timecycle_colorcorrection_influence, 0.0f, 15.0f, 0.005f);
+
+					ImGui::TextDisabled("Timecycle mColorCorrection: [ %.2f, %.2f, %.2f ]",
+						im->m_timecyc_curr_mColorCorrection.x,
+						im->m_timecyc_curr_mColorCorrection.y,
+						im->m_timecyc_curr_mColorCorrection.z);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxTonemapColorBalance: [ %.2f, %.2f, %.2f ]",
+						im->m_timecyc_curr_mColorCorrection_final.x,
+						im->m_timecyc_curr_mColorCorrection_final.y,
+						im->m_timecyc_curr_mColorCorrection_final.z);
+					ImGui::PopFont();
+
+					ImGui::Spacing(0, SEPARATOR_SPACING);
+					ImGui::BeginDisabled(!cs->timecycle_colorcorrection_enabled.get_as<bool>());
+					{
+						compsettings_bool_widget("Enable ColorTemperature Logic", cs->timecycle_colortemp_enabled);
+						compsettings_float_widget("ColorTemperature Value", cs->timecycle_colortemp_value, 0.0f, 15.0f, 0.005f);
+						compsettings_float_widget("ColorTemperature Influence", cs->timecycle_colortemp_influence, 0.0f, 0.0f, 0.005f);
+
+						//ImGui::TextDisabled("Timecycle mTemperature: [ %.2f ]",
+						//	im->m_timecyc_curr_mTemperature);
+						ImGui::TextDisabled("ColorTemp Offset applied to rtxTonemapColorBalance: [ %.2f, %.2f, %.2f ]",
+							im->m_timecyc_curr_mTemperature_offset.x,
+							im->m_timecyc_curr_mTemperature_offset.y,
+							im->m_timecyc_curr_mTemperature_offset.z);
+
+						ImGui::EndDisabled();
+					}
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+		ImGui::Widget_CategoryWithVerticalLabel("Desaturation", [&]()
+			{
+				ImGui::PushID("desat");
+
+				compsettings_bool_widget("Enable Desaturation Logic", cs->timecycle_desaturation_enabled);
+				ImGui::BeginDisabled(!cs->timecycle_desaturation_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("Desaturation Influence", cs->timecycle_desaturation_influence, 0.0f, 0.0f, 0.005f);
+					compsettings_float_widget("Far Desaturation Influence", cs->timecycle_fardesaturation_influence, 0.0f, 0.0f, 0.005f);
+
+					ImGui::TextDisabled("Timecycle mDesaturation: [ %.2f ]", im->m_timecyc_curr_mDesaturation);
+					ImGui::TextDisabled("Timecycle mDesaturationFar: [ %.2f ]", im->m_timecyc_curr_mDesaturationFar);
+					ImGui::TextDisabled("mDesaturationFar influence on rtxTonemapSaturation: [ %.2f ]", im->m_timecyc_curr_mDesaturationFar_offset);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxTonemapSaturation: [ %.2f ]", im->m_timecyc_curr_mDesaturation_final);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+		ImGui::Widget_CategoryWithVerticalLabel("Gamma", [&]()
+			{
+				ImGui::PushID("gammatwk");
+
+				compsettings_bool_widget("Enable Gamma Logic", cs->timecycle_gamma_enabled);
+				ImGui::BeginDisabled(!cs->timecycle_gamma_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("Gamma Offset", cs->timecycle_gamma_offset, 0.0f, 0.0f, 0.005f);
+					ImGui::TextDisabled("Timecycle mGamma: [ %.2f ]", im->m_timecyc_curr_mGamma);
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxTonemapExposureBias: [ %.2f ]", im->m_timecyc_curr_mGamma_final);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+		ImGui::Widget_CategoryWithVerticalLabel("Bloom", [&]()
+			{
+				ImGui::PushID("bloomtwk");
+
+				compsettings_bool_widget("Enable Bloom Logic", cs->timecycle_bloom_enabled);
+				ImGui::BeginDisabled(!cs->timecycle_bloom_enabled.get_as<bool>());
+				{
+					compsettings_float_widget("Bloom Intensity Scalar", cs->timecycle_bloomintensity_scalar, 0.0f, 0.0f, 0.005f);
+					compsettings_float_widget("Bloom Threshold Scalar", cs->timecycle_bloomthreshold_scalar, 0.0f, 0.0f, 0.005f);
+
+					ImGui::Spacing(0, SEPARATOR_SPACING);
+					compsettings_bool_widget("Clamp Min Intensity at Night", cs->timecycle_bloom_night_min_clamp_enabled);
+					ImGui::BeginDisabled(!cs->timecycle_bloom_night_min_clamp_enabled.get_as<bool>());
+					{
+						compsettings_float_widget("Bloom Night Min Value", cs->timecycle_bloom_night_min_clamp_value, 0.0f, 0.0f, 0.005f);
+						ImGui::EndDisabled();
+					}
+
+					ImGui::PushFont(shared::imgui::font::BOLD);
+					ImGui::TextDisabled("Out rtxBloomBurnIntensity: [ %.2f ]", im->m_timecyc_curr_mBloomIntensity_final);
+					ImGui::TextDisabled("Out rtxBloomLuminanceThreshold: [ %.2f ]", im->m_timecyc_curr_mBloomThreshold_final);
+					ImGui::PopFont();
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::PopID();
+			});
+	}
+
+	void tc_tab_weather()
+	{
+		const auto& cs = comp_settings::get();
+		
+		compsettings_bool_widget("Enable Weather Wetness Logic", cs->timecycle_wetness_enabled);
+		ImGui::Spacing(0, SEPARATOR_SPACING);
+
+		ImGui::BeginDisabled(!cs->timecycle_wetness_enabled.get_as<bool>());
+		{
+			ImGui::Widget_CategoryWithVerticalLabel("World", [&]()
+				{
+					ImGui::PushID("world");
+					compsettings_float_widget("Wetness Scalar", cs->timecycle_wetness_world_scalar, 0.0f, 0.0f, 0.005f);
+					compsettings_float_widget("Additional Wetness Offset", cs->timecycle_wetness_world_offset, 0.0f, 0.0f, 0.005f);
+					compsettings_float_widget("Min Surface Z-Normal", cs->timecycle_wetness_world_z_normal, 0.0f, 1.0f, 0.005f);
+					compsettings_float_widget("Blending Strength", cs->timecycle_wetness_world_blending, 0.0f, 1.0f, 0.005f);
+
+					compsettings_bool_widget("Enable Wetness Variation", cs->timecycle_wetness_world_variation_enable);
+					compsettings_bool_widget("Enable Puddle Layer", cs->timecycle_wetness_world_puddle_layer_enable);
+					compsettings_bool_widget("Enable World Raindrops", cs->timecycle_wetness_world_raindrop_enable);
+					compsettings_float_widget("World Raindrop Scale", cs->timecycle_wetness_world_raindrop_scalar, 0.0f, 10.0f, 0.005f);
+
+					ImGui::Spacing(0, 4.0f);
+					compsettings_bool_widget("Enable World Occlusion Check", cs->timecycle_wetness_world_occlusion_check_enable);
+					compsettings_bool_widget("Enable Occlusion Smoothing", cs->timecycle_wetness_world_occlusion_smoothing_enable);
+					ImGui::PopID();
+				});
+
+
+			ImGui::Spacing(0, SEPARATOR_SPACING);
+			ImGui::Widget_CategoryWithVerticalLabel("Ped", [&]() 
+				{
+					ImGui::PushID("ped");
+					compsettings_bool_widget("Enable Ped Raindrops", cs->timecycle_wetness_ped_raindrop_enable);
+					compsettings_float_widget("Ped Raindrop Scale", cs->timecycle_wetness_ped_raindrop_scalar, 0.0f, 10.0f, 0.005f);
+					ImGui::PopID();
+				});
+
+
+			ImGui::Spacing(0, SEPARATOR_SPACING);
+			ImGui::Widget_CategoryWithVerticalLabel("Vehicle", [&]() 
+				{
+					ImGui::PushID("vehicle");
+					compsettings_float_widget("Vehicle Wetness Scalar", cs->timecycle_wetness_vehicle_scalar, 0.0f, 1.0f, 0.005f);
+					compsettings_float_widget("Min Surface Z-Normal", cs->timecycle_wetness_vehicle_z_normal, 0.0f, 1.0f, 0.005f);
+					compsettings_float_widget("Blending Strength", cs->timecycle_wetness_vehicle_blending, 0.0f, 1.0f, 0.005f);
+
+					compsettings_bool_widget("Enable Vehicle Raindrops", cs->timecycle_wetness_vehicle_raindrop_enable);
+					compsettings_float_widget("Vehicle Raindrop Scale", cs->timecycle_wetness_vehicle_raindrop_scalar, 0.0f, 10.0f, 0.005f);
+
+					ImGui::SeparatorText("Vehicle Dirt");
+					ImGui::PushID("vehicledirt");
+					compsettings_float_widget("Intensity Scalar", cs->timecycle_wetness_vehicle_dirt_intensity_scalar, 0.0f, 1.0f, 0.005f);
+					compsettings_float_widget("Wetness Scalar", cs->timecycle_wetness_vehicle_dirt_roughness_scalar, 0.0f, 1.0f, 0.005f);
+					compsettings_float_widget("Min Surface Z-Normal", cs->timecycle_wetness_vehicle_dirt_z_normal, 0.0f, 1.0f, 0.005f);
+					compsettings_float_widget("Blending Strength", cs->timecycle_wetness_vehicle_dirt_blending, 0.0f, 1.0f, 0.005f);
+					ImGui::PopID();
+
+					ImGui::PopID();
+				});
+
+			ImGui::EndDisabled();
+		}
+	}
+
 	void compsettings_timecycle_container()
 	{
-		static const auto& im = imgui::get();
-		static const auto& gs = comp_settings::get();
-
-		const float inbetween_spacing = SEPARATOR_SPACING;
+		static const auto& cs = comp_settings::get();
 
 		ImGui::Spacing(0, 4);
 		ImGui::Indent(4);
 		ImGui::PushFont(shared::imgui::font::BOLD_LARGE);
 		ImGui::TextUnformatted("Note:");
 		ImGui::PopFont();
-		ImGui::TextWrapped(
-			"Remix' Tonemapper has to be set to 'global' for some of these settings to work.\n"
-			"You can make global adjustments using 'Tuning Mode'");
+		ImGui::TextWrapped("Some of these settings only work with the original sky.");
 		ImGui::Unindent(4);
 
-		ImGui::Spacing(0, inbetween_spacing);
+		ImGui::Spacing(0, SEPARATOR_SPACING);
 
-		compsettings_bool_widget("Set TimeCycle Variables on EndScene", gs->timecycle_set_on_endscene);
-
+		// no need to show that setting
+		//compsettings_bool_widget("Set TimeCycle Variables on EndScene", cs->timecycle_set_on_endscene);
 		remix_atmospheric_toggle();
 
-		const bool using_atmos = gs->timecycle_use_remix_atmos_system._bool();
+		ImGui::Spacing(0, SEPARATOR_SPACING);
 
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Fog ");
-		ImGui::Spacing(0, 4);
-
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x + 12.0f, 8));
+		ImGui::PushStyleColor(ImGuiCol_TabSelected, ImGui::GetColorU32(ImGuiCol_Separator));
+		if (ImGui::BeginTabBar("##tctabs"))
 		{
-			compsettings_bool_widget("Enable FogColor Logic", gs->timecycle_fogcolor_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_fogcolor_enabled.get_as<bool>() || using_atmos);
-			{
-				compsettings_float_widget("FogColor Base Strength", gs->timecycle_fogcolor_base_strength, 0.0f, 0.0f, 0.005f);
-				compsettings_float_widget("FogColor Influence Scalar", gs->timecycle_fogcolor_influence_scalar, 0.0f, 0.0f, 0.005f);
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar(1);
 
-				ImGui::TextDisabled("Timecycle mSkyBottomColorFogDensity: [ %.2f, %.2f, %.2f, (Density) %.2f ]",
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.x,
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.y,
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.z,
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.w);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxVolumetricsSingleScatteringAlbedo: [ %.2f, %.2f, %.2f ]",
-					im->m_timecyc_curr_singleScatteringAlbedo.x,
-					im->m_timecyc_curr_singleScatteringAlbedo.y,
-					im->m_timecyc_curr_singleScatteringAlbedo.z);
-				ImGui::PopFont();
-
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-
+			ADD_CONTAINER_TAB("Fog  " ICON_FA_WATER, tc_tab_fog, "Fog related Settings");
+			ADD_CONTAINER_TAB("Sky/Sun  " ICON_FA_SUN, tc_tab_sun, "Sky and Sun related Settings");
+			ADD_CONTAINER_TAB("Post  " ICON_FA_ADJUST, tc_tab_postprocess, "Postprocessing related Settings");
+			ADD_CONTAINER_TAB("Weather  " ICON_FA_CLOUD, tc_tab_weather, "Weather related Settings");
+			ImGui::EndTabBar();
+		} 
+		else
 		{
-			compsettings_bool_widget("Enable FogDensity Logic", gs->timecycle_fogdensity_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_fogdensity_enabled.get_as<bool>() || using_atmos);
-			{
-				compsettings_float_widget("FogDensity Influence Scalar", gs->timecycle_fogdensity_influence_scalar, 0.0f, 0.0f, 0.005f);
-
-				ImGui::TextDisabled("Timecycle mSkyBottomColorFogDensity: [ %.2f, %.2f, %.2f, (Density) %.2f ]",
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.x,
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.y,
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.z,
-					im->m_timecyc_curr_mSkyBottomColorFogDensity.w);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxVolumetricsTransmittanceMeasurementDistanceMeters: [ %.2f ]",
-					im->m_timecyc_curr_volumetricsTransmittanceMeasurementDistanceMeters);
-				ImGui::PopFont();
-
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-
-		{
-			compsettings_bool_widget("Enable SkyHorizonHeight Logic", gs->timecycle_skyhorizonheight_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_skyhorizonheight_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("SkyHorizonHeight Scalar", gs->timecycle_skyhorizonheight_scalar, 0.0f, 0.0f, 0.005f);
-				compsettings_float_widget("SkyHorizonHeight Low - Transmittance Offset", gs->timecycle_skyhorizonheight_low_transmittance_offset, 0.0f, 0.0f, 0.01f);
-				compsettings_float_widget("SkyHorizonHeight High - Transmittance Offset", gs->timecycle_skyhorizonheight_high_transmittance_offset, 0.0f, 0.0f, 0.01f);
-
-				ImGui::Spacing(0, 4);
-				compsettings_float_widget("Camera Height Threshold", gs->timecycle_skyhorizonheight_cam_height_threshold, 0.0f, 0.0f, 1.0f);
-				compsettings_float_widget("Camera Height Influence (Low)", gs->timecycle_skyhorizonheight_cam_height_influence_low, 0.0f, 0.0f, 0.01f);
-				compsettings_float_widget("Camera Height Influence (High)", gs->timecycle_skyhorizonheight_cam_height_influence_high, 0.0f, 0.0f, 0.01f);
-
-				ImGui::TextDisabled("Timecycle mSkyHorizonHeight: [ %.2f ]",
-					im->m_timecyc_curr_mSkyHorizonHeight);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxVolumetricsAtmosphereHeightMeters: [ %.2f ]",
-					im->m_timecyc_curr_mSkyHorizonHeight_final);
-				ImGui::PopFont();
-
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Sky/Sun ");
-		ImGui::Spacing(0, 4);
-
-		{
-			compsettings_bool_widget("Enable SkyLight Logic", gs->timecycle_skylight_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_skylight_enabled.get_as<bool>() || using_atmos);
-			{
-				compsettings_float_widget("SkyLight Scalar", gs->timecycle_skylight_scalar, 0.0f, 10.0f, 0.0001f, "%.4f");
-				compsettings_float_widget("SkyLight Bad Weather Offset", gs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);
-
-				ImGui::TextDisabled("Timecycle mSkyLightMultiplier: [ %.2f ]",
-					im->m_timecyc_curr_mSkyLightMultiplier);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxSkyBrightness: [ %.2f ]",
-					im->m_timecyc_curr_mSkyLightMultiplier_final);
-				ImGui::PopFont();
-
-				ImGui::EndDisabled();
-			}
-
-
-			ImGui::Spacing(0, inbetween_spacing);
-
-
-			compsettings_bool_widget("Enable Fogdensity Influence on Volumetric Scale", gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled);
-			ImGui::BeginDisabled(!gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("Fogdensity Volumetric Influence Scalar", gs->translate_sunlight_timecycle_fogdensity_volumetric_influence_scalar, 0.0f, 0.0f, 0.005f);
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Color Correction ");
-		ImGui::Spacing(0, 4);
-
-		{
-			compsettings_bool_widget("Enable ColorCorrection Logic", gs->timecycle_colorcorrection_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_colorcorrection_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("ColorCorrection Influence", gs->timecycle_colorcorrection_influence, 0.0f, 15.0f, 0.005f);
-
-				ImGui::TextDisabled("Timecycle mColorCorrection: [ %.2f, %.2f, %.2f ]",
-					im->m_timecyc_curr_mColorCorrection.x,
-					im->m_timecyc_curr_mColorCorrection.y,
-					im->m_timecyc_curr_mColorCorrection.z);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxTonemapColorBalance: [ %.2f, %.2f, %.2f ]",
-					im->m_timecyc_curr_mColorCorrection_final.x,
-					im->m_timecyc_curr_mColorCorrection_final.y,
-					im->m_timecyc_curr_mColorCorrection_final.z);
-				ImGui::PopFont();
-
-				ImGui::Spacing(0, 4);
-
-				ImGui::BeginDisabled(!gs->timecycle_colorcorrection_enabled.get_as<bool>());
-				{
-					compsettings_bool_widget("Enable ColorTemperature Logic", gs->timecycle_colortemp_enabled);
-					compsettings_float_widget("ColorTemperature Value", gs->timecycle_colortemp_value, 0.0f, 15.0f, 0.005f);
-					compsettings_float_widget("ColorTemperature Influence", gs->timecycle_colortemp_influence, 0.0f, 0.0f, 0.005f);
-
-					//ImGui::TextDisabled("Timecycle mTemperature: [ %.2f ]",
-					//	im->m_timecyc_curr_mTemperature);
-					ImGui::TextDisabled("ColorTemp Offset applied to rtxTonemapColorBalance: [ %.2f, %.2f, %.2f ]",
-						im->m_timecyc_curr_mTemperature_offset.x,
-						im->m_timecyc_curr_mTemperature_offset.y,
-						im->m_timecyc_curr_mTemperature_offset.z);
-
-					ImGui::EndDisabled();
-				}
-
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-
-		{
-			compsettings_bool_widget("Enable Desaturation Logic", gs->timecycle_desaturation_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_desaturation_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("Desaturation Influence", gs->timecycle_desaturation_influence, 0.0f, 0.0f, 0.005f);
-				compsettings_float_widget("Far Desaturation Influence", gs->timecycle_fardesaturation_influence, 0.0f, 0.0f, 0.005f);
-
-				ImGui::TextDisabled("Timecycle mDesaturation: [ %.2f ]",
-					im->m_timecyc_curr_mDesaturation);
-
-				ImGui::TextDisabled("Timecycle mDesaturationFar: [ %.2f ]",
-					im->m_timecyc_curr_mDesaturationFar);
-
-				ImGui::TextDisabled("mDesaturationFar influence on rtxTonemapSaturation: [ %.2f ]",
-					im->m_timecyc_curr_mDesaturationFar_offset);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxTonemapSaturation: [ %.2f ]",
-					im->m_timecyc_curr_mDesaturation_final);
-				ImGui::PopFont();
-
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-
-		{
-			compsettings_bool_widget("Enable Gamma Logic", gs->timecycle_gamma_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_gamma_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("Gamma Offset", gs->timecycle_gamma_offset, 0.0f, 0.0f, 0.005f);
-
-				ImGui::TextDisabled("Timecycle mGamma: [ %.2f ]",
-					im->m_timecyc_curr_mGamma);
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxTonemapExposureBias: [ %.2f ]",
-					im->m_timecyc_curr_mGamma_final);
-				ImGui::PopFont();
-
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Bloom ");
-		ImGui::Spacing(0, 4);
-
-		{
-			compsettings_bool_widget("Enable Bloom Logic", gs->timecycle_bloom_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_bloom_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("Bloom Intensity Scalar", gs->timecycle_bloomintensity_scalar, 0.0f, 0.0f, 0.005f);
-				compsettings_float_widget("Bloom Threshold Scalar", gs->timecycle_bloomthreshold_scalar, 0.0f, 0.0f, 0.005f);
-
-				ImGui::Spacing(0, 4);
-				compsettings_bool_widget("Clamp Min Intensity at Night", gs->timecycle_bloom_night_min_clamp_enabled);
-				ImGui::BeginDisabled(!gs->timecycle_bloom_night_min_clamp_enabled.get_as<bool>());
-				{
-					compsettings_float_widget("Bloom Night Min Value", gs->timecycle_bloom_night_min_clamp_value, 0.0f, 0.0f, 0.005f);
-					ImGui::EndDisabled();
-				}
-
-				ImGui::PushFont(shared::imgui::font::BOLD);
-				ImGui::TextDisabled("Out rtxBloomBurnIntensity: [ %.2f ]", im->m_timecyc_curr_mBloomIntensity_final);
-				ImGui::TextDisabled("Out rtxBloomLuminanceThreshold: [ %.2f ]", im->m_timecyc_curr_mBloomThreshold_final);
-				ImGui::PopFont();
-				
-				ImGui::EndDisabled();
-			}
-		}
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Weather ");
-		ImGui::Spacing(0, 4);
-
-		{
-			compsettings_bool_widget("Enable Weather Wetness Logic", gs->timecycle_wetness_enabled);
-			ImGui::Spacing(0, inbetween_spacing);
-
-			ImGui::BeginDisabled(!gs->timecycle_wetness_enabled.get_as<bool>());
-			{
-				ImGui::Widget_CategoryWithVerticalLabel("World", [&]() {
-					ImGui::PushID("world");
-					compsettings_float_widget("Wetness Scalar", gs->timecycle_wetness_world_scalar, 0.0f, 0.0f, 0.005f);
-					compsettings_float_widget("Additional Wetness Offset", gs->timecycle_wetness_world_offset, 0.0f, 0.0f, 0.005f);
-					compsettings_float_widget("Min Surface Z-Normal", gs->timecycle_wetness_world_z_normal, 0.0f, 1.0f, 0.005f);
-					compsettings_float_widget("Blending Strength", gs->timecycle_wetness_world_blending, 0.0f, 1.0f, 0.005f);
-
-					compsettings_bool_widget("Enable Wetness Variation", gs->timecycle_wetness_world_variation_enable);
-					compsettings_bool_widget("Enable Puddle Layer", gs->timecycle_wetness_world_puddle_layer_enable);
-					compsettings_bool_widget("Enable World Raindrops", gs->timecycle_wetness_world_raindrop_enable);
-					compsettings_float_widget("World Raindrop Scale", gs->timecycle_wetness_world_raindrop_scalar, 0.0f, 10.0f, 0.005f);
-
-					ImGui::Spacing(0, 4.0f);
-					compsettings_bool_widget("Enable World Occlusion Check", gs->timecycle_wetness_world_occlusion_check_enable);
-					compsettings_bool_widget("Enable Occlusion Smoothing", gs->timecycle_wetness_world_occlusion_smoothing_enable);
-					ImGui::PopID();
-				});
-
-
-				ImGui::Spacing(0, inbetween_spacing);
-				ImGui::Widget_CategoryWithVerticalLabel("Ped", [&]() {
-					ImGui::PushID("ped");
-					compsettings_bool_widget("Enable Ped Raindrops", gs->timecycle_wetness_ped_raindrop_enable);
-					compsettings_float_widget("Ped Raindrop Scale", gs->timecycle_wetness_ped_raindrop_scalar, 0.0f, 10.0f, 0.005f);
-					ImGui::PopID();
-				});
-
-
-				ImGui::Spacing(0, inbetween_spacing);
-				ImGui::Widget_CategoryWithVerticalLabel("Vehicle", [&]() {
-					ImGui::PushID("vehicle");
-					compsettings_float_widget("Vehicle Wetness Scalar", gs->timecycle_wetness_vehicle_scalar, 0.0f, 1.0f, 0.005f);
-					compsettings_float_widget("Min Surface Z-Normal", gs->timecycle_wetness_vehicle_z_normal, 0.0f, 1.0f, 0.005f);
-					compsettings_float_widget("Blending Strength", gs->timecycle_wetness_vehicle_blending, 0.0f, 1.0f, 0.005f);
-
-					compsettings_bool_widget("Enable Vehicle Raindrops", gs->timecycle_wetness_vehicle_raindrop_enable);
-					compsettings_float_widget("Vehicle Raindrop Scale", gs->timecycle_wetness_vehicle_raindrop_scalar, 0.0f, 10.0f, 0.005f);
-
-                    ImGui::SeparatorText("Vehicle Dirt");
-					ImGui::PushID("vehicledirt");
-					compsettings_float_widget("Intensity Scalar", gs->timecycle_wetness_vehicle_dirt_intensity_scalar, 0.0f, 1.0f, 0.005f);
-					compsettings_float_widget("Wetness Scalar", gs->timecycle_wetness_vehicle_dirt_roughness_scalar, 0.0f, 1.0f, 0.005f);
-					compsettings_float_widget("Min Surface Z-Normal", gs->timecycle_wetness_vehicle_dirt_z_normal, 0.0f, 1.0f, 0.005f);
-					compsettings_float_widget("Blending Strength", gs->timecycle_wetness_vehicle_dirt_blending, 0.0f, 1.0f, 0.005f);
-					ImGui::PopID();
-
-					ImGui::PopID();
-				});
-
-				ImGui::EndDisabled();
-			}
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar(1);
 		}
 
 		ImGui::Spacing(0, 4);
@@ -2489,54 +2561,6 @@ namespace gta4
 				ImGui::PopID();
 			});
 
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Weather ");
-		ImGui::Spacing(0, 4);
-
-		ImGui::BeginDisabled(!gs->timecycle_wetness_enabled.get_as<bool>());
-		{
-			ImGui::Widget_CategoryWithVerticalLabel("World", [&]() {
-				ImGui::PushID("world");
-				compsettings_bool_widget("Enable Wetness Variation", gs->timecycle_wetness_world_variation_enable);
-				compsettings_bool_widget("Enable Puddle Layer", gs->timecycle_wetness_world_puddle_layer_enable);
-				compsettings_bool_widget("Enable World Raindrops", gs->timecycle_wetness_world_raindrop_enable);
-				compsettings_float_widget("World Raindrop Scale", gs->timecycle_wetness_world_raindrop_scalar, 0.0f, 10.0f, 0.005f);
-
-				ImGui::Spacing(0, 4.0f);
-				ImGui::Style_BoldOrangeTextPush();
-				compsettings_bool_widget("Enable World Occlusion Check", gs->timecycle_wetness_world_occlusion_check_enable);
-				compsettings_bool_widget("Enable Occlusion Smoothing", gs->timecycle_wetness_world_occlusion_smoothing_enable);
-				ImGui::Style_BoldOrangeTextPop();
-				ImGui::PopID();
-			});
-
-
-			ImGui::Spacing(0, inbetween_spacing);
-			ImGui::Widget_CategoryWithVerticalLabel("Ped", [&]() {
-				ImGui::PushID("ped");
-				compsettings_bool_widget("Enable Ped Raindrops", gs->timecycle_wetness_ped_raindrop_enable);
-				compsettings_float_widget("Ped Raindrop Scale", gs->timecycle_wetness_ped_raindrop_scalar, 0.0f, 10.0f, 0.005f);
-				ImGui::PopID();
-			});
-
-
-			ImGui::Spacing(0, inbetween_spacing);
-			ImGui::Widget_CategoryWithVerticalLabel("Vehicle", [&]() {
-				ImGui::PushID("vehicle");
-				compsettings_bool_widget("Enable Vehicle Raindrops", gs->timecycle_wetness_vehicle_raindrop_enable);
-				compsettings_float_widget("Vehicle Raindrop Scale", gs->timecycle_wetness_vehicle_raindrop_scalar, 0.0f, 10.0f, 0.005f);
-				ImGui::PopID();
-			});
-
-			ImGui::EndDisabled();
-		}
-
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Effects ");
-		ImGui::Spacing(0, 4);
-
-		compsettings_bool_widget("Enable Rain - Remix Particle System", gs->rain_particle_system_enabled);
 
 		ImGui::Spacing(0, inbetween_spacing);
 		ImGui::SeparatorText(" Sirens ");
@@ -2545,70 +2569,43 @@ namespace gta4
 		bool clear = false;
 
 		ImGui::Widget_CategoryWithVerticalLabel("Fake", [&]()
-		{
-			ImGui::PushID("fakesiren");
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Fake Siren Light Z Offset", gs->translate_vehicle_fake_siren_z_offset, 0.0f, 0.0f, 0.005f));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Fake Siren Light Intensity Offset", gs->translate_vehicle_fake_siren_intensity_offset, 0.0f, 0.0f, 0.01f));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Fake Siren Light Radius Offset", gs->translate_vehicle_fake_siren_radius_offset, 0.0f, 0.0f, 0.01f));
-			ImGui::PopID();
-		});
+			{
+				ImGui::PushID("fakesiren");
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Fake Siren Light Z Offset", gs->translate_vehicle_fake_siren_z_offset, 0.0f, 0.0f, 0.005f));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Fake Siren Light Intensity Offset", gs->translate_vehicle_fake_siren_intensity_offset, 0.0f, 0.0f, 0.01f));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Fake Siren Light Radius Offset", gs->translate_vehicle_fake_siren_radius_offset, 0.0f, 0.0f, 0.01f));
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, SEPARATOR_SPACING);
 		ImGui::Widget_CategoryWithVerticalLabel("Siren", [&]()
-		{
-			ImGui::PushID("vsiren");
-			CLEAR_CACHE_CHECK(clear, compsettings_bool_widget("Siren Make Spotlight", gs->translate_vehicle_vsirens_make_spotlight));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Light Intensity Offset", gs->translate_vehicle_vsirens_intensity_offset, 0.0f, 0.0f, 0.01f));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Light Radius Offset", gs->translate_vehicle_vsirens_radius_offset, 0.0f, 0.0f, 0.01f));
+			{
+				ImGui::PushID("vsiren");
+				CLEAR_CACHE_CHECK(clear, compsettings_bool_widget("Siren Make Spotlight", gs->translate_vehicle_vsirens_make_spotlight));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Light Intensity Offset", gs->translate_vehicle_vsirens_intensity_offset, 0.0f, 0.0f, 0.01f));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Light Radius Offset", gs->translate_vehicle_vsirens_radius_offset, 0.0f, 0.0f, 0.01f));
 
-			ImGui::Spacing(0.0f, 4.0f);
-			CLEAR_CACHE_CHECK(clear, compsettings_bool_widget("Siren Secondary Spherelight", gs->translate_vehicle_vsirens_secondary_spherelight_enabled));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Spherelight Intensity Offset", gs->translate_vehicle_vsirens_secondary_spherelight_intensity_offset, 0.0f, 0.0f, 0.01f));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Spherelight Radius Offset", gs->translate_vehicle_vsirens_secondary_spherelight_radius_offset, 0.0f, 0.0f, 0.01f));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Spherelight Z Offset", gs->translate_vehicle_vsirens_secondary_spherelight_z_offset, 0.0f, 0.0f, 0.01f));
-			ImGui::PopID();
-		});
+				ImGui::Spacing(0.0f, 4.0f);
+				CLEAR_CACHE_CHECK(clear, compsettings_bool_widget("Siren Secondary Spherelight", gs->translate_vehicle_vsirens_secondary_spherelight_enabled));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Spherelight Intensity Offset", gs->translate_vehicle_vsirens_secondary_spherelight_intensity_offset, 0.0f, 0.0f, 0.01f));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Spherelight Radius Offset", gs->translate_vehicle_vsirens_secondary_spherelight_radius_offset, 0.0f, 0.0f, 0.01f));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Siren Spherelight Z Offset", gs->translate_vehicle_vsirens_secondary_spherelight_z_offset, 0.0f, 0.0f, 0.01f));
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, SEPARATOR_SPACING);
 		ImGui::Widget_CategoryWithVerticalLabel("Bar", [&]()
-		{
-			ImGui::PushID("barsiren");
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Bar-Siren Intensity Scalar", gs->translate_vehicle_barsirens_intensity_scalar, 0.0f, 0.0f, 0.01f));
-			CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Bar-Siren Radius Scalar", gs->translate_vehicle_barsirens_radius_scalar, 0.0f, 0.0f, 0.01f));
-			ImGui::PopID();
-		});
+			{
+				ImGui::PushID("barsiren");
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Bar-Siren Intensity Scalar", gs->translate_vehicle_barsirens_intensity_scalar, 0.0f, 0.0f, 0.01f));
+				CLEAR_CACHE_CHECK(clear, compsettings_float_widget("Bar-Siren Radius Scalar", gs->translate_vehicle_barsirens_radius_scalar, 0.0f, 0.0f, 0.01f));
+				ImGui::PopID();
+			});
 
 		ImGui::Spacing(0, SEPARATOR_SPACING);
 
 		if (clear) {
 			remix_lights::clear_light_cache();
-		}
-
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Lights ");
-		ImGui::Spacing(0, 4);
-
-		compsettings_float_widget("MoonLight Intensity Scalar", gs->translate_moonlight_intensity_scalar, 0.0f, 1.0f, 0.005f);
-		compsettings_float_widget("SunLight Bad Weather Influence", gs->translate_sunlight_intensity_bad_weather_influence, 0.0f, 1.0f, 0.005f);
-		
-
-		ImGui::Spacing(0, inbetween_spacing);
-		ImGui::SeparatorText(" Timecycle ");
-		ImGui::Spacing(0, 4);
-
-		ImGui::BeginDisabled(!gs->timecycle_bloom_enabled.get_as<bool>());
-		{
-			compsettings_bool_widget("Clamp Min Intensity at Night", gs->timecycle_bloom_night_min_clamp_enabled);
-			ImGui::BeginDisabled(!gs->timecycle_bloom_night_min_clamp_enabled.get_as<bool>());
-			{
-				compsettings_float_widget("Bloom Night Min Value", gs->timecycle_bloom_night_min_clamp_value, 0.0f, 0.0f, 0.005f);
-				ImGui::EndDisabled();
-			}
-			ImGui::EndDisabled();
-
-			ImGui::Spacing(0, 4);
-			compsettings_float_widget("SkyLight Bad Weather Offset", gs->timecycle_skylight_max_offset_bad_weather, 0.0f, 2.0f, 0.005f);
 		}
 
 		ImGui::Spacing(0, 4);
@@ -2679,9 +2676,6 @@ namespace gta4
 			ImGui::Spacing(0, 12);
 			ImGui::SeparatorText("    FreeCam     ");
 			ImGui::Spacing(0, 2);
-			ImGui::CenterText("WASD: Forward & Strafing      Q/E: Down & Up");
-			ImGui::CenterText("Shift/Space: Speedup & Slowdown");
-			ImGui::Spacing(0, 4);
 
 			ImGui::Style_ColorButtonPush(im->m_freecam_mode ? ImVec4(0.22f, 0.5f, 0.26f, 1.0f) : ImGui::GetStyleColorVec4(ImGuiCol_Button), true);
 			if (ImGui::Button("FreeCam Mode", ImVec2(ImGui::GetContentRegionAvail().x, 48)))
@@ -2697,7 +2691,11 @@ namespace gta4
 					n->SetCharCollision(ped, !im->m_freecam_mode);
 					n->FreezeCharPosition(ped, im->m_freecam_mode);
 				}
-			} TT("Enable FreeCam Mode - Not available when sitting in a car!");
+			} 
+			TT(	"Enable FreeCam Mode - Not available when sitting in a car!\n"
+				"WASD: Forward & Strafing\n"
+				"Q/E:  Down & Up\n"
+				"Shift/Space: Speedup & Slowdown");
 			ImGui::Style_ColorButtonPop();
 
 			SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("FreeCam Forward Speed", &im->m_freecam_fwd_speed, 0.01f, 10.0f, "%.2f");
@@ -2705,7 +2703,6 @@ namespace gta4
 			SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::SliderFloat("FreeCam Upward Speed", &im->m_freecam_up_speed, 0.01f, 10.0f, "%.2f");
 			//SET_CHILD_WIDGET_WIDTH_MAN(140.0f); ImGui::DragFloat("FreeCam Upward Offset", &im->m_freecam_up_offset, 0.0001f, 0, 0, "%.5f");
 			ImGui::EndDisabled();
-
 
 			ImGui::Spacing(0, 12);
 			ImGui::SeparatorText("    Misc     ");
@@ -2754,7 +2751,7 @@ namespace gta4
 		{
 			static float cont_quick_clock_weather_height = 0.0f;
 			cont_quick_clock_weather_height = ImGui::Widget_ContainerWithCollapsingTitle("Clock / Weather", cont_quick_clock_weather_height, quicksettings_clock_weather_container,
-				true, ICON_FA_TERMINAL, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+				true, ICON_FA_CLOCK, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
 		}
 	}
 
@@ -3318,7 +3315,7 @@ namespace gta4
 		ImGui::BeginDisabled(!im->m_dbg_visualize_api_light_hashes);
 		{
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("  Draw Distance      ").x);
-			ImGui::DragFloat("  Draw Distance      ", &im->m_dbg_visualize_api_light_hashes_distance, 0.005f, 0.0f, 3000.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+			ImGui::DragFloat("  Draw Distance      ", &im->m_dbg_visualize_api_light_hashes_distance, 0.02f, 0.0f, 3000.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
 			ImGui::EndDisabled();
 		}
 
@@ -5996,7 +5993,7 @@ namespace gta4
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x + 12.0f, 8));	\
 	if (ImGui::BeginTabItem(NAME)) {																		\
 		ImGui::PopStyleVar(1);																				\
-		if (ImGui::BeginChild("##child_" NAME, ImVec2(0, ImGui::GetContentRegionAvail().y - 38), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_AlwaysVerticalScrollbar )) {	\
+		if (ImGui::BeginChild("##child_" NAME, ImVec2(0, ImGui::GetContentRegionAvail().y - 20), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_AlwaysVerticalScrollbar )) {	\
 			FUNC(); ImGui::EndChild();																		\
 		} else {																							\
 			ImGui::EndChild();																				\
@@ -6033,7 +6030,8 @@ namespace gta4
 			ADD_TAB("About", tab_about);
 			ImGui::EndTabBar();
 		}
-		else {
+		else 
+		{
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar(1);
 		}
@@ -6047,7 +6045,7 @@ namespace gta4
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 			{
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().ItemSpacing.y * 0.5f);
 				const auto spos = ImGui::GetCursorScreenPos();
 				ImGui::TextUnformatted(m_devgui_custom_footer_content.c_str());
 				ImGui::SetCursorScreenPos(spos);
@@ -6055,8 +6053,10 @@ namespace gta4
 			}
 			
 
-			ImGui::SetCursorPos(ImVec2(cur_pos, ImGui::GetCursorPosY() + 2.0f));
-			if (ImGui::Button("Demo", ImVec2(50, 0))) {
+			ImGui::SetCursorPos(ImVec2(cur_pos, ImGui::GetCursorPosY() /*+ 2.0f*/));
+			
+			if (ImGui::TextLink("[Demo]")) {
+			//if (ImGui::Button("Demo", ImVec2(50, 26))) {
 				im_demo_menu = !im_demo_menu;
 			}
 
@@ -6276,6 +6276,7 @@ namespace gta4
 				icons_config.MergeMode = true;
 				icons_config.PixelSnapH = true;
 				icons_config.FontDataOwnedByAtlas = font_data_owned_by_atlas;
+				icons_config.GlyphOffset.y = 1.5f;
 
 				ImGui::GetIO().Fonts->AddFontFromMemoryTTF((void*)fa_solid_900, sizeof(fa_solid_900), font_size, &icons_config, icons_ranges);
 			};

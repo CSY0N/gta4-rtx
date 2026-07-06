@@ -367,7 +367,7 @@ namespace gta4
 				return m_dirty;
 			}
 
-			void set_dirty(bool state) {
+			void set_dirty(const bool state) {
 				m_dirty = state;
 			}
 
@@ -375,7 +375,7 @@ namespace gta4
 				return m_temp_override_enabled;
 			}
 
-			void set_temp_override_state(bool state) {
+			void set_temp_override_state(const bool state) {
 				m_temp_override_enabled = state;
 			}
 
@@ -1217,7 +1217,8 @@ namespace gta4
 
 			variable timecycle_use_remix_atmos_system = {
 				"timecycle_use_remix_atmos_system",
-				("Enable to use remix atmosphere system by github.com/RemixProjGroup/dxvk-remix (Sparkles"),
+				("Enable to use remix atmosphere system by github.com/RemixProjGroup/dxvk-remix (Sparkles)\n"
+				 "Disable to use the original game sky. Some settings will be locked when this is enabled."),
 				"1.3.1",
 				true
 			};
