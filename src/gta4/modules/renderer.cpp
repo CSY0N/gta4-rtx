@@ -1781,6 +1781,8 @@ namespace gta4
 			return dev->DrawIndexedPrimitive(PrimitiveType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 		}
 
+		GTA4_PERF_SCOPE(performance_section::DrawIndexedPrim);
+
 		auto& ctx = setup_context(dev);
 		static auto im = imgui::get();
 		static auto gs = comp_settings::get();

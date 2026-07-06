@@ -120,6 +120,7 @@ namespace gta4
 	// draw map_setting marker meshes
 	void remix_markers::draw_nocull_markers()
 	{
+		GTA4_PERF_SCOPE(performance_section::RemixMarkers);
 		auto& msettings = map_settings::get_map_settings();
 		const auto dev = game::get_d3d_device();
 

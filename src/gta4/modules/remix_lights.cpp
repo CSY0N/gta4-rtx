@@ -1,4 +1,4 @@
-﻿#include "std_include.hpp"
+#include "std_include.hpp"
 #include "remix_lights.hpp"
 
 #include "comp_settings.hpp"
@@ -239,6 +239,7 @@ namespace gta4
 
 	void remix_lights::on_client_frame()
 	{
+		GTA4_PERF_SCOPE(performance_section::RemixLights);
 		const auto rml = remix_lights::get();
 		const auto gl = game_lights::get();
 

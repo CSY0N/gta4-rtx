@@ -77,5 +77,6 @@ constexpr auto COMP_MOD_PRE_RELEASE_NUM = 0;
 #include "game/model_hashes.hpp"
 #include "game/game.hpp"
 #include "gta4.hpp"
+#include "modules/performance_logger.hpp"
 
 using namespace std::literals;

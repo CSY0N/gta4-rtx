@@ -103,6 +103,7 @@ namespace gta4
 	 */
 	void game_lights::iterate_all_game_lights()
 	{
+		GTA4_PERF_SCOPE(performance_section::GameLights);
 		const auto im = imgui::get();
 		const auto gs = comp_settings::get();
 		const auto rml = remix_lights::get();

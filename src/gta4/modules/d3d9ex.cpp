@@ -247,6 +247,10 @@ namespace gta4
 
 	HRESULT d3d9ex::D3D9Device::BeginScene()
 	{
+		if (const auto p = performance_logger::get(); p) {
+			p->begin_frame();
+		}
+
 		if (renderer::is_initialized()) {
 			on_begin_scene_cb();
 		}
@@ -282,7 +286,17 @@ namespace gta4
 			g_was_rendering_phone_last_frame_delay_reset_helper = false;
 		}
 
-		return m_pIDirect3DDevice9->EndScene();
+		HRESULT hr = D3D_OK;
+		{
+			GTA4_PERF_SCOPE(performance_section::AntiCull);
+			hr = m_pIDirect3DDevice9->EndScene();
+		}
+
+		if (const auto p = performance_logger::get(); p) {
+			p->end_frame(shared::globals::frame_time_ms);
+		}
+
+		return hr;
 	}
 
 	HRESULT d3d9ex::D3D9Device::Clear(DWORD Count, CONST D3DRECT* pRects, DWORD Flags, D3DCOLOR Color, float Z, DWORD Stencil)
