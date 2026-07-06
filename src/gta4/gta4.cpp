@@ -31,6 +31,7 @@ namespace gta4
 
 	void on_begin_scene_cb()
 	{
+		GTA4_PERF_SCOPE(performance_section::BeginScene);
 		const auto im = imgui::get();
 		const auto& gs = comp_settings::get();
 
@@ -703,6 +704,47 @@ namespace gta4
 		}
 	}
 
+#if 0
+	void start_renderlist_perf()
+	{
+		/*if (const auto p = performance_logger::get(); p) {
+			p->begin_frame();
+		}
+
+		GTA4_PERF_BEGIN(performance_section::DrawIndexedPrim);*/
+	}
+
+	void end_renderlist_perf()
+	{
+		/*GTA4_PERF_END(performance_section::DrawIndexedPrim);
+
+		if (const auto p = performance_logger::get(); p) {
+			p->end_frame(shared::globals::frame_time_ms);
+		}*/
+	}
+
+	__declspec(naked) void start_renderlists_stub()
+	{
+		static uint32_t func_addr = 0x942130;
+		static uint32_t retn_addr = 0x8D8C36;
+		__asm
+		{
+			pushad;
+			call	start_renderlist_perf;
+			popad;
+
+			call	func_addr;
+
+			pushad;
+			call	end_renderlist_perf;
+			popad;
+
+			jmp		retn_addr;
+
+		}
+	}
+#endif
+
 	// ---
 
 	typedef void(__cdecl ProcessGameInput_t)(bool);
@@ -728,6 +770,7 @@ namespace gta4
 		shared::common::remix_api::initialize(nullptr, nullptr, nullptr, false);
 
 		shared::common::loader::module_loader::register_module(std::make_unique<imgui>());
+		shared::common::loader::module_loader::register_module(std::make_unique<performance_logger>());
 		shared::common::loader::module_loader::register_module(std::make_unique<renderer>());
 		shared::common::loader::module_loader::register_module(std::make_unique<renderer_ff>());
 		shared::common::loader::module_loader::register_module(std::make_unique<dinput>());
@@ -813,6 +856,9 @@ namespace gta4
 
 		// detect invalid mesh / part and prevent accessing it - https://github.com/xoxor4d/gta4-rtx/issues/49
 		shared::utils::hook(game::retn_addr__veh_invalid_model_crash_fix - 5u, veh_nullptr_invalid_model_fix_stub, HOOK_JUMP).install()->quick();
+
+		// test
+		//shared::utils::hook(0x8D8C31, start_renderlists_stub, HOOK_JUMP).install()->quick();
 
 		MH_EnableHook(MH_ALL_HOOKS);
 	}

@@ -5,6 +5,7 @@
 #include "modules/d3d9ex.hpp"
 #include "modules/comp_settings.hpp"
 #include "modules/discord.hpp"
+#include "modules/performance_logger.hpp"
 #include "modules/renderer.hpp"
 
 //#define BLOCK_DISCORDHOOK // also hooks d3d

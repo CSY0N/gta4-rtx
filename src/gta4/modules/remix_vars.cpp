@@ -518,6 +518,7 @@ namespace gta4
 	// Called on d3d9ex::D3D9Device::EndScene
 	void remix_vars::on_client_frame()
 	{
+		GTA4_PERF_SCOPE(performance_section::RemixVars);
 		if (const auto v = get(); !v) {
 			return;
 		}

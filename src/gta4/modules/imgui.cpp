@@ -658,6 +658,11 @@ namespace gta4
 		ImGui::Spacing(0, TREENODE_SPACING);
 #endif
 		ImGui::Spacing(0, TREENODE_SPACING);
+		if (const auto p = performance_logger::get(); p) {
+			p->draw_imgui_panel_embedded();
+		}
+
+		ImGui::Spacing(0, TREENODE_SPACING);
 		if (ImGui::TreeNode("Statistics ..."))
 		{
 			im->m_stats.enable_tracking(true);
@@ -6071,6 +6076,7 @@ namespace gta4
 
 	void imgui::on_present()
 	{
+		GTA4_PERF_SCOPE(performance_section::ImGui);
 		if (auto* im = imgui::get(); im)
 		{
 			if (const auto dev = shared::globals::d3d_device; dev)
@@ -6142,6 +6148,10 @@ namespace gta4
 						io.MouseDrawCursor = false;
 						shared::globals::imgui_allow_input_bypass_timeout = 0u;
 						shared::globals::imgui_allow_input_bypass = false;
+					}
+
+					if (const auto p = performance_logger::get(); p) {
+						p->draw_imgui_popout_window();
 					}
 
 					im->draw_debug();
