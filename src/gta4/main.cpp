@@ -352,6 +352,8 @@ BOOL APIENTRY DllMain(HMODULE hmodule, const DWORD ul_reason_for_call, LPVOID)
 {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH) 
 	{
+		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+
 		shared::common::console();
 		shared::globals::setup_dll_module(hmodule);
 		shared::globals::setup_exe_module();
