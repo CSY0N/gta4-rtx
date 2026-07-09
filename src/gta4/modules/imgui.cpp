@@ -657,10 +657,6 @@ namespace gta4
 
 		ImGui::Spacing(0, TREENODE_SPACING);
 #endif
-		ImGui::Spacing(0, TREENODE_SPACING);
-		if (const auto p = performance_logger::get(); p) {
-			p->draw_imgui_panel_embedded();
-		}
 
 		ImGui::Spacing(0, TREENODE_SPACING);
 		if (ImGui::TreeNode("Statistics ..."))
@@ -2630,8 +2626,8 @@ namespace gta4
 
 		// cs
 		{
-			static float cont_quick_utilities_height = 0.0f;
-			cont_quick_utilities_height = ImGui::Widget_ContainerWithCollapsingTitle("Comp Settings", cont_quick_utilities_height, wip_cs_container,
+			static float cont_wip_comp_settings_height = 0.0f;
+			cont_wip_comp_settings_height = ImGui::Widget_ContainerWithCollapsingTitle("Comp Settings", cont_wip_comp_settings_height, wip_cs_container,
 				true, ICON_FA_CAMERA, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
 		}
 	}
@@ -2731,6 +2727,11 @@ namespace gta4
 				cs->nocull_map_areas_high_lod_logic.set_temp_override_state(temp_overwrite);
 			} TT("Quickly toggle all anti culling logic if you want quicker and smaller captures.");
 			ImGui::Style_ColorButtonPop();
+
+			ImGui::Spacing(0, TREENODE_SPACING);
+			if (const auto p = performance_logger::get(); p) {
+				p->draw_imgui_panel_embedded();
+			}
 
 			ImGui::Spacing(0.0f, 4.0f);
 		}

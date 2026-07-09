@@ -181,14 +181,14 @@ namespace gta4
 
 	void performance_logger::draw_imgui_panel_embedded()
 	{
-		if (ImGui::TreeNode("Performance Overlay ..."))
+		ImGui::Style_ColorButtonPush(m_popout_enabled ? ImVec4(0.72f, 0.5f, 0.26f, 1.0f) : ImGui::GetStyleColorVec4(ImGuiCol_Button), true);
+		if (ImGui::Button(m_popout_enabled ? "Hide Performance Overlay" : "Show Performance Overlay", ImVec2(ImGui::GetContentRegionAvail().x, 48))) {
+			m_popout_enabled = !m_popout_enabled;
+		}
+		ImGui::Style_ColorButtonPop();
+
+		if (ImGui::TreeNode("Performance Overlay Settings ..."))
 		{
-			ImGui::Spacing(0, 6.0f);
-
-			if (ImGui::Button(m_popout_enabled ? "Hide Performance Overlay" : "Show Performance Overlay", ImVec2(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().IndentSpacing, 0))) {
-				m_popout_enabled = !m_popout_enabled;
-			}
-
 			ImGui::Spacing(0, 4);
 			ImGui::SliderFloat("Hard Threshold (ms)", &m_spike_hard_ms, 8.0f, 100.0f, "%.1f");
 			ImGui::SliderFloat("Median Ratio", &m_spike_ratio, 1.1f, 3.0f, "%.2f");
@@ -208,15 +208,22 @@ namespace gta4
 	float performance_logger::get_display_fps()
 	{
 		static float displayed_fps = 0.0f;
-		static float timer = 0.0f;
+		static float time_sum_ms = 0.0f;
+		static int frame_count = 0;
 
-		timer += get_latest_frame_time_ms();
+		const float frame_ms = get_latest_frame_time_ms();
+		if (frame_ms <= 0.0f) {
+			return displayed_fps;
+		}
 
-		if (timer >= 250.0f) // update 4 times/sec
+		time_sum_ms += frame_ms;
+		++frame_count;
+
+		if (time_sum_ms >= 250.0f) // update ~4 times/sec from the mean frame time over the window
 		{
-			const float frame_time = get_latest_frame_time_ms();
-			displayed_fps = frame_time > 0.0f ? 1000.0f / frame_time : 0.0f;
-			timer = 0.0f;
+			displayed_fps = static_cast<float>(frame_count) * 1000.0f / time_sum_ms;
+			time_sum_ms = 0.0f;
+			frame_count = 0;
 		}
 
 		return displayed_fps;
