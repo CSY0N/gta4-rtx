@@ -1633,14 +1633,14 @@ namespace gta4
 			variable discord_rpc = {
 				"discord_rpc",
 				("Enables custom Discord Rich Presence"),
-				"1.3.2",
+				"1.4.0",
 				true
 			};
 
 			variable limit_option_sliders = {
 				"limit_option_sliders",
 				("Limits view/detail/vehicle density sliders to sane numbers to stop people from running into too much cpu bottleneck."),
-				"1.3.2",
+				"1.4.0",
 				true
 			};
 		};
