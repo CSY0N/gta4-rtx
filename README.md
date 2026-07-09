@@ -37,22 +37,21 @@ __[Compiling](#compiling)__
 ## Overview
 <div align="center" markdown="1"> 
 
-First and foremost, __this is not a remaster__. It is a mod that allows the game to be modded with NVIDIA's 
-[RTX Remix](https://github.com/NVIDIAGameWorks/rtx-remix).  
-[It comes with a few enhanced assets](https://github.com/xoxor4d/gta4-rtx-base-mod) and [GTAIV-AutoPBR](https://github.com/xoxor4d/gta4-rtx-autopbr-mod).  
+First and foremost, __this is not a remaster__. It is a mod that allows the game to be modded with NVIDIA's [RTX Remix](https://github.com/NVIDIAGameWorks/rtx-remix)  
+[It comes with a Baseline Remix Mod](https://github.com/xoxor4d/gta4-rtx-base-mod) and [GTAIV-AutoPBR](https://github.com/xoxor4d/gta4-rtx-autopbr-mod).  
 
 <br>
 
-There are obvious drawbacks, and things that will not work with such a new title, don't expect this to be perfect.  
-RTX Remix has a certain overhead because of how it works and intercepts the game's draw calls.  
+RTX Remix has a certain overhead because of how it works and intercepts the game's draw calls  
+and are obvious drawbacks and things that will not work with such a new title. So don't expect this to be perfect.  
 
-You'll experience CPU bottlenecks because of the amount of detailed meshes the game is rendering,  
-which means that the performance you'll see in certain places is not entirely due to pathtracing.  
+You'll likely experience a CPU bottleneck because of the amount of detailed meshes the game is rendering.  
+This means that the performance you'll see in certain places is not entirely due to pathtracing.  
 
 <br>
 
-The mod comes with a custom [Remix Runtime](https://github.com/xoxor4d/dxvk-remix/tree/game/gta4_rebase8) required for a few game specific features   
-and with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/tag/v9.0.0) to load the Compatibility Mod itself. 
+The mod comes with a custom [Remix Runtime](https://github.com/xoxor4d/dxvk-remix/tree/game/gta4_atmos9) required for a few game specific features,   
+with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/tag/v9.0.0) to load the Compatibility Mod itself and a custom fork of [FusionFix](https://github.com/xoxor4d/GTAIV.EFLC.FusionFix.RTXRemix) tailored for RTX-Remix.
 
 </div>
 
@@ -60,8 +59,8 @@ and with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader
 <br>
 
 ###### The good:  
-- Most objects rendered via fixed function to increase performance
-- Cascaded anti culling of static objects (__wip__)
+- Most objects rendered via fixed function to increase performance (compared to grabbing data from Vertexshaders)
+- Cascaded anti culling of meshes
 - All game lights (including the sun) are translated to remix lights
 - Ability to create overrides for translated game lights (change position, color, intensity etc.)
 - Vehicles now feature two headlights and two rear lights instead of single, centered ones
@@ -74,17 +73,16 @@ and with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader
 - Mobilephone works (but it is 3D and currently scales with the camera fov)
 - Modified vertex shaders (based on FusionFix) so that remix is able to capture surface normals
 - Ability to spawn unique _marker_ meshes that can be hidden based on distance, weather or time of day (these can be used to attach remix replacements or scene lights)
-- Screenshot Mode and FreeCam Mode
+- Screenshot Mode, FreeCam Mode and other Utilities
 - FusionFix compatible (custom fork: [GTAIV.EFLC.FusionFix.RTXRemix](https://github.com/xoxor4d/GTAIV.EFLC.FusionFix.RTXRemix))
 - Many many tweakable settings via the in-game __F4__ menu
-- A few PBR materials, mesh and texture fixes
-- Installer
+- A few PBR materials, hq-meshes (vegetation, modeled fences ..) and texture fixes
+- Includes an Atmospheric sky system with Volumetric Clouds made by the Community [Remix Plus / Numos](https://github.com/RemixProjGroup/dxvk-remix)
+- Mod Installer / Updater
 
 ###### The bad:
-- CPU Bottlenecked (reduce draw distance / quality)
-- Mobilephone UI looks a little broken
-- Anti-Culling is not perfect yet
-- TV's are not working
+- CPU Bottlenecked - Nvidia is constantly updating RTX-Remix and already made changes to improve this
+- Can be stuttery when traversing the world
 - No blood on peds
 
 <br>
@@ -92,8 +90,8 @@ and with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader
 
 <div align="center" markdown="1"> 
 
+![img](.github/img/04.jpg)
 ![img](.github/img/01.jpg)
-![img](.github/img/02.jpg)
 </div>
 
 <br>
@@ -102,14 +100,14 @@ and with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader
 - Grab the latest [Release](https://github.com/xoxor4d/gta4-rtx/releases) and follow the instructions found there
 
 
-<br>
 
 ## Uninstalling
-- Deleting the `d3d9.dll` and `a_gta4-rtx.asi` should be enough
+- Delete `d3d9.dll` and `a_gta4-rtx.asi` or use the provided `_toggle-gta4-rtx.bat` to quickly toggle RTX-Remix
+- Some other minor files remain in the updates folder (mainly `.img` files starting with `1__remix ..`)
 - Re-install the official FusionFix mod if you used the custom Fork
 
 <br>
-<br>
+
 
 ## Usage
 - Run the game like normal
@@ -144,19 +142,25 @@ and with [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader
 - [imgui-blur-effect](https://github.com/3r4y/imgui-blur-effect)
 - [minhook](https://github.com/TsudaKageyu/minhook)
 - [toml11](https://github.com/ToruNiina/toml11)
-- [miniz](https://github.com/richgel999/miniz)
 - [Ultimate-ASI-Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader)
-- [AssaultKifle47](https://github.com/akifle47)
+- [miniz](https://github.com/richgel999/miniz)
+- [Rapidjson](https://github.com/Tencent/rapidjson)
+- [DiscordRPC](https://github.com/discord/discord-rpc)
 - [FusionFix](https://github.com/ThirteenAG/GTAIV.EFLC.FusionFix)
 - [FusionShaders](https://github.com/Parallellines0451/GTAIV.EFLC.FusionShaders)
 - [Rage-Shader-Editor](https://github.com/ImpossibleEchoes/rage-shader-editor-cpp)
 - [IV-SDK](https://github.com/Zolika1351/iv-sdk/)
 - [IV-SDK-DotNet](https://github.com/ClonkAndre/IV-SDK-DotNet)
+- [AssaultKifle47](https://github.com/akifle47)
 - [DayL](https://www.gtainside.de/de/user/falcogray)
 - [Entity](https://www.youtube.com/@paprykszadolowski8796)
 - [Gabdeg](https://www.youtube.com/@gabdeg793)
 - [Hemry](https://www.youtube.com/@Hemry81)
 - [Danlopand / Thundery_Dan](https://github.com/DANLOPAND)
+- [KapibosRU](https://www.youtube.com/channel/UCqZ2NI_fQKRN-Onypt9aIGQ)
+- [Budgie](https://www.patreon.com/c/BudgieGames)
+- [Sparkles (Remix Plus)](https://github.com/Kim2091)
+- [Alex from Digital Foundry](https://www.youtube.com/watch?v=vGxPdcMQfwg)
 - All 🍓 Testers
 
 <div align="center" markdown="1"> 
@@ -167,5 +171,6 @@ and all the people that helped along the way!
 <br>
 
 ![img](.github/img/03.jpg)
+![img](.github/img/02.jpg)
 
 </div>

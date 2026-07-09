@@ -265,6 +265,7 @@ namespace gta4
 		CENTER_URL("Hemry", "https://www.youtube.com/@Hemry81");
 		CENTER_URL("Thundery_Dan", "https://github.com/DANLOPAND");
 		CENTER_URL("KapibosRU", "https://www.youtube.com/channel/UCqZ2NI_fQKRN-Onypt9aIGQ");
+		CENTER_URL("Budgie", "https://www.patreon.com/c/BudgieGames");
 		CENTER_URL("Sparkles (Remix Plus)", "https://github.com/Kim2091");
 		CENTER_URL("Alex from Digital Foundry", "https://www.youtube.com/watch?v=vGxPdcMQfwg");
 
