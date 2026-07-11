@@ -162,9 +162,17 @@ namespace gta4
 				}
 
 				out += "# Type: " + std::string(this->get_str_type()) + " || Default: " + std::string(this->get_str_value(true));
+				out += "\n # Name: '" + std::string(this->m_name) + "'";
 				out += "\n\n Use [MIDDLE MOUSE] to RESET to default values.";
+
 				out += this->get_dirty_state() ? "\n ! DIRTY - Modified by ADDON_SETTINGS file. Value ignored when saving !" : "";
-				out += this->get_temp_override_state() ? "\n ! Temporary Override Active. Changes are not reflected until override is disabled !" : "";
+
+				if (this->get_temp_override_state())
+				{
+					out += "\n ! Temporary Override Active. Changes are not reflected until override is disabled !";
+					out += "\n ! -> " + this->m_temp_override_comment + " !" ;
+				}
+
 				return out;
 			}
 
@@ -298,43 +306,51 @@ namespace gta4
 				m_var_base_user = m_var;
 			}
 
-			// sets var and writes toml (bool)
-			void set_var(const bool boolean, bool no_toml_update = false, bool is_temp_override = false)
+			/// sets var (bool) - only writes toml if temp_override is not active
+			/// @param boolean			state
+			/// @param no_toml_update	disable toml writing if false
+			void set_var(const bool boolean, bool no_toml_update = false)
 			{
-				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				auto& var = m_temp_override_enabled ? m_var_temp_override : m_var;
 				var.boolean = boolean;
 
-				if (!no_toml_update) {
+				if (!no_toml_update && !m_temp_override_enabled) {
 					write_comp_settings_toml();
 				}
 			}
 	
-			// sets var and writes toml (integer)
-			void set_var(const int integer, bool no_toml_update = false, bool is_temp_override = false)
+			/// sets var (integer) - only writes toml if temp_override is not active
+			/// @param integer			state
+			/// @param no_toml_update	disable toml writing if false
+			void set_var(const int integer, bool no_toml_update = false)
 			{
-				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				auto& var = m_temp_override_enabled ? m_var_temp_override : m_var;
 				var.integer = integer;
 
-				if (!no_toml_update) {
+				if (!no_toml_update && !m_temp_override_enabled) {
 					write_comp_settings_toml();
 				}
 			}
 	
-			// sets var and writes toml (float)
-			void set_var(const float value, bool no_toml_update = false, bool is_temp_override = false)
+			/// sets var (float) - only writes toml if temp_override is not active
+			/// @param value			value
+			/// @param no_toml_update	disable toml writing if false
+			void set_var(const float value, bool no_toml_update = false)
 			{
-				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				auto& var = m_temp_override_enabled ? m_var_temp_override : m_var;
 				var.value[0] = value;
 
-				if (!no_toml_update) {
+				if (!no_toml_update && !m_temp_override_enabled) {
 					write_comp_settings_toml();
 				}
 			}
 	
-			// sets var and writes toml (vec4)
-			void set_vec(const float* v, bool no_toml_update = false, bool is_temp_override = false)
+			/// sets var (vec1 - vec4) - only writes toml if temp_override is not active
+			/// @param v				vector
+			/// @param no_toml_update	disable toml writing if false
+			void set_vec(const float* v, bool no_toml_update = false)
 			{
-				auto& var = is_temp_override ? m_var_temp_override : m_var;
+				auto& var = m_temp_override_enabled ? m_var_temp_override : m_var;
 
 				switch (m_type)
 				{
@@ -358,7 +374,7 @@ namespace gta4
 					break;
 				}
 	
-				if (!no_toml_update && !is_temp_override) {
+				if (!no_toml_update && !m_temp_override_enabled) {
 					write_comp_settings_toml();
 				}
 			}
@@ -375,7 +391,13 @@ namespace gta4
 				return m_temp_override_enabled;
 			}
 
-			void set_temp_override_state(const bool state) {
+			void set_temp_override_state(const bool state, const char* comment = "") 
+			{
+				// only update comment on actual change
+				if (state != m_temp_override_enabled) {
+					m_temp_override_comment = comment;
+				}
+
 				m_temp_override_enabled = state;
 			}
 
@@ -407,6 +429,7 @@ namespace gta4
 
 			// not in constructor
 			var_value m_var_temp_override = {};
+			std::string m_temp_override_comment;
 			bool m_temp_override_enabled = false;
 			bool m_dirty = false;
 		};
