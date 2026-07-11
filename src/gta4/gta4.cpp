@@ -500,6 +500,14 @@ namespace gta4
 		const auto cs = comp_settings::get();
 		const auto sector_count = cs->nocull_map_areas_count._int();
 
+		// reset temp overrides here in case we return early
+		if (!cs->nocull_map_areas._bool() || !cs->nocull_map_areas_always_draw_lowest_lod._bool())
+		{
+			cs->nocull_dist_far_static.set_temp_override_state(false);
+			cs->nocull_radius_far_static.set_temp_override_state(false);
+			cs->nocull_height_far_static.set_temp_override_state(false);
+		}
+
 		if (!cs->nocull_map_areas._bool() || sector_count < 1 || !game::pCurrentRenderPhase || !*game::pCurrentRenderPhase || !game::AddMapSectionsInFrustum) {
 			return;
 		}
@@ -548,6 +556,40 @@ namespace gta4
 		game::AddMapSectionsInFrustum(poly, 4, render_context,
 									  reinterpret_cast<void(__cdecl*)(int, int, int, int)>(game::fn_addr__mark_render_sector_far_callback),
 									  x_of_up >= 0.0f, y_of_up >= 0.0f, fabsf(x_of_up) > fabsf(y_of_up), 0);
+
+		// always add lowest LOD section so that it can be affected by other anti culling code
+		// nocull_map_areas_always_draw_lowest_lod will overwrite the far anti culling cascade object radius and distance
+		// so that the lowest LOD section is always drawn
+		if (cs->nocull_map_areas_always_draw_lowest_lod._bool())
+		{
+			// basically places frustum high up in the sky looking down
+			// poly spans the full sector grid
+			constexpr float dbg_x_of_up = 0.0f;
+			constexpr float dbg_y_of_up = 1.0f;
+
+			const float map_min = 0.0f;
+			const float map_max = 30.0f; // 30 == full XY map in sector space
+
+			float dbg_poly[8] = {};
+			dbg_poly[0] = map_min; dbg_poly[1] = map_min;
+			dbg_poly[2] = map_max; dbg_poly[3] = map_min;
+			dbg_poly[4] = map_max; dbg_poly[5] = map_max;
+			dbg_poly[6] = map_min; dbg_poly[7] = map_max;
+
+			game::AddMapSectionsInFrustum(dbg_poly, 4, render_context,
+										  reinterpret_cast<void(__cdecl*)(int, int, int, int)>(game::fn_addr__mark_render_sector_far_callback),
+										  dbg_x_of_up >= 0.0f, dbg_y_of_up >= 0.0f, fabsf(dbg_x_of_up) > fabsf(dbg_y_of_up), 0);
+
+			// temp comp setting overrides
+			cs->nocull_dist_far_static.set_temp_override_state(true, "Override by NoCull Always Draw Lowest LOD logic");
+			cs->nocull_dist_far_static.set_var(8000.0f);
+
+			cs->nocull_radius_far_static.set_temp_override_state(true, "Override by NoCull Always Draw Lowest LOD logic");
+			cs->nocull_radius_far_static.set_var(200.0f);
+
+			cs->nocull_height_far_static.set_temp_override_state(true, "Override by NoCull Always Draw Lowest LOD logic");
+			cs->nocull_height_far_static.set_var(cs->nocull_map_areas_always_draw_lowest_lod_min_size._float());
+		}
 	}
 
 	DWORD g_far_grid_stub_helper = 0u;

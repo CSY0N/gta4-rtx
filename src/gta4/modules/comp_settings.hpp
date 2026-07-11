@@ -499,8 +499,8 @@ namespace gta4
 			{
 				"nocull_radius_medium_static",
 				("The minimum radius an object has to have to not get culled within the distance set by 'nocull_dist_medium_static'"),
-				"1.3.0",
-				40.0f
+				"1.4.0",
+				26.0f
 			};
 
 			variable nocull_dist_far_static =
@@ -601,6 +601,23 @@ namespace gta4
 				"1.3.1",
 				1
 			};
+
+			variable nocull_map_areas_always_draw_lowest_lod = {
+				"nocull_map_areas_always_draw_lowest_lod",
+				("Enabling this option will always keep the lowest LOD of a map section visible.\n"
+				 "This might be beneficial with remix' preserve path feature."),
+				"1.4.0",
+				false
+			};
+
+			variable nocull_map_areas_always_draw_lowest_lod_min_size = {
+				"nocull_map_areas_always_draw_lowest_lod_min_size",
+				("How large the low-LOD section needs to be to be affected by this anti culling logic.\n"),
+				"1.4.0",
+				35.0f
+			};
+
+			// ---
 
 			variable nocull_map_areas_high_lod_logic = {
 				"nocull_map_areas_high_lod_logic",

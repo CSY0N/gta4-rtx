@@ -1898,6 +1898,10 @@ namespace gta4
 				compsettings_bool_widget("Enable NoCull Logic", gs->nocull_map_areas);
 				ImGui::BeginDisabled(!gs->nocull_map_areas._bool());
 					compsettings_int_widget("Area Count", gs->nocull_map_areas_count, 1, 5);
+
+					ImGui::Spacing(0, inbetween_spacing);
+					compsettings_bool_widget("Always draw lowest LOD", gs->nocull_map_areas_always_draw_lowest_lod);
+					compsettings_float_widget("Lowest LOD Min. Size", gs->nocull_map_areas_always_draw_lowest_lod_min_size, 0.0f, 500.0f, 0.5f);
 				ImGui::EndDisabled();
 
 				ImGui::Spacing(0, inbetween_spacing);
@@ -2544,6 +2548,10 @@ namespace gta4
 
 				ImGui::BeginDisabled(!gs->nocull_map_areas._bool());
 					compsettings_int_widget("Area Count", gs->nocull_map_areas_count, 1, 5);
+
+					ImGui::Spacing(0, inbetween_spacing);
+					compsettings_bool_widget("Always draw lowest LOD", gs->nocull_map_areas_always_draw_lowest_lod);
+					compsettings_float_widget("Lowest LOD Min. Size", gs->nocull_map_areas_always_draw_lowest_lod_min_size, 0.0f, 500.0f, 0.5f);
 				ImGui::EndDisabled();
 
 				ImGui::Spacing(0, inbetween_spacing);
@@ -2717,7 +2725,7 @@ namespace gta4
 				const bool temp_overwrite = im->m_anti_cull_capture_toggle;
 
 				// enable temp override so that all get() calls return temp values 
-				// temp values default to 0 so we don't need to re-set them here (because we want these to be 0)
+				// temp values default to 0 so we don't need to re-set them here (because we want most of these at 0)
 				cs->nocull_dist_near_static.set_temp_override_state(temp_overwrite);
 				cs->nocull_dist_medium_static.set_temp_override_state(temp_overwrite);
 				cs->nocull_dist_far_static.set_temp_override_state(temp_overwrite);
@@ -2726,6 +2734,8 @@ namespace gta4
 				cs->nocull_extended.set_temp_override_state(temp_overwrite);
 				cs->nocull_map_areas.set_temp_override_state(temp_overwrite);
 				cs->nocull_map_areas_high_lod_logic.set_temp_override_state(temp_overwrite);
+				cs->nocull_map_areas_always_draw_lowest_lod.set_temp_override_state(temp_overwrite);
+
 			} TT("Quickly toggle all anti culling logic if you want quicker and smaller captures.");
 			ImGui::Style_ColorButtonPop();
 
@@ -2778,7 +2788,7 @@ namespace gta4
 		{
 			static float cont_setting_presets_height = 0.0f;
 			cont_setting_presets_height = ImGui::Widget_ContainerWithCollapsingTitle("Setting Presets", cont_setting_presets_height, 
-				compsetting_presets_container, true, ICON_FA_DOLLY_FLATBED, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
+				compsetting_presets_container, false, ICON_FA_DOLLY_FLATBED, &ImGuiCol_ContainerBackground, &ImGuiCol_ContainerBorder);
 		}
 
 		// rendering related
@@ -5234,7 +5244,7 @@ namespace gta4
 		ImGui::Spacing(0, 4);
 
 		ImGui::Checkbox("Visualize Anti Culling Info", &im->m_dbg_visualize_anti_cull_info); TT("Visualize Anti Culling Info");
-		//ImGui::DragFloat("Info Distance", &im->m_dbg_visualize_anti_cull_info_distance, 0.05f);  TT("Only draw mesh vis. up until this distance.");
+		ImGui::DragFloat("Info Distance", &im->m_dbg_visualize_anti_cull_info_distance, 0.05f);  TT("Only draw mesh vis. up until this distance.");
 		ImGui::DragFloat("Info Min Radius", &im->m_dbg_visualize_anti_cull_info_min_radius, 0.05f); TT("A mesh needs to have at least this radius to be visualized.");
 		ImGui::DragInt("Highlight Mesh with Index", &im->m_dbg_visualize_anti_cull_highlight); TT("Draw bounding box around mesh with this index.");
 		ImGui::DragFloat("Highlight Line Width", &im->m_dbg_visualize_anti_cull_info_highlight_line_width, 0.05f); TT("Line width for bounding box.");
