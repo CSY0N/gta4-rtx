@@ -161,16 +161,25 @@ namespace gta4
 					out += "# " + line + "\n";
 				}
 
-				out += "# Type: " + std::string(this->get_str_type()) + " || Default: " + std::string(this->get_str_value(true));
-				out += "\n # Name: '" + std::string(this->m_name) + "'";
-				out += "\n\n Use [MIDDLE MOUSE] to RESET to default values.";
+				out += "# Type: " + std::string(this->get_str_type()) + " || Default: " + std::string(this->get_str_value(true)) + "\n";
+				out += "# Name: '" + std::string(this->m_name) + "'\n\n";
+				out += "> Use [MIDDLE MOUSE] to RESET to default values.";
 
-				out += this->get_dirty_state() ? "\n ! DIRTY - Modified by ADDON_SETTINGS file. Value ignored when saving !" : "";
+				const auto is_dirty = this->get_dirty_state();
+				const auto has_override = this->get_temp_override_state();
 
-				if (this->get_temp_override_state())
+				if (is_dirty || has_override) {
+					out += "\n";
+				}
+
+				if (is_dirty) {
+					out += "\n! DIRTY - Modified by ADDON_SETTINGS file. Value ignored when saving !";
+				}
+
+				if (has_override)
 				{
-					out += "\n ! Temporary Override Active. Changes are not reflected until override is disabled !";
-					out += "\n ! -> " + this->m_temp_override_comment + " !" ;
+					out += "\n! Temporary Override Active. Changes are not reflected until override is disabled !";
+					out += "\n! -> " + this->m_temp_override_comment + " !" ;
 				}
 
 				return out;

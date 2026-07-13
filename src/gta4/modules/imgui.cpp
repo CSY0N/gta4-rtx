@@ -2723,18 +2723,19 @@ namespace gta4
 			{
 				im->m_anti_cull_capture_toggle = !im->m_anti_cull_capture_toggle;
 				const bool temp_overwrite = im->m_anti_cull_capture_toggle;
+				const char* comment_str = "Quick AntiCull Toggle";
 
 				// enable temp override so that all get() calls return temp values 
 				// temp values default to 0 so we don't need to re-set them here (because we want most of these at 0)
-				cs->nocull_dist_near_static.set_temp_override_state(temp_overwrite);
-				cs->nocull_dist_medium_static.set_temp_override_state(temp_overwrite);
-				cs->nocull_dist_far_static.set_temp_override_state(temp_overwrite);
-				cs->nocull_dist_lights.set_temp_override_state(temp_overwrite);
-				cs->nocull_dist_sphere_interior.set_temp_override_state(temp_overwrite);
-				cs->nocull_extended.set_temp_override_state(temp_overwrite);
-				cs->nocull_map_areas.set_temp_override_state(temp_overwrite);
-				cs->nocull_map_areas_high_lod_logic.set_temp_override_state(temp_overwrite);
-				cs->nocull_map_areas_always_draw_lowest_lod.set_temp_override_state(temp_overwrite);
+				cs->nocull_dist_near_static.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_dist_medium_static.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_dist_far_static.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_dist_lights.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_dist_sphere_interior.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_extended.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_map_areas.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_map_areas_high_lod_logic.set_temp_override_state(temp_overwrite, comment_str);
+				cs->nocull_map_areas_always_draw_lowest_lod.set_temp_override_state(temp_overwrite, comment_str);
 
 			} TT("Quickly toggle all anti culling logic if you want quicker and smaller captures.");
 			ImGui::Style_ColorButtonPop();

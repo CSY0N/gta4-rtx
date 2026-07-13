@@ -258,18 +258,18 @@ namespace gta4
 				}
 
 				const auto& v1 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_elevation));
-				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunElevation, v1, 0.005f);
+				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunElevation, v1, 0.01f);
 
 				const auto& v2 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(sun_rotation));
-				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunRotation, v2, 0.005f);
+				remix_vars::get()->add_interpolate_entry(rtx_atmosphere_sunRotation, v2, 0.01f);
 
 				if (hour >= 20 || hour <= 6)
 				{
 					// directional light past 21 = moon
 					const auto& v3 = remix_vars::string_to_option_value(remix_vars::OPTION_TYPE_FLOAT, std::to_string(moon_elevation));
-					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_elevation, v3, 0.005f);
+					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_elevation, v3, 0.01f);
 
-					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_rotation, v2, 0.005f);
+					remix_vars::get()->add_interpolate_entry(rtx_atmosphere_moon0_rotation, v2, 0.01f);
 				}
 			}
 		}
