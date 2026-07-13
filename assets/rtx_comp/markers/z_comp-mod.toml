@@ -42,4 +42,7 @@ MARKER = [
 
     # downtown skyscrapers shadowcasters 04
     { marker_num = 303, position = [-50.80, -561.45, 64.70], rotation = [0.00, 0.00, 0.00], scale = [1.00, 1.00, 1.00], cull_distance = 800.00 },
+
+    # dukes basketball field
+    { marker_num = 100, position = [1210.08, 694.85, 38.00], rotation = [0.00, 0.00, 0.00], scale = [5.00, 5.00, 5.00], cull_distance = 110.00 },
 ]
